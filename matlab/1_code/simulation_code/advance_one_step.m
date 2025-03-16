@@ -36,11 +36,16 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
             [dt*(eye(nr)/Fr-Delta/We),eye(nr)-dt*2*Delta/Re]];
           
         % Completing the system
-        Mat =  [[Sist(:,(cPoints+1):2*nr),...
-            [zeros(nr,cPoints);dt*eye(cPoints);zeros(nr-cPoints,cPoints)],...
-            zeros(2*nr,1),Sist(:,1:cPoints)*ones(cPoints,1)];
-            [-SF*dt/dr, zeros(1,2*nr-cPoints-1),-dt*pIntegral(1:cPoints)/Ma, 1 , SF*dt/dr];
-            [zeros(1,2*nr-cPoints),-zeros(1, cPoints)  ,-dt,1]];
+        Mat =  [[Sist(:,(cPoints+1):2*nr),... % Eta and phi columns
+            [zeros(nr,cPoints);dt*eye(cPoints); ...
+            zeros(nr-cPoints,cPoints)],... % pressurecolumns 
+            zeros(2*nr,1),Sist(:,1:cPoints)*ones(cPoints,1)]; ... % h and v columns
+            [-SF*dt/dr, zeros(1,2*nr-cPoints-1),-dt*pIntegral(1:cPoints)/Ma, 1 , SF*dt/dr]; %Newton equation 1
+            [zeros(1,2*nr-cPoints),-zeros(1, cPoints)  ,-dt,1]]; % Newton equation 2
+
+        Mat(nr+cPoints, :) = zeros(1, 2*nr+2);
+        Mat(nr + cPoints, [nr-1, nr, nr+1]) = [1 -2 1]; 
+
         % Now save the matrix for later
         PROBLEM_CONSTANTS.precomputedInverse = inv(Mat);
 
