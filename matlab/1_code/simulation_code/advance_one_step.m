@@ -13,10 +13,13 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
     CoM_vel = previous_conditions.center_of_mass_velocity;
     b = [previous_conditions.bath_surface; previous_conditions.bath_potential];
     %b = b-Sist(:,1:cPoints)*(CoM * ones(cPoints, 1)); %zs(1:cPoints)+Rv);
-    indep = [b; CoM_vel - dt/Fr - dt*F*cos(w*(t+dt)); CoM];
+    gamma = PROBLEM_CONSTANTS.bath_forcing_amplitude; % CHANGED
+    g_prefactor = (1 - gamma * cos(w * (t + dt))); % CHANGED: Oscillating gravity prefactor at t + dt
+    indep = [b; CoM_vel - dt/Fr * g_prefactor; CoM]; % CHANGED: Removed direct forcing and added gravity prefactor
     
-    % If the matrix exists, import it
-    if ~isnan(PROBLEM_CONSTANTS.precomputedInverse)
+    % If the matrix exists and gravity is constant, import it. 
+    % Otherwise (oscillating gravity), we must recompute it every step.
+    if ~isnan(PROBLEM_CONSTANTS.precomputedInverse) && gamma == 0 % CHANGED: Only use precomputed inverse if gravity is constant
         invMat = PROBLEM_CONSTANTS.precomputedInverse;
         sol = invMat * indep;
     else
@@ -33,7 +36,7 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
         
         % Preparing the matrix (2x2 block)
         Sist = [[eye(nr)-dt*2*Delta/Re,-dt*DTN];...
-            [dt*(eye(nr)/Fr-Delta/We),eye(nr)-dt*2*Delta/Re]];
+            [dt*(eye(nr)/Fr * g_prefactor - Delta/We),eye(nr)-dt*2*Delta/Re]]; % CHANGED: Added gravity prefactor to fluid equation
           
         % Completing the system
         Mat =  [[Sist(:,(cPoints+1):2*nr),...

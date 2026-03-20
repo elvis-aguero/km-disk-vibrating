@@ -46,8 +46,9 @@ arguments
     % Default values amount to a water bath
     NameValueArgs.diskRadius (1, 1) double = .5 % Radius of the oscillating disk, in cm
     NameValueArgs.diskMass (1, 1) double = 1 % Mass in grams of the disk
-    NameValueArgs.forceAmplitude (1, 1) double = 10 % Amplitude of sinusoidal force applied to disk (in dynes)
+    NameValueArgs.forceAmplitude (1, 1) double = 0 % Amplitude of sinusoidal force applied to disk (in dynes)
     NameValueArgs.forceFrequency (1, 1) double = 90 % Frequency of sinusoidal force in Hz
+    NameValueArgs.bathAmplitude (1, 1) double = 0 % Amplitude of bath oscillation in cm. CHANGED
     NameValueArgs.bathDensity (1, 1) double = 1 % Density of bath's fluid in g/cm^3
     NameValueArgs.bathSurfaceTension (1, 1) double = 72.20 % For water, in dynes/cm
     NameValueArgs.bathViscosity (1, 1) double = 0.978e-2 % Viscosity in Stokes (cgs)
@@ -127,6 +128,7 @@ force_adim = forceAmplitude / diskMass * (T_unit^2 / L_unit);
 surface_force_adim = 2*pi*diskRadius*bathSurfaceTension/diskMass * (T_unit^2 / L_unit);
 freq_adim = forceFrequency * T_unit;
 obj_mass_adim = diskMass / M_unit;
+bath_forcing_amplitude = NameValueArgs.bathAmplitude * forceFrequency^2 / g; % Dimensionless acceleration ratio (A*w^2/g). CHANGED
 
 % Set numerical simulation parameters
 dt = 1 / temporalResolution; % Adimensional time step
@@ -155,6 +157,7 @@ PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "reynolds", Re, "dr", dr, "DEBUG_FLAG", debug_flag, ...
     "nr", nr, "contact_points", spatialResolution+1, ... 
     "force_amplitude", force_adim, "force_frequency", freq_adim, ...
+    "bath_forcing_amplitude", bath_forcing_amplitude, ... % CHANGED
     "surface_force_constant", surface_force_adim, ...
     "DTN", DTN, "laplacian", laplacian, "obj_mass", obj_mass_adim, ...
     "pressure_integral", pressureIntegral(spatialResolution+1, :), ...
