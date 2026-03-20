@@ -37,68 +37,24 @@ load_vars('z.mat')
 load_vars('etaOri.mat')
 load_vars('tvec.mat')
 
-load_vars('oscillation_amplitudes.mat');
-load_vars('pressure_amplitudes.mat');
-Rv = zeros(1, size(oscillation_amplitudes, 2));
-for ii = 1:size(oscillation_amplitudes, 2)
-    Rv(ii) = zs_from_spherical(pi, oscillation_amplitudes(:, ii));
-end
-
-%%
-
-cd ..
-try
-    load('Ro.mat','Ro')%Sphere's radius in CGS
-catch
-    cd ..
-    load('Ro.mat','Ro')
-end
-cd ..
-load('rhoS.mat','rhoS')%Sphere density
-
-
-cd ..
-load('rho.mat','rho')
-
-load('nu.mat','nu')
-load('muair.mat')
-load('g.mat','g') %gravitational constant
-
-cd ..
-
-load('nr.mat','nr')
-load('dr.mat','dr')
-load('r.mat')
-load('zs.mat','zs')
-
-
-%xplot = dr*(0:nr-1); save('xplot.mat','xplot')%I might remove or relocate this
-load('xplot.mat')
-
-cd(p);
-
-ntimes = size(etaMatPer,2);
-
-zplot = z(1:end-1);
-etaOriplot = etaOri(1:end-1);
-
-zmin = min(min(etaMatPer));
-zmax = max(max(etaMatPer));
-
-if errored
-    file_name = 'errored_WavesAndDrop.mp4';
+% Loading oscillating conditions. CHANGED
+resFile = dir("simulationResults*.mat");
+if ~isempty(resFile)
+    load(resFile(1).name, 'PROBLEM_CONSTANTS');
+    Gamma = PROBLEM_CONSTANTS.bath_forcing_amplitude;
+    Fr = PROBLEM_CONSTANTS.froude;
+    w = PROBLEM_CONSTANTS.force_frequency;
 else
-    file_name = 'WavesAndDrop.mp4';
+    % Fallback to existing or default values
+    Gamma = 0; 
+    try load('Fr.mat','Fr'); catch; Fr = 1; end
+    w = 1; 
 end
-vidObj = VideoWriter(file_name,'MPEG-4');
-set(vidObj,'FrameRate',10)
-open(vidObj);
 
-Gamma = 0; %%
-wzero = 1; %%
-thetaZero = 0; %%
-zb = Gamma/(Fr*wzero^2)*cos(wzero*tvec+thetaZero); %Elevation of the pool
-zbplot=zb; %(1:end-1);
+zb = Gamma/(Fr*w^2)*cos(w*tvec); % Elevation of the pool in lab frame. CHANGED
+zbplot = zb;
+
+load_vars('oscillation_amplitudes.mat');
 
 h = figure();
 h.Position = [100 100 1260 400];
@@ -109,7 +65,7 @@ for ii = floor(linspace(1, size(etaMatPer,2), 300))
     thetaplot = linspace(0, pi, 100);
     zsTop = zs_from_spherical(thetaplot, oscillation_amplitudes(:, ii));
     xsTop = r_from_spherical(thetaplot, oscillation_amplitudes(:, ii)); 
-    plot([-xsTop(end:-1:2), xsTop],[zsTop(end:-1:2), zsTop]+z(ii),'k','Linewidth',2);
+    plot([-xsTop(end:-1:2), xsTop],[zsTop(end:-1:2), zsTop] + z(ii) + zb(ii),'k','Linewidth',2); % CHANGED: added zb to show lab frame
     hold on
 
     plot([fliplr(-1*r),r(2:end)],(zbplot(ii)+[0;flipud(etaMatPer(:,ii));etaMatPer(2:end,ii);0]),...

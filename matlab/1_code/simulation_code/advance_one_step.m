@@ -15,7 +15,7 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
     %b = b-Sist(:,1:cPoints)*(CoM * ones(cPoints, 1)); %zs(1:cPoints)+Rv);
     gamma = PROBLEM_CONSTANTS.bath_forcing_amplitude; % CHANGED
     g_prefactor = (1 - gamma * cos(w * (t + dt))); % CHANGED: Oscillating gravity prefactor at t + dt
-    indep = [b; CoM_vel - dt/Fr * g_prefactor; CoM]; % CHANGED: Removed direct forcing and added gravity prefactor
+    indep = [b; CoM_vel - dt/Fr * g_prefactor - dt*F*cos(w*(t+dt)); CoM]; % CHANGED: Re-enabled direct forcing and kept gravity prefactor
     
     % If the matrix exists and gravity is constant, import it. 
     % Otherwise (oscillating gravity), we must recompute it every step.
