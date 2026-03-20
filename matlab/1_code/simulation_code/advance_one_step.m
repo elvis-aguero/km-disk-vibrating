@@ -19,7 +19,7 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
     
     % If the matrix exists and gravity is constant, import it. 
     % Otherwise (oscillating gravity), we must recompute it every step.
-    if ~isnan(PROBLEM_CONSTANTS.precomputedInverse) && gamma == 0 % CHANGED: Only use precomputed inverse if gravity is constant
+    if ~any(isnan(PROBLEM_CONSTANTS.precomputedInverse(:))) && gamma == 0 % CHANGED: Using any() to ensure scalar logical for &&
         invMat = PROBLEM_CONSTANTS.precomputedInverse;
         sol = invMat * indep;
     else

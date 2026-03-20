@@ -1,0 +1,12 @@
+Starting simulation on /Users/eaguerov/Documents/Github/km-disk-vibrating/matlab/1_code/simulation_code
+{Index exceeds array bounds.
+
+Error in <a href="matlab:matlab.lang.internal.introspective.errorDocCallback('solve_motion>results_saver', '/Users/eaguerov/Documents/Github/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m', 273)" style="font-weight:bold">solve_motion>results_saver</a> (<a href="matlab: opentoline('/Users/eaguerov/Documents/Github/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m',273,0)">line 273</a>)
+    if indexes(2) == 1
+       ^^^^^^^^^^
+Error in <a href="matlab:matlab.lang.internal.introspective.errorDocCallback('solve_motion', '/Users/eaguerov/Documents/Github/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m', 244)" style="font-weight:bold">solve_motion</a> (<a href="matlab: opentoline('/Users/eaguerov/Documents/Github/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m',244,0)">line 244</a>)
+    results_saver("errored_results", 1:(current_index-1), variableValues, savingvarNames, NameValueArgs);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+} 
+opentoline('/Users/eaguerov/Documents/Github/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m',273,0)
+solve_motion

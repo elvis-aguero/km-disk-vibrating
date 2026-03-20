@@ -62,7 +62,7 @@ end
 
 % Record the time the script is run
 tic;
-datetimeMarker = datetime('now'); datetimeMarker.Format = 'yyyyMMddmmss';
+datetimeMarker = datetime('now'); datetimeMarker.Format = 'yyyyMMddHHmmss'; % CHANGED: HH for hours to avoid month/minute ambiguity
 NameValueArgs.datetimeMarker = datetimeMarker;
 
 % Add arguments to the current scope
@@ -270,7 +270,7 @@ function results_saver(fileName, indexes, variables, variableNames, NameValueArg
         cd(folder);
     end
 
-    if indexes(2) == 1
+    if length(indexes) > 1 && indexes(2) == 1 % CHANGED: added length check
         indexes = indexes(2:end); 
     end
     stru = struct();
