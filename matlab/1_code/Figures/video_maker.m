@@ -39,6 +39,10 @@ load_vars('tvec.mat')
 
 % Loading oscillating conditions. CHANGED
 resFile = dir("simulationResults*.mat");
+if isempty(resFile)
+    resFile = dir("../simulationResults*.mat"); % Check parent if not in current
+end
+
 if ~isempty(resFile)
     load(resFile(1).name, 'PROBLEM_CONSTANTS');
     Gamma = PROBLEM_CONSTANTS.bath_forcing_amplitude;
@@ -46,6 +50,7 @@ if ~isempty(resFile)
     w = PROBLEM_CONSTANTS.force_frequency;
 else
     % Fallback to existing or default values
+    warning('Could not find simulationResults*.mat in current or parent directory. Gamma set to 0. Plot will be in bath frame.');
     Gamma = 0; 
     try load('Fr.mat','Fr'); catch; Fr = 1; end
     w = 1; 
@@ -73,7 +78,7 @@ for ii = floor(linspace(1, size(etaMatPer,2), 300))
     hold on
     %axis equal
     grid on
-    set(gca,'xlim',[-2.5 2.5],'ylim',[-2 3],'Xtick',-5:5,'FontName','Times','FontSize',14);
+    set(gca,'xlim',[-2.5 2.5],'ylim',[-2.5 3.5],'Xtick',-5:5,'FontName','Times','FontSize',14); % CHANGED: Increased ylim
     xlabel('   $x/R_o$   ','interpreter','Latex','FontName','Times','FontSize',14)
     ylabel('$z/R_o$','interpreter','Latex','FontName','Times',...
         'FontSize',20,'rotation',90)
