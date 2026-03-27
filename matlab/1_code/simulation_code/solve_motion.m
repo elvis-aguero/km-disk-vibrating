@@ -50,7 +50,7 @@ arguments
     NameValueArgs.forceFrequency (1, 1) double = 90 % Frequency of sinusoidal force in Hz
     NameValueArgs.bathAmplitude (1, 1) double = 0 % Amplitude of bath oscillation in cm. CHANGED
     NameValueArgs.bathFrequency (1, 1) double = 90 % Frequency of bath oscillation in Hz. CHANGED
-    NameValueArgs.phaseDifference (1, 1) double = 0 % Phase difference between disk forcing and bath oscillation in degrees. CHANGED
+    NameValueArgs.phaseDifference (1, 1) double = -90 % Phase difference between disk forcing and bath oscillation in degrees. CHANGED to -90 for sine profile
     NameValueArgs.bathDensity (1, 1) double = 1 % Density of bath's fluid in g/cm^3
     NameValueArgs.bathSurfaceTension (1, 1) double = 72.20 % For water, in dynes/cm
     NameValueArgs.bathViscosity (1, 1) double = 0.978e-2 % Viscosity in Stokes (cgs)
