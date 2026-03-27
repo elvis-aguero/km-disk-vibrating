@@ -21,19 +21,23 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
     current_step = PROBLEM_CONSTANTS.step_counter;
     PROBLEM_CONSTANTS.step_counter = current_step + 1;
     
-    % Re-calculating time-dependent term precisely to match cache indices
-    % (Implicit Euler: evaluation at t + dt)
-    g_prefactor = (1 - gamma * cos(bath_w * (current_step + 1) * dt + phase)); 
+    % Use periodic index to avoid floating-point phase drift over many cycles. CHANGED
+    % cycleIdx is 1-based, matches the step within the cycle (1 to stepsPerCycle)
+    cycleIdx = mod(current_step, PROBLEM_CONSTANTS.stepsPerCycle) + 1;
     
-    indep = [b; CoM_vel - dt/Fr * g_prefactor - dt*F*cos(w*(current_step + 1) * dt); CoM]; % CHANGED: Using counter-based time
+    % Re-calculating time-dependent terms precisely using periodic index
+    g_prefactor = (1 - gamma * cos(bath_w * cycleIdx * dt + phase)); 
+    force_term = dt * F * cos(w * cycleIdx * dt); 
+    
+    indep = [b; CoM_vel - dt/Fr * g_prefactor - force_term; CoM]; % CHANGED: Perfectly periodic RHS
     
     % --- Solver Logic ---
     if gamma == 0 && ~any(isnan(PROBLEM_CONSTANTS.precomputedInverse(:)))
         % Static Gravity: Use precomputed inverse
         sol = PROBLEM_CONSTANTS.precomputedInverse * indep;
     elseif PROBLEM_CONSTANTS.useCaching
-        % Oscillating Gravity with Caching. CHANGED
-        cycleIdx = mod(current_step, PROBLEM_CONSTANTS.stepsPerCycle) + 1;
+        % Oscillating Gravity with Caching.
+        % We already have cycleIdx correctly calculated.
         if isempty(PROBLEM_CONSTANTS.InverseLibrary{cycleIdx})
             % Compute and cache
             Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
