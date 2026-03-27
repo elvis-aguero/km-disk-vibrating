@@ -57,7 +57,7 @@ arguments
     NameValueArgs.g (1, 1) double = 981 % Gravitational constant in cgs
     NameValueArgs.bathDiameter (1, 1) double = 100 % Diameter of the bath wrt to disk Radius
     NameValueArgs.spatialResolution (1, 1) double = 50 % Number of numerical radial intervals in one disk radius
-    NameValueArgs.temporalResolution (1, 1) double = 20; % Number of temporal steps in one adimensional unit
+    NameValueArgs.temporalResolution (1, 1) double = 10; % Number of temporal steps in one adimensional unit
     NameValueArgs.simulationTime (1, 1) double = 30/90; % Time to be simulated in seconds
     NameValueArgs.debug_flag (1, 1) logical = true; % To show some debugging info
 end
@@ -251,7 +251,7 @@ try
         current_index = current_index + 1;
 
         if PROBLEM_CONSTANTS.DEBUG_FLAG == true
-            width = 5; 
+            width = 6; % CHANGED: Increased to show more of the surface
             width = min(nr, ceil(width*spatialResolution));
             
             % Calculate current bath position for lab frame plotting. CHANGED
@@ -270,15 +270,16 @@ try
             % Filling the shape of the vibrating object
             x = [1, 1, -1, -1];
             z = recordedConditions{current_index}.center_of_mass;
-            y = [z, z+1/10, z+1/10, z] + zb; % CHANGED: added zb
+            z_lab = z + zb; % Disk bottom in lab frame. CHANGED
+            y = [z_lab, z_lab+1/10, z_lab+1/10, z_lab]; % CHANGED
             fill(x, y, 'k');
   
             %axis equal
-            title(sprintf('   t = %0.3f s, z = %.2f (Lab Frame)', recordedConditions{current_index}.time*T_unit, (z+zb)*L_unit),'FontSize',16); % CHANGED
+            title(sprintf('   t = %0.3f s, z_{lab} = %.2f', recordedConditions{current_index}.time*T_unit, z_lab*L_unit),'FontSize',16); % CHANGED
             grid on
             hold off;
-            xlim([-1.5, 1.5]);
-            ylim([zb - 0.2, zb + 0.1]); % CHANGED: Dynamic ylim centered on the bath position
+            xlim([-3, 3]); % CHANGED: Showing 6 disk radii
+            ylim([z_lab - 1.0, z_lab + 0.3]); % CHANGED: Dynamic ylim centered on the disk
             %set(gca,'xlim',[-6 6])
             drawnow;
         end
