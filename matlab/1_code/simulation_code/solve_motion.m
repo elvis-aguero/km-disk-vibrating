@@ -49,6 +49,8 @@ arguments
     NameValueArgs.forceAmplitude (1, 1) double = 0 % Amplitude of sinusoidal force applied to disk (in dynes)
     NameValueArgs.forceFrequency (1, 1) double = 90 % Frequency of sinusoidal force in Hz
     NameValueArgs.bathAmplitude (1, 1) double = 0 % Amplitude of bath oscillation in cm. CHANGED
+    NameValueArgs.bathFrequency (1, 1) double = 90 % Frequency of bath oscillation in Hz. CHANGED
+    NameValueArgs.phaseDifference (1, 1) double = 0 % Phase difference between disk forcing and bath oscillation in degrees. CHANGED
     NameValueArgs.bathDensity (1, 1) double = 1 % Density of bath's fluid in g/cm^3
     NameValueArgs.bathSurfaceTension (1, 1) double = 72.20 % For water, in dynes/cm
     NameValueArgs.bathViscosity (1, 1) double = 0.978e-2 % Viscosity in Stokes (cgs)
@@ -62,7 +64,7 @@ end
 
 % Record the time the script is run
 tic;
-datetimeMarker = datetime('now'); datetimeMarker.Format = 'yyyyMMddHHmmss'; % CHANGED: HH for hours to avoid month/minute ambiguity
+datetimeMarker = datetime('now'); datetimeMarker.Format = 'yyyyMMddHHmmss';
 NameValueArgs.datetimeMarker = datetimeMarker;
 
 % Add arguments to the current scope
@@ -128,7 +130,12 @@ force_adim = forceAmplitude / diskMass * (T_unit^2 / L_unit);
 surface_force_adim = 2*pi*diskRadius*bathSurfaceTension/diskMass * (T_unit^2 / L_unit);
 freq_adim = forceFrequency * T_unit;
 obj_mass_adim = diskMass / M_unit;
-bath_forcing_amplitude = NameValueArgs.bathAmplitude * forceFrequency^2 / g; % Dimensionless acceleration ratio (A*w^2/g). CHANGED
+
+% New bath-specific parameters. CHANGED
+bath_angular_freq = NameValueArgs.bathFrequency * 2 * pi;
+bath_freq_adim = bath_angular_freq * T_unit;
+phase_diff_rad = NameValueArgs.phaseDifference * pi / 180;
+bath_forcing_amplitude = NameValueArgs.bathAmplitude * bath_angular_freq^2 / g; % Dimensionless acceleration ratio (A*w^2/g)
 
 % Set numerical simulation parameters
 dt = 1 / temporalResolution; % Adimensional time step
@@ -157,7 +164,8 @@ PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "reynolds", Re, "dr", dr, "DEBUG_FLAG", debug_flag, ...
     "nr", nr, "contact_points", spatialResolution+1, ... 
     "force_amplitude", force_adim, "force_frequency", freq_adim, ...
-    "bath_forcing_amplitude", bath_forcing_amplitude, ... % CHANGED
+    "bath_forcing_amplitude", bath_forcing_amplitude, ...
+    "bath_frequency", bath_freq_adim, "phase_difference", phase_diff_rad, ... % CHANGED
     "surface_force_constant", surface_force_adim, ...
     "DTN", DTN, "laplacian", laplacian, "obj_mass", obj_mass_adim, ...
     "pressure_integral", pressureIntegral(spatialResolution+1, :), ...
@@ -189,24 +197,32 @@ try
         if PROBLEM_CONSTANTS.DEBUG_FLAG == true
             width = 5; 
             width = min(nr, ceil(width*spatialResolution));
+            
+            % Calculate current bath position for lab frame plotting. CHANGED
+            gamma = PROBLEM_CONSTANTS.bath_forcing_amplitude;
+            Fr = PROBLEM_CONSTANTS.froude;
+            bath_w = PROBLEM_CONSTANTS.bath_frequency;
+            phase = PROBLEM_CONSTANTS.phase_difference;
+            zb = (gamma / (Fr * bath_w^2)) * cos(bath_w * recordedConditions{current_index}.time + phase);
+            
             eta = recordedConditions{current_index}.bath_surface;
             eta = [flipud(eta(2:width)); eta(1:width)];
             xplot = dr*(0:nr-1);
-            plot([-fliplr(xplot(2:width)), xplot(1:width)], eta, 'b', 'Linewidth', 2);
+            plot([-fliplr(xplot(2:width)), xplot(1:width)], eta + zb, 'b', 'Linewidth', 2); % CHANGED: added zb
             hold on
             
             % Filling the shape of the vibrating object
             x = [1, 1, -1, -1];
             z = recordedConditions{current_index}.center_of_mass;
-            y = [z, z+1/10, z+1/10, z];
+            y = [z, z+1/10, z+1/10, z] + zb; % CHANGED: added zb
             fill(x, y, 'k');
   
             %axis equal
-            title(sprintf('   t = %0.3f s, z = %.2f', recordedConditions{current_index}.time*T_unit, z*L_unit),'FontSize',16);
+            title(sprintf('   t = %0.3f s, z = %.2f (Lab Frame)', recordedConditions{current_index}.time*T_unit, (z+zb)*L_unit),'FontSize',16); % CHANGED
             grid on
             hold off;
             xlim([-1.5, 1.5]);
-            ylim([-.2, 0.05]);
+            ylim([zb - 0.2, zb + 0.1]); % CHANGED: Dynamic ylim centered on the bath position
             %set(gca,'xlim',[-6 6])
             drawnow;
         end

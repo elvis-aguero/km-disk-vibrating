@@ -14,8 +14,10 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
     b = [previous_conditions.bath_surface; previous_conditions.bath_potential];
     %b = b-Sist(:,1:cPoints)*(CoM * ones(cPoints, 1)); %zs(1:cPoints)+Rv);
     gamma = PROBLEM_CONSTANTS.bath_forcing_amplitude; % CHANGED
-    g_prefactor = (1 - gamma * cos(w * (t + dt))); % CHANGED: Oscillating gravity prefactor at t + dt
-    indep = [b; CoM_vel - dt/Fr * g_prefactor - dt*F*cos(w*(t+dt)); CoM]; % CHANGED: Re-enabled direct forcing and kept gravity prefactor
+    bath_w = PROBLEM_CONSTANTS.bath_frequency; % CHANGED
+    phase = PROBLEM_CONSTANTS.phase_difference; % CHANGED
+    g_prefactor = (1 - gamma * cos(bath_w * (t + dt) + phase)); % CHANGED: Using bath-specific frequency and phase
+    indep = [b; CoM_vel - dt/Fr * g_prefactor - dt*F*cos(w*(t+dt)); CoM]; % CHANGED: F and w are for the disk forcing
     
     % If the matrix exists and gravity is constant, import it. 
     % Otherwise (oscillating gravity), we must recompute it every step.
