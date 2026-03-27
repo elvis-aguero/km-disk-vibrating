@@ -16,8 +16,16 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
     gamma = PROBLEM_CONSTANTS.bath_forcing_amplitude; % CHANGED
     bath_w = PROBLEM_CONSTANTS.bath_frequency; % CHANGED
     phase = PROBLEM_CONSTANTS.phase_difference; % CHANGED
-    g_prefactor = (1 - gamma * cos(bath_w * (t + dt) + phase)); % CHANGED: Using bath-specific frequency and phase
-    indep = [b; CoM_vel - dt/Fr * g_prefactor - dt*F*cos(w*(t+dt)); CoM]; % CHANGED: F and w are for the disk forcing
+    
+    % Use discrete step counter for more robust physics and indexing. CHANGED
+    current_step = PROBLEM_CONSTANTS.step_counter;
+    PROBLEM_CONSTANTS.step_counter = current_step + 1;
+    
+    % Re-calculating time-dependent term precisely to match cache indices
+    % (Implicit Euler: evaluation at t + dt)
+    g_prefactor = (1 - gamma * cos(bath_w * (current_step + 1) * dt + phase)); 
+    
+    indep = [b; CoM_vel - dt/Fr * g_prefactor - dt*F*cos(w*(current_step + 1) * dt); CoM]; % CHANGED: Using counter-based time
     
     % --- Solver Logic ---
     if gamma == 0 && ~any(isnan(PROBLEM_CONSTANTS.precomputedInverse(:)))
@@ -25,7 +33,7 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
         sol = PROBLEM_CONSTANTS.precomputedInverse * indep;
     elseif PROBLEM_CONSTANTS.useCaching
         % Oscillating Gravity with Caching. CHANGED
-        cycleIdx = mod(round(t/dt), PROBLEM_CONSTANTS.stepsPerCycle) + 1;
+        cycleIdx = mod(current_step, PROBLEM_CONSTANTS.stepsPerCycle) + 1;
         if isempty(PROBLEM_CONSTANTS.InverseLibrary{cycleIdx})
             % Compute and cache
             Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
