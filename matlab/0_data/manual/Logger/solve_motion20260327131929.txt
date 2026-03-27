@@ -10,3 +10,4 @@ In <a href="matlab:matlab.lang.internal.introspective.errorDocCallback('solve_mo
                advance_one_step(recordedConditions{current_index}, ...
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 } 
+exit

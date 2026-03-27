@@ -137,6 +137,17 @@ bath_freq_adim = bath_angular_freq * T_unit;
 phase_diff_rad = NameValueArgs.phaseDifference * pi / 180;
 bath_forcing_amplitude = NameValueArgs.bathAmplitude * bath_angular_freq^2 / g; % Dimensionless acceleration ratio (A*w^2/g)
 
+% Calculate initial velocity offset for zero lab velocity. CHANGED
+% z_b = A*cos(w*t + phase). v_b = -A*w*sin(w*t + phase). 
+% At t=0: v_b(0) = -A*w*sin(phase). 
+% We want v_lab = v_disk_bath + v_b = 0 -> v_disk_bath = -v_b(0) = A*w*sin(phase)
+v_bath_0_adim = (NameValueArgs.bathAmplitude * bath_angular_freq * sin(phase_diff_rad)) / V_unit;
+
+% Calculate informed static ylim. CHANGED
+A_bath_adim = abs(NameValueArgs.bathAmplitude / L_unit);
+A_forcing_adim = force_adim / (freq_adim^2 + 1e-6); % Rough estimate
+H_limit_adim = 1.5 * (A_bath_adim + A_forcing_adim + 0.5); % Symmetric limit around z=0
+
 % Set numerical simulation parameters
 dt = 1 / temporalResolution; % Adimensional time step
 steps = ceil(simulationTime / (dt * T_unit)); % Minimum number of time steps
@@ -153,7 +164,7 @@ phiInitial = zeros(nr,1); %initial surface potential
 % Define the current state of the system
 current_conditions = struct( ...
     "dt", dt(1), "time", 0, ...
-    "center_of_mass", 0, "center_of_mass_velocity", 0, ...
+    "center_of_mass", 0, "center_of_mass_velocity", v_bath_0_adim, ... % CHANGED: Starts at v_lab = 0
     "bath_surface", etaInitial, "bath_potential", phiInitial, "pressure", zeros(spatialResolution+1, 1));
 current_index = 1; %iteration counter
 recordedConditions = cell(steps, 1);
@@ -225,7 +236,8 @@ PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "DTN", DTN, "laplacian", laplacian, "obj_mass", obj_mass_adim, ...
     "pressure_integral", pressureIntegral(spatialResolution+1, :), ...
     "precomputedInverse", precomputedInverse, ...
-    "useCaching", useCaching, "InverseLibrary", {InverseLibrary}, "stepsPerCycle", stepsPerCycle); % CHANGED
+    "useCaching", useCaching, "InverseLibrary", {InverseLibrary}, "stepsPerCycle", stepsPerCycle, ...
+    "ylim_limit", H_limit_adim); % CHANGED
 
 fprintf("Starting simulation on %s\n", pwd);
 
@@ -278,8 +290,8 @@ try
             title(sprintf('   t = %0.3f s, z_{lab} = %.2f', recordedConditions{current_index}.time*T_unit, z_lab*L_unit),'FontSize',16); % CHANGED
             grid on
             hold off;
-            xlim([-3, 3]); % CHANGED: Showing 6 disk radii
-            ylim([z_lab - 1.0, z_lab + 0.3]); % CHANGED: Dynamic ylim centered on the disk
+            xlim([-3, 3]); % Showing 6 disk radii
+            ylim([-PROBLEM_CONSTANTS.ylim_limit, PROBLEM_CONSTANTS.ylim_limit]); % CHANGED: Static symmetric limit
             %set(gca,'xlim',[-6 6])
             drawnow;
         end
