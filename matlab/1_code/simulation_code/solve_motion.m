@@ -190,10 +190,11 @@ else
     effective_w_adim = bath_freq_adim; % Use bath freq as reference
 end
 
-% Steps per cycle is 2*pi / w_adim * temporalResolution
-% Since freq_adim = 1 (by definition of T_unit), then if bath_w = freq_adim:
-% stepsPerCycle = 2*pi * temporalResolution.
-stepsPerCycle = ceil((2 * pi / effective_w_adim) * temporalResolution); 
+% Steps per cycle must be an integer for periodic caching to be valid. CHANGED
+% We adjust dt slightly to ensure stepsPerCycle * dt = 2*pi / effective_w_adim
+stepsPerCycle = round((2 * pi / effective_w_adim) * temporalResolution); 
+dt = (2 * pi / effective_w_adim) / stepsPerCycle; % Adjusted adimensional time step
+
 systemSize = 2 * nr + 2;
 requiredRAM = stepsPerCycle * (systemSize^2) * 8;
 availableRAM = getAvailableRAM();

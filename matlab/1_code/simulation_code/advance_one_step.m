@@ -53,8 +53,8 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
         z = previous_conditions.center_of_mass;
         x0 = [eta_rest; phi; p; v; z];
 
-        % GMRES Solve
-        [sol, ~] = gmres(Mat, indep, [], 1e-6, 100, [], [], x0); 
+        % GMRES Solve. CHANGED: Tighter tolerance for numerical agreement
+        [sol, ~] = gmres(Mat, indep, [], 1e-12, 100, [], [], x0); 
     end
 
 
