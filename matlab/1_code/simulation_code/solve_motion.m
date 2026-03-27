@@ -160,9 +160,27 @@ recordedConditions = cell(steps, 1);
 recordedConditions{current_index} = current_conditions;
 
 % --- Smart Gatekeeper for Caching ---
-% Check if system is periodic (simple case: frequencies are equal)
-isPeriodic = (abs(NameValueArgs.forceFrequency - NameValueArgs.bathFrequency * 2 * pi) < 1e-6);
-stepsPerCycle = ceil(temporalResolution * 2 * pi); 
+% Logic: The system is periodic if frequencies are commensurate. 
+% If one amplitude is zero, the system follows the period of the other.
+if bath_forcing_amplitude == 0
+    % Case 1: Static Bath. System is constant (handled by precomputedInverse)
+    % but we set periodicity logic for completeness.
+    isPeriodic = true;
+    effective_w_adim = freq_adim;
+elseif forceAmplitude == 0
+    % Case 2: Only Bath oscillates. Period is defined by bath frequency.
+    isPeriodic = true;
+    effective_w_adim = bath_freq_adim;
+else
+    % Case 3: Both active. Check if commensurate (simple check for equality)
+    isPeriodic = (abs(freq_adim - bath_freq_adim) < 1e-6);
+    effective_w_adim = bath_freq_adim; % Use bath freq as reference
+end
+
+% Steps per cycle is 2*pi / w_adim * temporalResolution
+% Since freq_adim = 1 (by definition of T_unit), then if bath_w = freq_adim:
+% stepsPerCycle = 2*pi * temporalResolution.
+stepsPerCycle = ceil((2 * pi / effective_w_adim) * temporalResolution); 
 systemSize = 2 * nr + 2;
 requiredRAM = stepsPerCycle * (systemSize^2) * 8;
 availableRAM = getAvailableRAM();
