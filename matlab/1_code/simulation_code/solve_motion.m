@@ -111,17 +111,19 @@ A_forcing_adim = force_adim / (freq_adim^2 + 1e-6); % Rough estimate
 H_limit_adim = 1.5 * (A_bath_adim + A_forcing_adim + 0.5); % Symmetric limit around z=0
 
 % Steps per cycle must be an integer for periodic caching to be valid. 
-isPeriodic = (abs(freq_adim - bath_freq_adim) < 1e-6);
-effective_w_adim = bath_freq_adim;
+if bath_forcing_amplitude == 0
+    effective_w_adim = freq_adim;
+elseif forceAmplitude == 0
+    effective_w_adim = bath_freq_adim;
+else
+    effective_w_adim = bath_freq_adim; % Use bath freq as reference
+end
+isPeriodic = (abs(freq_adim - bath_freq_adim) < 1e-6) || (bath_forcing_amplitude == 0) || (forceAmplitude == 0);
+
 stepsPerCycle = round((2 * pi / effective_w_adim) * temporalResolution); 
 dt = (2 * pi / effective_w_adim) / stepsPerCycle; % Adjusted adimensional time step
 
 steps = ceil(simulationTime / (dt * T_unit)); % Minimum number of time steps
-
-% Warn if memory usage could be large
-if steps * nr * 8 > 1e+9
-    warning('Spatial resolution and simulation times might be too big to store all matrices in memory');
-end
 
 %Inintial conditions for the fluid
 etaInitial = zeros(nr,1); %initial surface elevation
@@ -151,7 +153,7 @@ elseif isPeriodic && bath_forcing_amplitude ~= 0
         fprintf('Smart Caching: ENABLED (Estimated RAM: %.2f GB)\n', requiredRAM/1e9);
     elseif requiredRAM > availableRAM
         fprintf('Smart Caching: DISABLED (Insufficient RAM: %.2f GB required, %.2f GB available)\n', requiredRAM/1e9, availableRAM/1e9);
-        warning('Oscillating bath with no caching will be slow. Using preconditioned iterative solver.');
+        warning('Oscillating bath with no caching will be slow. Using iterative solver.');
     else
         fprintf('Caching requires %.2f GB (Available: %.2f GB).\n', requiredRAM/1e9, availableRAM/1e9);
         if ~usejava('desktop') || isempty(javachk('desktop'))
@@ -166,21 +168,6 @@ elseif isPeriodic && bath_forcing_amplitude ~= 0
     end
 end
 
-% --- Preconditioner for Iterative Solver ---
-if ~useCaching && (bath_forcing_amplitude ~= 0)
-    fprintf('Precomputing frozen preconditioner... ');
-    tic;
-    if ~any(isnan(precomputedInverse(:)))
-        preconditioner = precomputedInverse;
-    else
-        M_static = buildStaticMatrix(Fr, We, Re, dr, laplacian, DTN, pressureIntegral(spatialResolution+1, :), obj_mass_adim, nr, spatialResolution+1, dt, surface_force_adim);
-        preconditioner = inv(M_static);
-    end
-    fprintf('Done (%.2fs).\n', toc);
-else
-    preconditioner = nan;
-end
-
 % Store problem constants for use in the simulation
 PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "reynolds", Re, "dr", dr, "DEBUG_FLAG", debug_flag, ...
@@ -193,8 +180,7 @@ PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "pressure_integral", pressureIntegral(spatialResolution+1, :), ...
     "precomputedInverse", precomputedInverse, ...
     "useCaching", useCaching, "InverseLibrary", {InverseLibrary}, "stepsPerCycle", stepsPerCycle, ...
-    "ylim_limit", H_limit_adim, "step_counter", 0, ...
-    "preconditioner", preconditioner);
+    "ylim_limit", H_limit_adim, "step_counter", 0);
 
 fprintf("Starting simulation on %s\n", pwd);
 
@@ -322,14 +308,4 @@ end
 
 function out = getVarName(var)
     out = inputname(1);
-end
-
-function Mat = buildStaticMatrix(Fr, We, Re, dr, Delta, DTN, pIntegral, Ma, nr, cPoints, dt, SF)
-    Sist = [[eye(nr)-dt*2*Delta/Re,-dt*DTN];...
-        [dt*(eye(nr)/Fr - Delta/We),eye(nr)-dt*2*Delta/Re]]; 
-    Mat =  [[Sist(:,(cPoints+1):2*nr),...
-        [zeros(nr,cPoints);dt*eye(cPoints);zeros(nr-cPoints,cPoints)],...
-        zeros(2*nr,1),Sist(:,1:cPoints)*ones(cPoints,1)];
-        [-SF*dt/dr, zeros(1,2*nr-cPoints-1),-dt*pIntegral(1:cPoints)/Ma, 1 , SF*dt/dr];
-        [zeros(1,2*nr-cPoints),-zeros(1, cPoints)  ,-dt,1]];
 end

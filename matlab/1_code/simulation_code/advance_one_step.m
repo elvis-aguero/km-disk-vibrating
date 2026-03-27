@@ -41,7 +41,7 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
         end
         sol = PROBLEM_CONSTANTS.InverseLibrary{cycleIdx} * indep;
     else
-        % Oscillating Gravity without Caching: Preconditioned Iterative Solver. CHANGED
+        % Oscillating Gravity without Caching: Iterative Solver with Warm Start. CHANGED
         Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
 
         % Construct initial guess from previous condition (warm start)
@@ -52,9 +52,8 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
         z = previous_conditions.center_of_mass;
         x0 = [eta_rest; phi; p; v; z];
 
-        % GMRES Solve with Frozen Preconditioner. CHANGED
-        P = PROBLEM_CONSTANTS.preconditioner;
-        [sol, ~] = gmres(Mat, indep, [], 1e-12, 100, P, [], x0); 
+        % GMRES Solve with Warm Start (no preconditioner). CHANGED
+        [sol, ~] = gmres(Mat, indep, [], 1e-12, 100, [], [], x0); 
     end
 
 
