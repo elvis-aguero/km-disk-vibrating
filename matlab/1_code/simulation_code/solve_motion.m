@@ -188,25 +188,27 @@ else
     % Case 3: Both active. Check if commensurate (simple check for equality)
     isPeriodic = (abs(freq_adim - bath_freq_adim) < 1e-6);
     effective_w_adim = bath_freq_adim; % Use bath freq as reference
-end
+    end
 
-% Steps per cycle must be an integer for periodic caching to be valid. CHANGED
-% We adjust dt slightly to ensure stepsPerCycle * dt = 2*pi / effective_w_adim
-stepsPerCycle = round((2 * pi / effective_w_adim) * temporalResolution); 
-dt = (2 * pi / effective_w_adim) / stepsPerCycle; % Adjusted adimensional time step
+    % Steps per cycle must be an integer for periodic caching to be valid. CHANGED
+    % We adjust dt slightly to ensure stepsPerCycle * dt = 2*pi / effective_w_adim.
+    % This is moved outside the Gatekeeper to ensure consistency between runs.
+    stepsPerCycle = round((2 * pi / effective_w_adim) * temporalResolution); 
+    dt = (2 * pi / effective_w_adim) / stepsPerCycle; % Adjusted adimensional time step
 
-systemSize = 2 * nr + 2;
-requiredRAM = stepsPerCycle * (systemSize^2) * 8;
-availableRAM = getAvailableRAM();
+    % --- Smart Gatekeeper for Caching ---
+    systemSize = 2 * nr + 2;
+    requiredRAM = stepsPerCycle * (systemSize^2) * 8;
+    availableRAM = getAvailableRAM();
 
-useCaching = false;
-InverseLibrary = {};
+    useCaching = false;
+    InverseLibrary = {};
 
-if NameValueArgs.forceNoCaching
+    if NameValueArgs.forceNoCaching
     fprintf('Smart Caching: DISABLED (Manual override via forceNoCaching)\n');
-elseif isPeriodic && bath_forcing_amplitude ~= 0
+    elseif isPeriodic && bath_forcing_amplitude ~= 0
     if requiredRAM < 0.75 * availableRAM
-        useCaching = true;
+
         InverseLibrary = cell(stepsPerCycle, 1);
         fprintf('Smart Caching: ENABLED (Estimated RAM: %.2f GB)\n', requiredRAM/1e9);
     elseif requiredRAM > availableRAM
