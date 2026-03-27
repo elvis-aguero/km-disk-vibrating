@@ -1,46 +1,10 @@
 function solve_motion(NameValueArgs)
 % SOLVE_MOTION Simulates the motion of a disk oscillating in a fluid bath.
-%   This functi on models the motion of a disk subjected to sinusoidal forces
+%   This function models the motion of a disk subjected to sinusoidal forces
 %   within a fluid environment using configurable parameters provided through
 %   name-value arguments.
-%
-%   Parameters (Name-Value Arguments):
-%       - diskRadius: Radius of the oscillating disk.
-%       - diskMass: Mass of the disk in grams.
-%       - forceAmplitude: Amplitude of the sinusoidal force.
-%       - forceFrequency: Frequency of the applied force.
-%       - bathDensity: Density of the fluid bath.
-%       - bathSurfaceTension: Surface tension of the fluid.
-%       - bathViscosity: Viscosity of the fluid.
-%       - g: Gravitational constant.
-%       - bathDiameter: Diameter of the bath relative to disk radius.
-%       - spatialResolution: Number of radial intervals per disk radius.
-%       - temporalResolution: Number of time steps per dimensionless unit.
-%       - simulationTime: Total simulation time in seconds.
-%       - debug_flag: Enables/disables debugging information.
-%
-%   The script simulates the fluid motion and surface interaction with the disk, and
-%   provides visualizations and logs. The simulation considers various dimensionless
-%   numbers (Reynolds, Weber, and Froude numbers) and handles precomputed inverse matrices.
-%
-%   Outputs:
-%       Results are saved in specified directories based on the provided parameters.
-%
-%   Example:
-%       solve_motion('diskRadius', 1, 'diskMass', 2, 'forceAmplitude', 500);
-%
-%   Dependencies:
-%       This function depends on external functions such as domainMaker and 
-%       advance_one_step to create the fluid domain and advance the simulation, 
-%       respectively.
-%
-%   Author:
-%       Elvis Aguero - Date of Creation: Oct 10th, 2024.
-%
-%   See also: domainMaker, advance_one_step, results_saver
 
 % Parse input arguments using name-value pairs and set default values
-
 arguments
     % Unless stated otherwise, all units are cgs. 
     % Default values amount to a water bath
@@ -48,9 +12,9 @@ arguments
     NameValueArgs.diskMass (1, 1) double = 1 % Mass in grams of the disk
     NameValueArgs.forceAmplitude (1, 1) double = 0 % Amplitude of sinusoidal force applied to disk (in dynes)
     NameValueArgs.forceFrequency (1, 1) double = 90 % Frequency of sinusoidal force in Hz
-    NameValueArgs.bathAmplitude (1, 1) double = 0.1 % Amplitude of bath oscillation in cm. CHANGED
-    NameValueArgs.bathFrequency (1, 1) double = 90 % Frequency of bath oscillation in Hz. CHANGED
-    NameValueArgs.phaseDifference (1, 1) double = -90 % Phase difference between disk forcing and bath oscillation in degrees. CHANGED to -90 for sine profile
+    NameValueArgs.bathAmplitude (1, 1) double = 0 % Amplitude of bath oscillation in cm. 
+    NameValueArgs.bathFrequency (1, 1) double = 90 % Frequency of bath oscillation in Hz. 
+    NameValueArgs.phaseDifference (1, 1) double = -90 % Phase difference between disk forcing and bath oscillation in degrees.
     NameValueArgs.bathDensity (1, 1) double = 1 % Density of bath's fluid in g/cm^3
     NameValueArgs.bathSurfaceTension (1, 1) double = 72.20 % For water, in dynes/cm
     NameValueArgs.bathViscosity (1, 1) double = 0.978e-2 % Viscosity in Stokes (cgs)
@@ -60,13 +24,12 @@ arguments
     NameValueArgs.temporalResolution (1, 1) double = 20; % Number of temporal steps in one adimensional unit
     NameValueArgs.simulationTime (1, 1) double = 10/90; % Time to be simulated in seconds
     NameValueArgs.debug_flag (1, 1) logical = true; % To show some debugging info
-    NameValueArgs.forceNoCaching (1, 1) logical = false; % CHANGED: Manual override to disable RAM caching
-    end
-
+    NameValueArgs.forceNoCaching (1, 1) logical = false; % Manual override to disable RAM caching
+end
 
 % Record the time the script is run
 tic;
-datetimeMarker = datetime('now'); datetimeMarker.Format = 'yyyyMMddHHmmss';
+datetimeMarker = datetime('now'); datetimeMarker.Format = 'yyyyMMddHHmmss'; 
 NameValueArgs.datetimeMarker = datetimeMarker;
 
 % Add arguments to the current scope
@@ -78,7 +41,7 @@ lastwarn('', '');
 
 % Prepare for file saving
 close all
-currfold = fullfile(fileparts(mfilename('fullpath'))); %fileparts(matlab.desktop.editor.getActiveFilename);
+currfold = fullfile(fileparts(mfilename('fullpath'))); 
 cd(currfold);
 
 % Add the current folder to the path
@@ -133,25 +96,26 @@ surface_force_adim = 2*pi*diskRadius*bathSurfaceTension/diskMass * (T_unit^2 / L
 freq_adim = forceFrequency * T_unit;
 obj_mass_adim = diskMass / M_unit;
 
-% New bath-specific parameters. CHANGED
+% New bath-specific parameters. 
 bath_angular_freq = NameValueArgs.bathFrequency * 2 * pi;
 bath_freq_adim = bath_angular_freq * T_unit;
 phase_diff_rad = NameValueArgs.phaseDifference * pi / 180;
 bath_forcing_amplitude = NameValueArgs.bathAmplitude * bath_angular_freq^2 / g; % Dimensionless acceleration ratio (A*w^2/g)
 
-% Calculate initial velocity offset for zero lab velocity. CHANGED
-% z_b = A*cos(w*t + phase). v_b = -A*w*sin(w*t + phase). 
-% At t=0: v_b(0) = -A*w*sin(phase). 
-% We want v_lab = v_disk_bath + v_b = 0 -> v_disk_bath = -v_b(0) = A*w*sin(phase)
+% Calculate initial velocity offset for zero lab velocity. 
 v_bath_0_adim = (NameValueArgs.bathAmplitude * bath_angular_freq * sin(phase_diff_rad)) / V_unit;
 
-% Calculate informed static ylim. CHANGED
+% Calculate informed static ylim. 
 A_bath_adim = abs(NameValueArgs.bathAmplitude / L_unit);
 A_forcing_adim = force_adim / (freq_adim^2 + 1e-6); % Rough estimate
 H_limit_adim = 1.5 * (A_bath_adim + A_forcing_adim + 0.5); % Symmetric limit around z=0
 
-% Set numerical simulation parameters
-dt = 1 / temporalResolution; % Adimensional time step
+% Steps per cycle must be an integer for periodic caching to be valid. 
+isPeriodic = (abs(freq_adim - bath_freq_adim) < 1e-6);
+effective_w_adim = bath_freq_adim;
+stepsPerCycle = round((2 * pi / effective_w_adim) * temporalResolution); 
+dt = (2 * pi / effective_w_adim) / stepsPerCycle; % Adjusted adimensional time step
+
 steps = ceil(simulationTime / (dt * T_unit)); % Minimum number of time steps
 
 % Warn if memory usage could be large
@@ -166,70 +130,55 @@ phiInitial = zeros(nr,1); %initial surface potential
 % Define the current state of the system
 current_conditions = struct( ...
     "dt", dt(1), "time", 0, ...
-    "center_of_mass", 0, "center_of_mass_velocity", v_bath_0_adim, ... % CHANGED: Starts at v_lab = 0
+    "center_of_mass", 0, "center_of_mass_velocity", v_bath_0_adim, ... 
     "bath_surface", etaInitial, "bath_potential", phiInitial, "pressure", zeros(spatialResolution+1, 1));
 current_index = 1; %iteration counter
 recordedConditions = cell(steps, 1);
 recordedConditions{current_index} = current_conditions;
 
 % --- Smart Gatekeeper for Caching ---
-% Logic: The system is periodic if frequencies are commensurate. 
-% If one amplitude is zero, the system follows the period of the other.
-if bath_forcing_amplitude == 0
-    % Case 1: Static Bath. System is constant (handled by precomputedInverse)
-    % but we set periodicity logic for completeness.
-    isPeriodic = true;
-    effective_w_adim = freq_adim;
-elseif forceAmplitude == 0
-    % Case 2: Only Bath oscillates. Period is defined by bath frequency.
-    isPeriodic = true;
-    effective_w_adim = bath_freq_adim;
-else
-    % Case 3: Both active. Check if commensurate (simple check for equality)
-    isPeriodic = (abs(freq_adim - bath_freq_adim) < 1e-6);
-    effective_w_adim = bath_freq_adim; % Use bath freq as reference
-    end
+availableRAM = getAvailableRAM();
+useCaching = false;
+InverseLibrary = {};
 
-    % Steps per cycle must be an integer for periodic caching to be valid. CHANGED
-    % We adjust dt slightly to ensure stepsPerCycle * dt = 2*pi / effective_w_adim.
-    % This is moved outside the Gatekeeper to ensure consistency between runs.
-    stepsPerCycle = round((2 * pi / effective_w_adim) * temporalResolution); 
-    dt = (2 * pi / effective_w_adim) / stepsPerCycle; % Adjusted adimensional time step
-
-    % --- Smart Gatekeeper for Caching ---
-    systemSize = 2 * nr + 2;
-    requiredRAM = stepsPerCycle * (systemSize^2) * 8;
-    availableRAM = getAvailableRAM();
-
-    useCaching = false;
-    InverseLibrary = {};
-
-    if NameValueArgs.forceNoCaching
+if NameValueArgs.forceNoCaching
     fprintf('Smart Caching: DISABLED (Manual override via forceNoCaching)\n');
-    elseif isPeriodic && bath_forcing_amplitude ~= 0
+elseif isPeriodic && bath_forcing_amplitude ~= 0
+    requiredRAM = stepsPerCycle * ((2*nr+2)^2) * 8;
     if requiredRAM < 0.75 * availableRAM
-
+        useCaching = true;
         InverseLibrary = cell(stepsPerCycle, 1);
         fprintf('Smart Caching: ENABLED (Estimated RAM: %.2f GB)\n', requiredRAM/1e9);
     elseif requiredRAM > availableRAM
         fprintf('Smart Caching: DISABLED (Insufficient RAM: %.2f GB required, %.2f GB available)\n', requiredRAM/1e9, availableRAM/1e9);
-        warning('Oscillating bath with no caching will be slow. Using iterative solver.');
+        warning('Oscillating bath with no caching will be slow. Using preconditioned iterative solver.');
     else
-        % Margin case: Ask user if interactive
-        useCacheStr = 'n';
+        fprintf('Caching requires %.2f GB (Available: %.2f GB).\n', requiredRAM/1e9, availableRAM/1e9);
         if ~usejava('desktop') || isempty(javachk('desktop'))
-             fprintf('Smart Caching: DISABLED (Headless mode, skipping RAM intensive cache)\n');
+             fprintf('Smart Caching: DISABLED (Headless mode)\n');
         else
-             % Creating a simple timer-based input is complex in a single block, 
-             % we'll use a simplified version for MATLAB CLI.
-             fprintf('Caching requires %.2f GB (Available: %.2f GB).\n', requiredRAM/1e9, availableRAM/1e9);
              useCacheStr = input('Enable Caching? (y/n) [n]: ', 's');
-        end
-        if strcmpi(useCacheStr, 'y')
-            useCaching = true;
-            InverseLibrary = cell(stepsPerCycle, 1);
+             if strcmpi(useCacheStr, 'y')
+                useCaching = true;
+                InverseLibrary = cell(stepsPerCycle, 1);
+             end
         end
     end
+end
+
+% --- Preconditioner for Iterative Solver ---
+if ~useCaching && (bath_forcing_amplitude ~= 0)
+    fprintf('Precomputing frozen preconditioner... ');
+    tic;
+    if ~any(isnan(precomputedInverse(:)))
+        preconditioner = precomputedInverse;
+    else
+        M_static = buildStaticMatrix(Fr, We, Re, dr, laplacian, DTN, pressureIntegral(spatialResolution+1, :), obj_mass_adim, nr, spatialResolution+1, dt, surface_force_adim);
+        preconditioner = inv(M_static);
+    end
+    fprintf('Done (%.2fs).\n', toc);
+else
+    preconditioner = nan;
 end
 
 % Store problem constants for use in the simulation
@@ -244,10 +193,10 @@ PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "pressure_integral", pressureIntegral(spatialResolution+1, :), ...
     "precomputedInverse", precomputedInverse, ...
     "useCaching", useCaching, "InverseLibrary", {InverseLibrary}, "stepsPerCycle", stepsPerCycle, ...
-    "ylim_limit", H_limit_adim, "step_counter", 0); % CHANGED: added step_counter
+    "ylim_limit", H_limit_adim, "step_counter", 0, ...
+    "preconditioner", preconditioner);
 
 fprintf("Starting simulation on %s\n", pwd);
-
 
 % Names of the variables to be saved
 savingvarNames = { ...
@@ -256,9 +205,7 @@ savingvarNames = { ...
     getVarName(recordedConditions), ...
     getVarName(UNITS) ...
 };
-
 variableValues = cell(size(savingvarNames));
-
 
 %% Main Simulation Loop
 try
@@ -270,10 +217,9 @@ try
         current_index = current_index + 1;
 
         if PROBLEM_CONSTANTS.DEBUG_FLAG == true
-            width = 6; % CHANGED: Increased to show more of the surface
+            width = 6; 
             width = min(nr, ceil(width*spatialResolution));
             
-            % Calculate current bath position for lab frame plotting. CHANGED
             gamma = PROBLEM_CONSTANTS.bath_forcing_amplitude;
             Fr = PROBLEM_CONSTANTS.froude;
             bath_w = PROBLEM_CONSTANTS.bath_frequency;
@@ -283,31 +229,25 @@ try
             eta = recordedConditions{current_index}.bath_surface;
             eta = [flipud(eta(2:width)); eta(1:width)];
             xplot = dr*(0:nr-1);
-            plot([-fliplr(xplot(2:width)), xplot(1:width)], eta + zb, 'b', 'Linewidth', 2); % CHANGED: added zb
+            plot([-fliplr(xplot(2:width)), xplot(1:width)], eta + zb, 'b', 'Linewidth', 2);
             hold on
             
-            % Filling the shape of the vibrating object
             x = [1, 1, -1, -1];
             z = recordedConditions{current_index}.center_of_mass;
-            z_lab = z + zb; % Disk bottom in lab frame. CHANGED
-            y = [z_lab, z_lab+1/10, z_lab+1/10, z_lab]; % CHANGED
+            z_lab = z + zb;
+            y = [z_lab, z_lab+1/10, z_lab+1/10, z_lab];
             fill(x, y, 'k');
   
-            %axis equal
-            title(sprintf('   t = %0.3f s, z_{lab} = %.2f', recordedConditions{current_index}.time*T_unit, z_lab*L_unit),'FontSize',16); % CHANGED
+            title(sprintf('   t = %0.3f s, z_{lab} = %.2f', recordedConditions{current_index}.time*T_unit, z_lab*L_unit),'FontSize',16);
             grid on
             hold off;
-            xlim([-3, 3]); % Showing 6 disk radii
-            ylim([-PROBLEM_CONSTANTS.ylim_limit, PROBLEM_CONSTANTS.ylim_limit]); % CHANGED: Static symmetric limit
-            %set(gca,'xlim',[-6 6])
+            xlim([-3, 3]);
+            ylim([-PROBLEM_CONSTANTS.ylim_limit, PROBLEM_CONSTANTS.ylim_limit]);
             drawnow;
         end
-    % 
-  
-     end % Outer while
-    % 
-    % 
-    if ~isnan(PROBLEM_CONSTANTS.precomputedInverse)
+     end 
+    
+    if ~any(isnan(PROBLEM_CONSTANTS.precomputedInverse(:)))
         cd(fold)
         precomputedInverse = PROBLEM_CONSTANTS.precomputedInverse;
         save(myfile, "precomputedInverse")
@@ -317,34 +257,27 @@ try
     for ii = 1:length(savingvarNames)
        variableValues{ii} = eval(savingvarNames{ii}); 
     end
-
     results_saver("simulationResults", 1:(current_index-1), variableValues, savingvarNames, NameValueArgs);
 
 catch ME
-
-    if ~isnan(PROBLEM_CONSTANTS.precomputedInverse)
+    if ~any(isnan(PROBLEM_CONSTANTS.precomputedInverse(:)))
         cd(fold)
         precomputedInverse = PROBLEM_CONSTANTS.precomputedInverse;
         save(myfile, "precomputedInverse")
         PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, "precomputedInverse");
     end
-
     for ii = 1:length(savingvarNames)
        variableValues{ii} = eval(savingvarNames{ii}); 
     end
-
     results_saver("errored_results", 1:(current_index-1), variableValues, savingvarNames, NameValueArgs);
-       
     fprintf("Couldn't run simulation"); 
-    
     save(sprintf("error_log%s.mat", datetimeMarker),'ME');
-end % end while catch
+end 
 
 mypwd = split(pwd, "1_code"); mypwd = mypwd{2};
 fprintf("Finished simulation on %s. Time elapsed: %0.2f minutes\n", mypwd, toc/60);
 cd(currfold)
 diary off;
-
 
 end
 
@@ -361,8 +294,7 @@ function results_saver(fileName, indexes, variables, variableNames, NameValueArg
         if ~exist(folder, "dir"); mkdir(folder);  end
         cd(folder);
     end
-
-    if length(indexes) > 1 && indexes(2) == 1 % CHANGED: added length check
+    if length(indexes) > 1 && indexes(2) == 1
         indexes = indexes(2:end); 
     end
     stru = struct();
@@ -377,20 +309,27 @@ function results_saver(fileName, indexes, variables, variableNames, NameValueArg
                var = var(:, indexes);
            end
        end
-       stru.(variableNames{ii}) = var;% = struct(variableNames{ii}, var);
+       stru.(variableNames{ii}) = var;
     end
-    
     my_file = sprintf('%s%s.mat', fileName, NameValueArgs.datetimeMarker);
-       
    if exist(my_file, 'file')
        save(my_file, '-struct', 'stru', '-append');
    else
        save(my_file, '-struct', 'stru');
    end
-           
     cd(currfold)
 end
 
 function out = getVarName(var)
     out = inputname(1);
+end
+
+function Mat = buildStaticMatrix(Fr, We, Re, dr, Delta, DTN, pIntegral, Ma, nr, cPoints, dt, SF)
+    Sist = [[eye(nr)-dt*2*Delta/Re,-dt*DTN];...
+        [dt*(eye(nr)/Fr - Delta/We),eye(nr)-dt*2*Delta/Re]]; 
+    Mat =  [[Sist(:,(cPoints+1):2*nr),...
+        [zeros(nr,cPoints);dt*eye(cPoints);zeros(nr-cPoints,cPoints)],...
+        zeros(2*nr,1),Sist(:,1:cPoints)*ones(cPoints,1)];
+        [-SF*dt/dr, zeros(1,2*nr-cPoints-1),-dt*pIntegral(1:cPoints)/Ma, 1 , SF*dt/dr];
+        [zeros(1,2*nr-cPoints),-zeros(1, cPoints)  ,-dt,1]];
 end
