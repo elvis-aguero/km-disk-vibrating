@@ -57,10 +57,12 @@ arguments
     NameValueArgs.g (1, 1) double = 981 % Gravitational constant in cgs
     NameValueArgs.bathDiameter (1, 1) double = 100 % Diameter of the bath wrt to disk Radius
     NameValueArgs.spatialResolution (1, 1) double = 50 % Number of numerical radial intervals in one disk radius
-    NameValueArgs.temporalResolution (1, 1) double = 10; % Number of temporal steps in one adimensional unit
-    NameValueArgs.simulationTime (1, 1) double = 30/90; % Time to be simulated in seconds
+    NameValueArgs.temporalResolution (1, 1) double = 20; % Number of temporal steps in one adimensional unit
+    NameValueArgs.simulationTime (1, 1) double = 10/90; % Time to be simulated in seconds
     NameValueArgs.debug_flag (1, 1) logical = true; % To show some debugging info
-end
+    NameValueArgs.forceNoCaching (1, 1) logical = false; % CHANGED: Manual override to disable RAM caching
+    end
+
 
 % Record the time the script is run
 tic;
@@ -199,7 +201,9 @@ availableRAM = getAvailableRAM();
 useCaching = false;
 InverseLibrary = {};
 
-if isPeriodic && bath_forcing_amplitude ~= 0
+if NameValueArgs.forceNoCaching
+    fprintf('Smart Caching: DISABLED (Manual override via forceNoCaching)\n');
+elseif isPeriodic && bath_forcing_amplitude ~= 0
     if requiredRAM < 0.75 * availableRAM
         useCaching = true;
         InverseLibrary = cell(stepsPerCycle, 1);
