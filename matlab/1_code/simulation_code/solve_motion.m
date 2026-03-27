@@ -48,7 +48,7 @@ arguments
     NameValueArgs.diskMass (1, 1) double = 1 % Mass in grams of the disk
     NameValueArgs.forceAmplitude (1, 1) double = 0 % Amplitude of sinusoidal force applied to disk (in dynes)
     NameValueArgs.forceFrequency (1, 1) double = 90 % Frequency of sinusoidal force in Hz
-    NameValueArgs.bathAmplitude (1, 1) double = 0 % Amplitude of bath oscillation in cm. CHANGED
+    NameValueArgs.bathAmplitude (1, 1) double = 0.1 % Amplitude of bath oscillation in cm. CHANGED
     NameValueArgs.bathFrequency (1, 1) double = 90 % Frequency of bath oscillation in Hz. CHANGED
     NameValueArgs.phaseDifference (1, 1) double = -90 % Phase difference between disk forcing and bath oscillation in degrees. CHANGED to -90 for sine profile
     NameValueArgs.bathDensity (1, 1) double = 1 % Density of bath's fluid in g/cm^3
@@ -58,7 +58,7 @@ arguments
     NameValueArgs.bathDiameter (1, 1) double = 100 % Diameter of the bath wrt to disk Radius
     NameValueArgs.spatialResolution (1, 1) double = 50 % Number of numerical radial intervals in one disk radius
     NameValueArgs.temporalResolution (1, 1) double = 20; % Number of temporal steps in one adimensional unit
-    NameValueArgs.simulationTime (1, 1) double = 10/90; % Time to be simulated in seconds
+    NameValueArgs.simulationTime (1, 1) double = 30/90; % Time to be simulated in seconds
     NameValueArgs.debug_flag (1, 1) logical = true; % To show some debugging info
 end
 
@@ -159,17 +159,55 @@ current_index = 1; %iteration counter
 recordedConditions = cell(steps, 1);
 recordedConditions{current_index} = current_conditions;
 
+% --- Smart Gatekeeper for Caching ---
+% Check if system is periodic (simple case: frequencies are equal)
+isPeriodic = (abs(NameValueArgs.forceFrequency - NameValueArgs.bathFrequency * 2 * pi) < 1e-6);
+stepsPerCycle = ceil(temporalResolution * 2 * pi); 
+systemSize = 2 * nr + 2;
+requiredRAM = stepsPerCycle * (systemSize^2) * 8;
+availableRAM = getAvailableRAM();
+
+useCaching = false;
+InverseLibrary = {};
+
+if isPeriodic && bath_forcing_amplitude ~= 0
+    if requiredRAM < 0.75 * availableRAM
+        useCaching = true;
+        InverseLibrary = cell(stepsPerCycle, 1);
+        fprintf('Smart Caching: ENABLED (Estimated RAM: %.2f GB)\n', requiredRAM/1e9);
+    elseif requiredRAM > availableRAM
+        fprintf('Smart Caching: DISABLED (Insufficient RAM: %.2f GB required, %.2f GB available)\n', requiredRAM/1e9, availableRAM/1e9);
+        warning('Oscillating bath with no caching will be slow. Using iterative solver.');
+    else
+        % Margin case: Ask user if interactive
+        useCacheStr = 'n';
+        if ~usejava('desktop') || isempty(javachk('desktop'))
+             fprintf('Smart Caching: DISABLED (Headless mode, skipping RAM intensive cache)\n');
+        else
+             % Creating a simple timer-based input is complex in a single block, 
+             % we'll use a simplified version for MATLAB CLI.
+             fprintf('Caching requires %.2f GB (Available: %.2f GB).\n', requiredRAM/1e9, availableRAM/1e9);
+             useCacheStr = input('Enable Caching? (y/n) [n]: ', 's');
+        end
+        if strcmpi(useCacheStr, 'y')
+            useCaching = true;
+            InverseLibrary = cell(stepsPerCycle, 1);
+        end
+    end
+end
+
 % Store problem constants for use in the simulation
 PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "reynolds", Re, "dr", dr, "DEBUG_FLAG", debug_flag, ...
     "nr", nr, "contact_points", spatialResolution+1, ... 
     "force_amplitude", force_adim, "force_frequency", freq_adim, ...
     "bath_forcing_amplitude", bath_forcing_amplitude, ...
-    "bath_frequency", bath_freq_adim, "phase_difference", phase_diff_rad, ... % CHANGED
+    "bath_frequency", bath_freq_adim, "phase_difference", phase_diff_rad, ... 
     "surface_force_constant", surface_force_adim, ...
     "DTN", DTN, "laplacian", laplacian, "obj_mass", obj_mass_adim, ...
     "pressure_integral", pressureIntegral(spatialResolution+1, :), ...
-    "precomputedInverse", precomputedInverse);
+    "precomputedInverse", precomputedInverse, ...
+    "useCaching", useCaching, "InverseLibrary", {InverseLibrary}, "stepsPerCycle", stepsPerCycle); % CHANGED
 
 fprintf("Starting simulation on %s\n", pwd);
 

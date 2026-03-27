@@ -45,3 +45,5 @@ if system_dependent('IsDebugMode')==1, dbstep; end
 if system_dependent('IsDebugMode')==1, dbstep; end
 if system_dependent('IsDebugMode')==1, dbcont; end
 <a href="matlab: opentoline('/Users/eaguerov/Documents/Github/km-disk-vibrating/matlab/1_code/simulation_code/advance_one_step.m',51,1)">51  </a>    end
+if system_dependent('IsDebugMode')==1, dbquit; end
+solve_motion

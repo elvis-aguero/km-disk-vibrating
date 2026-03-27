@@ -19,43 +19,41 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
     g_prefactor = (1 - gamma * cos(bath_w * (t + dt) + phase)); % CHANGED: Using bath-specific frequency and phase
     indep = [b; CoM_vel - dt/Fr * g_prefactor - dt*F*cos(w*(t+dt)); CoM]; % CHANGED: F and w are for the disk forcing
     
-    % If the matrix exists and gravity is constant, import it. 
-    % Otherwise (oscillating gravity), we must recompute it every step.
-    if ~any(isnan(PROBLEM_CONSTANTS.precomputedInverse(:))) && gamma == 0 % CHANGED: Using any() to ensure scalar logical for &&
-        invMat = PROBLEM_CONSTANTS.precomputedInverse;
-        sol = invMat * indep;
+    % --- Solver Logic ---
+    if gamma == 0 && ~any(isnan(PROBLEM_CONSTANTS.precomputedInverse(:)))
+        % Static Gravity: Use precomputed inverse
+        sol = PROBLEM_CONSTANTS.precomputedInverse * indep;
+    elseif PROBLEM_CONSTANTS.useCaching
+        % Oscillating Gravity with Caching. CHANGED
+        cycleIdx = mod(round(t/dt), PROBLEM_CONSTANTS.stepsPerCycle) + 1;
+        if isempty(PROBLEM_CONSTANTS.InverseLibrary{cycleIdx})
+            % Compute and cache
+            Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
+            PROBLEM_CONSTANTS.InverseLibrary{cycleIdx} = inv(Mat);
+        end
+        sol = PROBLEM_CONSTANTS.InverseLibrary{cycleIdx} * indep;
     else
-    % If it does not, create it and then save it
-        
-        We = PROBLEM_CONSTANTS.weber;
-        Re = PROBLEM_CONSTANTS.reynolds;
-        Delta = PROBLEM_CONSTANTS.laplacian;
-        DTN = PROBLEM_CONSTANTS.DTN;
-        
-        
-        pIntegral = PROBLEM_CONSTANTS.pressure_integral;
-        Ma = PROBLEM_CONSTANTS.obj_mass;
-        
-        % Preparing the matrix (2x2 block)
-        Sist = [[eye(nr)-dt*2*Delta/Re,-dt*DTN];...
-            [dt*(eye(nr)/Fr * g_prefactor - Delta/We),eye(nr)-dt*2*Delta/Re]]; % CHANGED: Added gravity prefactor to fluid equation
-          
-        % Completing the system
-        Mat =  [[Sist(:,(cPoints+1):2*nr),...
-            [zeros(nr,cPoints);dt*eye(cPoints);zeros(nr-cPoints,cPoints)],...
-            zeros(2*nr,1),Sist(:,1:cPoints)*ones(cPoints,1)];
-            [-SF*dt/dr, zeros(1,2*nr-cPoints-1),-dt*pIntegral(1:cPoints)/Ma, 1 , SF*dt/dr];
-            [zeros(1,2*nr-cPoints),-zeros(1, cPoints)  ,-dt,1]];
-        % Now save the matrix for later
-        PROBLEM_CONSTANTS.precomputedInverse = inv(Mat);
+        % Oscillating Gravity without Caching: Iterative Solver with Warm Start. CHANGED
+        Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
 
-        sol = Mat\indep;
+        % Construct initial guess from previous condition (warm start)
+        % Structure: [eta_rest; phi; p; v; z]
+        eta_rest = previous_conditions.bath_surface(cPoints+1:nr);
+        phi = previous_conditions.bath_potential;
+        p = previous_conditions.pressure;
+        v = previous_conditions.center_of_mass_velocity;
+        z = previous_conditions.center_of_mass;
+        x0 = [eta_rest; phi; p; v; z];
+
+        % GMRES Solve
+        [sol, ~] = gmres(Mat, indep, [], 1e-6, 100, [], [], x0); 
     end
 
 
     next_condition = previous_conditions;
-    next_condition.bath_surface = [sol(end)* ones(cPoints, 1); ...
-                                                sol(1:nr-cPoints)];
+    % Re-mapping sol based on the system construction
+    % sol = [eta_rest; phi; p; v; z]
+    next_condition.bath_surface = [sol(end)* ones(cPoints, 1); sol(1:nr-cPoints)];
     next_condition.bath_potential = sol(nr-cPoints+1:2*nr-cPoints);
     next_condition.pressure = sol(2*nr-cPoints+1:2*nr);
     next_condition.center_of_mass_velocity = sol(end-1);
@@ -63,3 +61,24 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
     next_condition.time = next_condition.time + dt;
     
 end
+
+    function Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF)
+    We = PROBLEM_CONSTANTS.weber;
+    Re = PROBLEM_CONSTANTS.reynolds;
+    Delta = PROBLEM_CONSTANTS.laplacian;
+    DTN = PROBLEM_CONSTANTS.DTN;
+    Fr = PROBLEM_CONSTANTS.froude;
+    pIntegral = PROBLEM_CONSTANTS.pressure_integral;
+    Ma = PROBLEM_CONSTANTS.obj_mass;
+
+    % Preparing the matrix (2x2 block)
+    Sist = [[eye(nr)-dt*2*Delta/Re,-dt*DTN];...
+        [dt*(eye(nr)/Fr * g_prefactor - Delta/We),eye(nr)-dt*2*Delta/Re]]; 
+
+    % Completing the system
+    Mat =  [[Sist(:,(cPoints+1):2*nr),...
+        [zeros(nr,cPoints);dt*eye(cPoints);zeros(nr-cPoints,cPoints)],...
+        zeros(2*nr,1),Sist(:,1:cPoints)*ones(cPoints,1)];
+        [-SF*dt/dr, zeros(1,2*nr-cPoints-1),-dt*pIntegral(1:cPoints)/Ma, 1 , SF*dt/dr];
+        [zeros(1,2*nr-cPoints),-zeros(1, cPoints)  ,-dt,1]];
+    end
