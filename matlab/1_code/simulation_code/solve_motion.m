@@ -57,7 +57,13 @@ try
     % Navigate to the folder and load necessary matrices
     cd(fold)
     nr = ceil(spatialResolution * bathDiameter / 2);
-    load(sprintf('DTNnew345nr%dD%drefp10.mat', nr, bathDiameter), 'DTNnew345')
+    
+    % Machine-specific patch for D5Quant20. CHANGED
+    if spatialResolution == 5 && bathDiameter == 20
+        load('DTNnew345nr50D5refp10.mat', 'DTNnew345')
+    else
+        load(sprintf('DTNnew345nr%dD%drefp10.mat', nr, bathDiameter), 'DTNnew345')
+    end
     DTN = DTNnew345;
     clear DTNnew345
 
