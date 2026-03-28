@@ -64,6 +64,16 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
             sol = PROBLEM_CONSTANTS.InverseLibrary{cycleIdx} * indep;
         end
     else
+        % Oscillating Gravity without Caching: Iterative Solver with Warm Start.
+        Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
+        eta_rest = previous_conditions.bath_surface(cPoints+1:nr);
+        phi = previous_conditions.bath_potential;
+        p = previous_conditions.pressure;
+        v = previous_conditions.center_of_mass_velocity;
+        z = previous_conditions.center_of_mass;
+        x0 = [eta_rest; phi; p; v; z];
+        [sol, ~] = gmres(Mat, indep, [], 1e-8, 100, [], [], x0); 
+    end
 
     next_condition = previous_conditions;
     next_condition.bath_surface = [sol(end)* ones(cPoints, 1); sol(1:nr-cPoints)];
