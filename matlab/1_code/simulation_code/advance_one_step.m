@@ -32,10 +32,19 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
     indep = [b; CoM_vel - dt/Fr * g_prefactor - force_term; CoM]; % CHANGED: Perfectly periodic RHS
     
     % --- Solver Logic ---
-    % We prioritize the iterative solver with warm start for stability and memory efficiency.
     if gamma == 0 && ~any(isnan(PROBLEM_CONSTANTS.precomputedInverse(:)))
-        % Static Gravity: Use precomputed inverse (Legacy support)
+        % Static Gravity: Use precomputed inverse
         sol = PROBLEM_CONSTANTS.precomputedInverse * indep;
+    elseif PROBLEM_CONSTANTS.useCaching
+        % Oscillating Gravity with Caching.
+        if isempty(PROBLEM_CONSTANTS.InverseLibrary{cycleIdx})
+            % Compute and cache
+            fprintf('Cache MISS at cycleIdx %d. Inverting... ', cycleIdx);
+            Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
+            PROBLEM_CONSTANTS.InverseLibrary{cycleIdx} = inv(Mat);
+            fprintf('Done.\n');
+        end
+        sol = PROBLEM_CONSTANTS.InverseLibrary{cycleIdx} * indep;
     else
         % Oscillating Gravity or No Cache: Iterative Solver with Warm Start.
         Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);

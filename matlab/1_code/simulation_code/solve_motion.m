@@ -146,8 +146,9 @@ elseif forceAmplitude == 0
 else
     effective_w_adim = bath_freq_adim; % Use bath freq as reference
 end
-stepsPerCycle = round((2 * pi / effective_w_adim) * temporalResolution); 
-dt = (2 * pi / effective_w_adim) / stepsPerCycle; % Adjusted adimensional time step
+% FORCE 6 STEPS PER CYCLE FOR DIAGNOSTIC TEST. CHANGED
+stepsPerCycle = 6; 
+dt = (2 * pi / effective_w_adim) / stepsPerCycle; 
 
 % Store problem constants for use in the simulation
 PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
@@ -161,7 +162,8 @@ PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "pressure_integral", pressureIntegral(spatialResolution+1, :), ...
     "precomputedInverse", precomputedInverse, ...
     "ylim_limit", H_limit_adim, "step_counter", 0, ...
-    "stepsPerCycle", stepsPerCycle); % CHANGED: Final clean version
+    "stepsPerCycle", stepsPerCycle, ...
+    "useCaching", true, "InverseLibrary", {cell(stepsPerCycle, 1)}); % CHANGED: Enabled caching for 6 matrices
 
 fprintf("Starting simulation on %s\n", pwd);
 
