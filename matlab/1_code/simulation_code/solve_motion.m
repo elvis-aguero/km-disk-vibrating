@@ -138,6 +138,17 @@ current_index = 1; %iteration counter
 recordedConditions = cell(steps, 1);
 recordedConditions{current_index} = current_conditions;
 
+% Steps per cycle must be an integer for periodic physics to be valid. CHANGED
+if bath_forcing_amplitude == 0
+    effective_w_adim = freq_adim;
+elseif forceAmplitude == 0
+    effective_w_adim = bath_freq_adim;
+else
+    effective_w_adim = bath_freq_adim; % Use bath freq as reference
+end
+stepsPerCycle = round((2 * pi / effective_w_adim) * temporalResolution); 
+dt = (2 * pi / effective_w_adim) / stepsPerCycle; % Adjusted adimensional time step
+
 % Store problem constants for use in the simulation
 PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "reynolds", Re, "dr", dr, "DEBUG_FLAG", debug_flag, ...
@@ -149,7 +160,8 @@ PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "DTN", DTN, "laplacian", laplacian, "obj_mass", obj_mass_adim, ...
     "pressure_integral", pressureIntegral(spatialResolution+1, :), ...
     "precomputedInverse", precomputedInverse, ...
-    "ylim_limit", H_limit_adim, "step_counter", 0); % CHANGED: Simplified, caching logic removed
+    "ylim_limit", H_limit_adim, "step_counter", 0, ...
+    "stepsPerCycle", stepsPerCycle, "useCaching", false, "InverseLibrary", {{}}); % CHANGED: Restore stepsPerCycle and placeholders
 
 fprintf("Starting simulation on %s\n", pwd);
 
