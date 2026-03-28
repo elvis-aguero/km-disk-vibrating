@@ -138,36 +138,6 @@ current_index = 1; %iteration counter
 recordedConditions = cell(steps, 1);
 recordedConditions{current_index} = current_conditions;
 
-% --- Smart Gatekeeper for Caching ---
-availableRAM = getAvailableRAM();
-useCaching = false;
-InverseLibrary = {};
-
-if NameValueArgs.forceNoCaching
-    fprintf('Smart Caching: DISABLED (Manual override via forceNoCaching)\n');
-elseif isPeriodic && bath_forcing_amplitude ~= 0
-    requiredRAM = stepsPerCycle * ((2*nr+2)^2) * 8;
-    if requiredRAM < 0.75 * availableRAM
-        useCaching = true;
-        InverseLibrary = cell(stepsPerCycle, 1);
-        fprintf('Smart Caching: ENABLED (Estimated RAM: %.2f GB)\n', requiredRAM/1e9);
-    elseif requiredRAM > availableRAM
-        fprintf('Smart Caching: DISABLED (Insufficient RAM: %.2f GB required, %.2f GB available)\n', requiredRAM/1e9, availableRAM/1e9);
-        warning('Oscillating bath with no caching will be slow. Using iterative solver.');
-    else
-        fprintf('Caching requires %.2f GB (Available: %.2f GB).\n', requiredRAM/1e9, availableRAM/1e9);
-        if ~usejava('desktop') || isempty(javachk('desktop'))
-             fprintf('Smart Caching: DISABLED (Headless mode)\n');
-        else
-             useCacheStr = input('Enable Caching? (y/n) [n]: ', 's');
-             if strcmpi(useCacheStr, 'y')
-                useCaching = true;
-                InverseLibrary = cell(stepsPerCycle, 1);
-             end
-        end
-    end
-end
-
 % Store problem constants for use in the simulation
 PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "reynolds", Re, "dr", dr, "DEBUG_FLAG", debug_flag, ...
@@ -179,8 +149,7 @@ PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "DTN", DTN, "laplacian", laplacian, "obj_mass", obj_mass_adim, ...
     "pressure_integral", pressureIntegral(spatialResolution+1, :), ...
     "precomputedInverse", precomputedInverse, ...
-    "useCaching", useCaching, "InverseLibrary", {InverseLibrary}, "stepsPerCycle", stepsPerCycle, ...
-    "ylim_limit", H_limit_adim, "step_counter", 0);
+    "ylim_limit", H_limit_adim, "step_counter", 0); % CHANGED: Simplified, caching logic removed
 
 fprintf("Starting simulation on %s\n", pwd);
 
@@ -233,25 +202,9 @@ try
         end
      end 
     
-    if ~any(isnan(PROBLEM_CONSTANTS.precomputedInverse(:)))
-        cd(fold)
-        precomputedInverse = PROBLEM_CONSTANTS.precomputedInverse;
-        save(myfile, "precomputedInverse")
-        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, "precomputedInverse");
-    end
-
-    for ii = 1:length(savingvarNames)
-       variableValues{ii} = eval(savingvarNames{ii}); 
-    end
     results_saver("simulationResults", 1:(current_index-1), variableValues, savingvarNames, NameValueArgs);
 
 catch ME
-    if ~any(isnan(PROBLEM_CONSTANTS.precomputedInverse(:)))
-        cd(fold)
-        precomputedInverse = PROBLEM_CONSTANTS.precomputedInverse;
-        save(myfile, "precomputedInverse")
-        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, "precomputedInverse");
-    end
     for ii = 1:length(savingvarNames)
        variableValues{ii} = eval(savingvarNames{ii}); 
     end
