@@ -155,10 +155,6 @@ end
 stepsPerCycle = round((2 * pi / effective_w_adim) * temporalResolution); 
 dt = (2 * pi / effective_w_adim) / stepsPerCycle; % Adjusted adimensional time step
 
-% --- Smart Gatekeeper for Caching ---
-availableRAM = getAvailableRAM();
-useCaching = true; % FORCE ENABLED FOR STABILITY TEST. CHANGED
-
 % Store problem constants for use in the simulation
 PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "reynolds", Re, "dr", dr, "DEBUG_FLAG", debug_flag, ...
@@ -171,10 +167,7 @@ PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "pressure_integral", pressureIntegral(spatialResolution+1, :), ...
     "precomputedInverse", precomputedInverse, ...
     "ylim_limit", H_limit_adim, "step_counter", 0, ...
-    "stepsPerCycle", stepsPerCycle, "useCaching", true, ...
-    "L_Library", {cell(stepsPerCycle, 1)}, ...
-    "U_Library", {cell(stepsPerCycle, 1)}, ...
-    "P_Library", {cell(stepsPerCycle, 1)}); % CHANGED: LU Caching for stability
+    "stepsPerCycle", stepsPerCycle); % Final baseline version
 
 fprintf("Starting simulation on %s\n", pwd);
 
@@ -227,21 +220,9 @@ try
         end
      end 
     
-    % Strip large Libraries before saving to avoid disk bloat. CHANGED
-    if isfield(PROBLEM_CONSTANTS, 'L_Library')
-        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, {'L_Library', 'U_Library', 'P_Library'}); 
-    end
-
-    for ii = 1:length(savingvarNames)
-       variableValues{ii} = eval(savingvarNames{ii}); 
-    end
     results_saver("simulationResults", 1:(current_index-1), variableValues, savingvarNames, NameValueArgs);
 
 catch ME
-    % Strip large Libraries before saving errored results. CHANGED
-    if isfield(PROBLEM_CONSTANTS, 'L_Library')
-        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, {'L_Library', 'U_Library', 'P_Library'}); 
-    end
     for ii = 1:length(savingvarNames)
        variableValues{ii} = eval(savingvarNames{ii}); 
     end
