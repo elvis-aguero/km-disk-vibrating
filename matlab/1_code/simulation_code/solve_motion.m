@@ -195,7 +195,10 @@ PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "pressure_integral", pressureIntegral(spatialResolution+1, :), ...
     "precomputedInverse", precomputedInverse, ...
     "ylim_limit", H_limit_adim, "step_counter", 0, ...
-    "stepsPerCycle", stepsPerCycle, "useCaching", useCaching, "InverseLibrary", {InverseLibrary}); % CHANGED
+    "stepsPerCycle", stepsPerCycle, "useCaching", useCaching, ...
+    "L_Library", {cell(stepsPerCycle, 1)}, ...
+    "U_Library", {cell(stepsPerCycle, 1)}, ...
+    "P_Library", {cell(stepsPerCycle, 1)}); % CHANGED: LU Caching for stability
 
 fprintf("Starting simulation on %s\n", pwd);
 
@@ -248,9 +251,9 @@ try
         end
      end 
     
-    % Strip large InverseLibrary before saving to avoid disk bloat. CHANGED
-    if isfield(PROBLEM_CONSTANTS, 'InverseLibrary')
-        PROBLEM_CONSTANTS.InverseLibrary = {}; 
+    % Strip large Libraries before saving to avoid disk bloat. CHANGED
+    if isfield(PROBLEM_CONSTANTS, 'L_Library')
+        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, {'L_Library', 'U_Library', 'P_Library'}); 
     end
 
     for ii = 1:length(savingvarNames)
@@ -259,9 +262,9 @@ try
     results_saver("simulationResults", 1:(current_index-1), variableValues, savingvarNames, NameValueArgs);
 
 catch ME
-    % Strip large InverseLibrary before saving errored results. CHANGED
-    if isfield(PROBLEM_CONSTANTS, 'InverseLibrary')
-        PROBLEM_CONSTANTS.InverseLibrary = {}; 
+    % Strip large Libraries before saving errored results. CHANGED
+    if isfield(PROBLEM_CONSTANTS, 'L_Library')
+        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, {'L_Library', 'U_Library', 'P_Library'}); 
     end
     for ii = 1:length(savingvarNames)
        variableValues{ii} = eval(savingvarNames{ii}); 
