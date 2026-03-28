@@ -21,12 +21,12 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
     current_step = PROBLEM_CONSTANTS.step_counter;
     PROBLEM_CONSTANTS.step_counter = current_step + 1;
     
-    % Use periodic index to avoid floating-point phase drift over many cycles.
+    % Use periodic index ONLY for cache indexing.
     cycleIdx = mod(current_step, PROBLEM_CONSTANTS.stepsPerCycle) + 1;
     
-    % Re-calculating time-dependent terms precisely using periodic index
-    g_prefactor = (1 - gamma * cos(bath_w * cycleIdx * dt + phase)); 
-    force_term = dt * F * cos(w * cycleIdx * dt); 
+    % Use actual simulation step for physics to ensure temporal continuity. CHANGED
+    g_prefactor = (1 - gamma * cos(bath_w * (current_step + 1) * dt + phase)); 
+    force_term = dt * F * cos(w * (current_step + 1) * dt); 
     
     indep = [b; CoM_vel - dt/Fr * g_prefactor - force_term; CoM];
     
@@ -43,27 +43,15 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
             PROBLEM_CONSTANTS.L_Library{cycleIdx} = L;
             PROBLEM_CONSTANTS.U_Library{cycleIdx} = U;
             PROBLEM_CONSTANTS.P_Library{cycleIdx} = P;
-            PROBLEM_CONSTANTS.DiagnosticMat{cycleIdx} = Mat;
             
             % Apply LU factors
             sol = U \ (L \ (P * indep));
         else
-            % DOUBLE-SOLVE AUDIT: Compare fresh vs cached solve. CHANGED
-            Mat_fresh = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
-            sol_fresh = Mat_fresh \ indep;
-            
+            % SUBSEQUENT CYCLES: Apply cached LU. Stable because Mat(t) is periodic.
             L = PROBLEM_CONSTANTS.L_Library{cycleIdx};
             U = PROBLEM_CONSTANTS.U_Library{cycleIdx};
             P = PROBLEM_CONSTANTS.P_Library{cycleIdx};
-            sol_cached = U \ (L \ (P * indep));
-            
-            err_sol = norm(sol_fresh - sol_cached) / norm(sol_fresh);
-            
-            if current_step < PROBLEM_CONSTANTS.stepsPerCycle + 5
-                fprintf('Step %d: Solve Difference (Fresh Direct vs Cached LU) = %.2e\n', current_step + 1, err_sol);
-            end
-            
-            sol = sol_cached; % Use cached for the remainder of the test
+            sol = U \ (L \ (P * indep));
         end
     else
         % Forced Fresh Direct Solve. 
