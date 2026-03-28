@@ -216,9 +216,21 @@ try
         end
      end 
     
+    % Strip large InverseLibrary before saving to avoid disk bloat. CHANGED
+    if isfield(PROBLEM_CONSTANTS, 'InverseLibrary')
+        PROBLEM_CONSTANTS.InverseLibrary = {}; 
+    end
+
+    for ii = 1:length(savingvarNames)
+       variableValues{ii} = eval(savingvarNames{ii}); 
+    end
     results_saver("simulationResults", 1:(current_index-1), variableValues, savingvarNames, NameValueArgs);
 
 catch ME
+    % Strip large InverseLibrary before saving errored results. CHANGED
+    if isfield(PROBLEM_CONSTANTS, 'InverseLibrary')
+        PROBLEM_CONSTANTS.InverseLibrary = {}; 
+    end
     for ii = 1:length(savingvarNames)
        variableValues{ii} = eval(savingvarNames{ii}); 
     end
