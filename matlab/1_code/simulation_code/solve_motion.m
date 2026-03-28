@@ -157,8 +157,7 @@ PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "useCaching", ~NameValueArgs.forceNoCaching, ...
     "L_Library", {cell(stepsPerCycle, 1)}, ...
     "U_Library", {cell(stepsPerCycle, 1)}, ...
-    "P_Library", {cell(stepsPerCycle, 1)}, ...
-    "DiagnosticMat", {cell(stepsPerCycle, 1)}); 
+    "P_Library", {cell(stepsPerCycle, 1)}); % Final production LU caching
 
 fprintf("Starting simulation on %s\n", pwd);
 
@@ -213,7 +212,7 @@ try
     
     % Strip large Libraries before saving
     if isfield(PROBLEM_CONSTANTS, 'L_Library')
-        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, {'L_Library', 'U_Library', 'P_Library', 'DiagnosticMat'}); 
+        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, {'L_Library', 'U_Library', 'P_Library'}); 
     end
 
     for ii = 1:length(savingvarNames)
@@ -222,9 +221,9 @@ try
     results_saver("simulationResults", 1:(current_index-1), variableValues, savingvarNames, NameValueArgs);
 
 catch ME
-    % Strip large Libraries before saving
+    % Strip large Libraries before saving errored results. CHANGED
     if isfield(PROBLEM_CONSTANTS, 'L_Library')
-        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, {'L_Library', 'U_Library', 'P_Library', 'DiagnosticMat'}); 
+        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, {'L_Library', 'U_Library', 'P_Library'}); 
     end
     for ii = 1:length(savingvarNames)
        variableValues{ii} = eval(savingvarNames{ii}); 
