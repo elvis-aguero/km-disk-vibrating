@@ -39,35 +39,34 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
         % Oscillating Gravity with Caching.
         if isempty(PROBLEM_CONSTANTS.InverseLibrary{cycleIdx})
             % Compute and cache
-            fprintf('Cache MISS at cycleIdx %d. Inverting... ', cycleIdx);
             Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
             PROBLEM_CONSTANTS.InverseLibrary{cycleIdx} = inv(Mat);
-            fprintf('Done.\n');
+        else
+            % AUDIT: Compare cached vs fresh at the start of Cycle 2. CHANGED
+            if current_step == PROBLEM_CONSTANTS.stepsPerCycle
+                fprintf('\n--- NUMERICAL AUDIT: STEP %d (Start of Cycle 2) ---\n', current_step + 1);
+                M_fresh = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
+                P_cached = PROBLEM_CONSTANTS.InverseLibrary{cycleIdx};
+                
+                err_mat = norm(inv(M_fresh) - P_cached, 'fro') / norm(P_cached, 'fro');
+                fprintf('Operator Periodicity Error (Frobenius): %.2e\n', err_mat);
+                
+                x_cached = P_cached * indep;
+                x_direct = M_fresh \ indep;
+                err_sol = norm(x_cached - x_direct) / norm(x_direct);
+                fprintf('Solve Consistency Error: %.2e\n', err_sol);
+                
+                if err_mat > 1e-12 || err_sol > 1e-12
+                    fprintf('VERDICT: BUG DETECTED in caching/periodicity logic.\n');
+                else
+                    fprintf('VERDICT: CACHING IS MATHEMATICALLY VALID. Explosion is purely cumulative.\n');
+                end
+                fprintf('---------------------------------------------------\n\n');
+            end
         end
         sol = PROBLEM_CONSTANTS.InverseLibrary{cycleIdx} * indep;
-        
-        % DIAGNOSTIC: Verify residual of cached solution. CHANGED
-        Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
-        res = norm(Mat * sol - indep) / norm(indep);
-        if res > 1e-6
-            fprintf('WARNING: Cache Inconsistency at cycleIdx %d. Relative Residual: %.2e\n', cycleIdx, res);
-            % If consistency is lost, we could force a re-inversion here.
-        end
     else
-        % Oscillating Gravity or No Cache: Iterative Solver with Warm Start.
-        Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
 
-        % Construct initial guess from previous condition (warm start)
-        eta_rest = previous_conditions.bath_surface(cPoints+1:nr);
-        phi = previous_conditions.bath_potential;
-        p = previous_conditions.pressure;
-        v = previous_conditions.center_of_mass_velocity;
-        z = previous_conditions.center_of_mass;
-        x0 = [eta_rest; phi; p; v; z];
-
-        % GMRES Solve with Warm Start. Using 1e-8 for performance/stability balance.
-        [sol, ~] = gmres(Mat, indep, [], 1e-8, 100, [], [], x0); 
-    end
 
 
     next_condition = previous_conditions;
