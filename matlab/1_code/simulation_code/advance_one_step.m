@@ -50,24 +50,23 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
             end
             PROBLEM_CONSTANTS.DiagnosticMat{cycleIdx} = Mat;
         else
-            % SUBSEQUENT CYCLES: Matrix Identity Audit. CHANGED
+            % DOUBLE-SOLVE AUDIT: Compare fresh vs cached solve. CHANGED
             Mat_fresh = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
-            Mat_cached = PROBLEM_CONSTANTS.DiagnosticMat{cycleIdx};
+            sol_fresh = Mat_fresh \ indep;
             
-            diff_bits = Mat_fresh - Mat_cached;
-            max_err = max(abs(diff_bits(:)));
+            L = PROBLEM_CONSTANTS.L_Library{cycleIdx};
+            U = PROBLEM_CONSTANTS.U_Library{cycleIdx};
+            P = PROBLEM_CONSTANTS.P_Library{cycleIdx};
+            sol_cached = U \ (L \ (P * indep));
+            
+            err_sol = norm(sol_fresh - sol_cached) / norm(sol_fresh);
             
             if current_step < PROBLEM_CONSTANTS.stepsPerCycle + 5
-                fprintf('Audit Step %d: Matrix Difference = %.2e\n', current_step + 1, max_err);
-                if max_err > 0
-                    [row, col] = find(abs(diff_bits) == max_err, 1);
-                    fprintf('!!! BUG: Difference detected at row %d, col %d. Fresh: %.15e, Cached: %.15e\n', ...
-                        row, col, Mat_fresh(row, col), Mat_cached(row, col));
-                end
+                fprintf('Step %d: Solve Difference (Fresh vs Cached LU) = %.2e\n', current_step + 1, err_sol);
             end
+            
+            sol = sol_cached;
         end
-        % Apply LU factors
-        sol = PROBLEM_CONSTANTS.U_Library{cycleIdx} \ (PROBLEM_CONSTANTS.L_Library{cycleIdx} \ (PROBLEM_CONSTANTS.P_Library{cycleIdx} * indep));
     else
         % Oscillating Gravity without Caching: Iterative Solver with Warm Start.
         Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
