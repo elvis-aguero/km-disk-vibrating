@@ -1,5 +1,4 @@
 % Script to generate DtN matrix for spatialResolution=20, bathDiameter=20
-cd matlab/1_code/simulation_code
 nr = 200; % 20 points per radius * 20 radii / 2 = 200
 D = 20;
 fprintf('Starting DTN computation for nr=%d, D=%d...\n', nr, D);
