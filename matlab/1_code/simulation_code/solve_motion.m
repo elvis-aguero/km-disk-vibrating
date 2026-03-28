@@ -57,8 +57,7 @@ try
     % Navigate to the folder and load necessary matrices
     cd(fold)
     nr = ceil(spatialResolution * bathDiameter / 2);
-    
-    % Machine-specific patch for D5Quant20. CHANGED
+    % Machine-specific patch for D5Quant20.
     if spatialResolution == 5 && bathDiameter == 20
         load('DTNnew345nr50D5refp10.mat', 'DTNnew345')
     else
@@ -116,7 +115,7 @@ A_bath_adim = abs(NameValueArgs.bathAmplitude / L_unit);
 A_forcing_adim = force_adim / (freq_adim^2 + 1e-6); % Rough estimate
 H_limit_adim = 1.5 * (A_bath_adim + A_forcing_adim + 0.5); % Symmetric limit around z=0
 
-% Steps per cycle must be an integer for periodic caching to be valid. 
+% Steps per cycle must be an integer for periodic physics to be valid.
 if bath_forcing_amplitude == 0
     effective_w_adim = freq_adim;
 elseif forceAmplitude == 0
@@ -124,8 +123,6 @@ elseif forceAmplitude == 0
 else
     effective_w_adim = bath_freq_adim; % Use bath freq as reference
 end
-isPeriodic = (abs(freq_adim - bath_freq_adim) < 1e-6) || (bath_forcing_amplitude == 0) || (forceAmplitude == 0);
-
 stepsPerCycle = round((2 * pi / effective_w_adim) * temporalResolution); 
 dt = (2 * pi / effective_w_adim) / stepsPerCycle; % Adjusted adimensional time step
 
@@ -144,17 +141,6 @@ current_index = 1; %iteration counter
 recordedConditions = cell(steps, 1);
 recordedConditions{current_index} = current_conditions;
 
-% Steps per cycle must be an integer for periodic physics to be valid. CHANGED
-if bath_forcing_amplitude == 0
-    effective_w_adim = freq_adim;
-elseif forceAmplitude == 0
-    effective_w_adim = bath_freq_adim;
-else
-    effective_w_adim = bath_freq_adim; % Use bath freq as reference
-end
-stepsPerCycle = round((2 * pi / effective_w_adim) * temporalResolution); 
-dt = (2 * pi / effective_w_adim) / stepsPerCycle; % Adjusted adimensional time step
-
 % Store problem constants for use in the simulation
 PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "reynolds", Re, "dr", dr, "DEBUG_FLAG", debug_flag, ...
@@ -167,7 +153,12 @@ PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "pressure_integral", pressureIntegral(spatialResolution+1, :), ...
     "precomputedInverse", precomputedInverse, ...
     "ylim_limit", H_limit_adim, "step_counter", 0, ...
-    "stepsPerCycle", stepsPerCycle); % Final baseline version
+    "stepsPerCycle", stepsPerCycle, ...
+    "useCaching", ~NameValueArgs.forceNoCaching, ...
+    "L_Library", {cell(stepsPerCycle, 1)}, ...
+    "U_Library", {cell(stepsPerCycle, 1)}, ...
+    "P_Library", {cell(stepsPerCycle, 1)}, ...
+    "DiagnosticMat", {cell(stepsPerCycle, 1)}); 
 
 fprintf("Starting simulation on %s\n", pwd);
 
@@ -220,9 +211,21 @@ try
         end
      end 
     
+    % Strip large Libraries before saving
+    if isfield(PROBLEM_CONSTANTS, 'L_Library')
+        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, {'L_Library', 'U_Library', 'P_Library', 'DiagnosticMat'}); 
+    end
+
+    for ii = 1:length(savingvarNames)
+       variableValues{ii} = eval(savingvarNames{ii}); 
+    end
     results_saver("simulationResults", 1:(current_index-1), variableValues, savingvarNames, NameValueArgs);
 
 catch ME
+    % Strip large Libraries before saving
+    if isfield(PROBLEM_CONSTANTS, 'L_Library')
+        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, {'L_Library', 'U_Library', 'P_Library', 'DiagnosticMat'}); 
+    end
     for ii = 1:length(savingvarNames)
        variableValues{ii} = eval(savingvarNames{ii}); 
     end
@@ -279,4 +282,14 @@ end
 
 function out = getVarName(var)
     out = inputname(1);
+end
+
+function Mat = buildStaticMatrix(Fr, We, Re, dr, Delta, DTN, pIntegral, Ma, nr, cPoints, dt, SF)
+    Sist = [[eye(nr)-dt*2*Delta/Re,-dt*DTN];...
+        [dt*(eye(nr)/Fr - Delta/We),eye(nr)-dt*2*Delta/Re]]; 
+    Mat =  [[Sist(:,(cPoints+1):2*nr),...
+        [zeros(nr,cPoints);dt*eye(cPoints);zeros(nr-cPoints,cPoints)],...
+        zeros(2*nr,1),Sist(:,1:cPoints)*ones(cPoints,1)];
+        [-SF*dt/dr, zeros(1,2*nr-cPoints-1),-dt*pIntegral(1:cPoints)/Ma, 1 , SF*dt/dr];
+        [zeros(1,2*nr-cPoints),-zeros(1, cPoints)  ,-dt,1]];
 end

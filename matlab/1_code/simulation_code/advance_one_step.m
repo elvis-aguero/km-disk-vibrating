@@ -35,7 +35,7 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
         % Static Gravity: Use precomputed inverse
         sol = PROBLEM_CONSTANTS.precomputedInverse * indep;
     elseif PROBLEM_CONSTANTS.useCaching
-        % Oscillating Gravity with LU Caching. CHANGED
+        % Oscillating Gravity with LU Caching.
         if isempty(PROBLEM_CONSTANTS.L_Library{cycleIdx})
             % FIRST CYCLE: Build and cache LU
             Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
@@ -43,19 +43,32 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
             PROBLEM_CONSTANTS.L_Library{cycleIdx} = L;
             PROBLEM_CONSTANTS.U_Library{cycleIdx} = U;
             PROBLEM_CONSTANTS.P_Library{cycleIdx} = P;
+            PROBLEM_CONSTANTS.DiagnosticMat{cycleIdx} = Mat;
+            
+            % Apply LU factors
+            sol = U \ (L \ (P * indep));
+        else
+            % DOUBLE-SOLVE AUDIT: Compare fresh vs cached solve. CHANGED
+            Mat_fresh = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
+            sol_fresh = Mat_fresh \ indep;
+            
+            L = PROBLEM_CONSTANTS.L_Library{cycleIdx};
+            U = PROBLEM_CONSTANTS.U_Library{cycleIdx};
+            P = PROBLEM_CONSTANTS.P_Library{cycleIdx};
+            sol_cached = U \ (L \ (P * indep));
+            
+            err_sol = norm(sol_fresh - sol_cached) / norm(sol_fresh);
+            
+            if current_step < PROBLEM_CONSTANTS.stepsPerCycle + 5
+                fprintf('Step %d: Solve Difference (Fresh Direct vs Cached LU) = %.2e\n', current_step + 1, err_sol);
+            end
+            
+            sol = sol_cached; % Use cached for the remainder of the test
         end
-        % Apply LU factors
-        sol = PROBLEM_CONSTANTS.U_Library{cycleIdx} \ (PROBLEM_CONSTANTS.L_Library{cycleIdx} \ (PROBLEM_CONSTANTS.P_Library{cycleIdx} * indep));
     else
-        % Oscillating Gravity or No Cache: Iterative Solver with Warm Start.
+        % Forced Fresh Direct Solve. 
         Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
-        eta_rest = previous_conditions.bath_surface(cPoints+1:nr);
-        phi = previous_conditions.bath_potential;
-        p = previous_conditions.pressure;
-        v = previous_conditions.center_of_mass_velocity;
-        z = previous_conditions.center_of_mass;
-        x0 = [eta_rest; phi; p; v; z];
-        [sol, ~] = gmres(Mat, indep, [], 1e-8, 100, [], [], x0); 
+        sol = Mat \ indep;
     end
 
     next_condition = previous_conditions;
@@ -65,11 +78,6 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
     next_condition.center_of_mass_velocity = sol(end-1);
     next_condition.center_of_mass = sol(end);
     next_condition.time = next_condition.time + dt;
-    
-    % LIVE LOGGING. CHANGED
-    if mod(current_step, 10) == 0
-        fprintf('Step %d: z = %.4f\n', current_step + 1, next_condition.center_of_mass);
-    end
     
     % --- Numerical Guardrail ---
     if any(isnan(sol)) || any(isinf(sol)) || abs(next_condition.center_of_mass) > 10
