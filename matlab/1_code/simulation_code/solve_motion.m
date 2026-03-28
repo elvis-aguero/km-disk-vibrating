@@ -146,14 +146,6 @@ elseif forceAmplitude == 0
 else
     effective_w_adim = bath_freq_adim; % Use bath freq as reference
 end
-% Steps per cycle must be an integer for periodic physics to be valid. CHANGED
-if bath_forcing_amplitude == 0
-    effective_w_adim = freq_adim;
-elseif forceAmplitude == 0
-    effective_w_adim = bath_freq_adim;
-else
-    effective_w_adim = bath_freq_adim; % Use bath freq as reference
-end
 stepsPerCycle = round((2 * pi / effective_w_adim) * temporalResolution); 
 dt = (2 * pi / effective_w_adim) / stepsPerCycle; % Adjusted adimensional time step
 
