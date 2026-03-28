@@ -32,19 +32,12 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
     indep = [b; CoM_vel - dt/Fr * g_prefactor - force_term; CoM]; % CHANGED: Perfectly periodic RHS
     
     % --- Solver Logic ---
+    % We prioritize the iterative solver with warm start for stability and memory efficiency.
     if gamma == 0 && ~any(isnan(PROBLEM_CONSTANTS.precomputedInverse(:)))
-        % Static Gravity: Use precomputed inverse
+        % Static Gravity: Use precomputed inverse (Legacy support)
         sol = PROBLEM_CONSTANTS.precomputedInverse * indep;
-    elseif PROBLEM_CONSTANTS.useCaching
-        % Oscillating Gravity with Caching. CHANGED
-        if isempty(PROBLEM_CONSTANTS.InverseLibrary{cycleIdx})
-            % Compute and cache
-            Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
-            PROBLEM_CONSTANTS.InverseLibrary{cycleIdx} = inv(Mat);
-        end
-        sol = PROBLEM_CONSTANTS.InverseLibrary{cycleIdx} * indep;
     else
-        % Oscillating Gravity without Caching: Iterative Solver with Warm Start.
+        % Oscillating Gravity or No Cache: Iterative Solver with Warm Start.
         Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
 
         % Construct initial guess from previous condition (warm start)
@@ -55,7 +48,7 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
         z = previous_conditions.center_of_mass;
         x0 = [eta_rest; phi; p; v; z];
 
-        % GMRES Solve with Warm Start (no preconditioner). 
+        % GMRES Solve with Warm Start. Using 1e-8 for performance/stability balance.
         [sol, ~] = gmres(Mat, indep, [], 1e-8, 100, [], [], x0); 
     end
 

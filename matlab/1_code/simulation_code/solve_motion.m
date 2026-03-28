@@ -149,40 +149,6 @@ end
 stepsPerCycle = round((2 * pi / effective_w_adim) * temporalResolution); 
 dt = (2 * pi / effective_w_adim) / stepsPerCycle; % Adjusted adimensional time step
 
-% --- Smart Gatekeeper for Caching ---
-% Check if system is periodic
-isPeriodic = (abs(freq_adim - bath_freq_adim) < 1e-6) || (bath_forcing_amplitude == 0) || (forceAmplitude == 0);
-
-availableRAM = getAvailableRAM();
-useCaching = false;
-InverseLibrary = {};
-
-if NameValueArgs.forceNoCaching
-    fprintf('Smart Caching: DISABLED (Manual override via forceNoCaching)\n');
-elseif isPeriodic && bath_forcing_amplitude ~= 0
-    systemSize = 2 * nr + 2;
-    requiredRAM = stepsPerCycle * (systemSize^2) * 8;
-    if requiredRAM < 0.75 * availableRAM
-        useCaching = true;
-        InverseLibrary = cell(stepsPerCycle, 1);
-        fprintf('Smart Caching: ENABLED (Estimated RAM: %.2f GB)\n', requiredRAM/1e9);
-    elseif requiredRAM > availableRAM
-        fprintf('Smart Caching: DISABLED (Insufficient RAM: %.2f GB required, %.2f GB available)\n', requiredRAM/1e9, availableRAM/1e9);
-        warning('Oscillating bath with no caching will be slow. Using iterative solver.');
-    else
-        fprintf('Caching requires %.2f GB (Available: %.2f GB).\n', requiredRAM/1e9, availableRAM/1e9);
-        if ~usejava('desktop') || isempty(javachk('desktop'))
-             fprintf('Smart Caching: DISABLED (Headless mode)\n');
-        else
-             useCacheStr = input('Enable Caching? (y/n) [n]: ', 's');
-             if strcmpi(useCacheStr, 'y')
-                useCaching = true;
-                InverseLibrary = cell(stepsPerCycle, 1);
-             end
-        end
-    end
-end
-
 % Store problem constants for use in the simulation
 PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "reynolds", Re, "dr", dr, "DEBUG_FLAG", debug_flag, ...
@@ -195,7 +161,7 @@ PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "pressure_integral", pressureIntegral(spatialResolution+1, :), ...
     "precomputedInverse", precomputedInverse, ...
     "ylim_limit", H_limit_adim, "step_counter", 0, ...
-    "stepsPerCycle", stepsPerCycle, "useCaching", useCaching, "InverseLibrary", {InverseLibrary}); % CHANGED: Restore caching logic
+    "stepsPerCycle", stepsPerCycle); % CHANGED: Final clean version
 
 fprintf("Starting simulation on %s\n", pwd);
 
