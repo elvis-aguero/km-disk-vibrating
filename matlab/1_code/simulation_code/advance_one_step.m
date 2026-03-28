@@ -45,6 +45,14 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
             fprintf('Done.\n');
         end
         sol = PROBLEM_CONSTANTS.InverseLibrary{cycleIdx} * indep;
+        
+        % DIAGNOSTIC: Verify residual of cached solution. CHANGED
+        Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
+        res = norm(Mat * sol - indep) / norm(indep);
+        if res > 1e-6
+            fprintf('WARNING: Cache Inconsistency at cycleIdx %d. Relative Residual: %.2e\n', cycleIdx, res);
+            % If consistency is lost, we could force a re-inversion here.
+        end
     else
         % Oscillating Gravity or No Cache: Iterative Solver with Warm Start.
         Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
