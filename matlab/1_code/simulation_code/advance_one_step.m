@@ -35,28 +35,35 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
         % Static Gravity: Use precomputed inverse
         sol = PROBLEM_CONSTANTS.precomputedInverse * indep;
     elseif PROBLEM_CONSTANTS.useCaching
-        % Oscillating Gravity with LU Caching. CHANGED for stability.
-        if isempty(PROBLEM_CONSTANTS.L_Library{cycleIdx})
-            % Compute and cache LU factors
+        % Oscillating Gravity with Caching.
+        if isempty(PROBLEM_CONSTANTS.InverseLibrary{cycleIdx})
+            % FIRST CYCLE: Build, Invert, and Store
             Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
-            [L, U, P] = lu(Mat);
-            PROBLEM_CONSTANTS.L_Library{cycleIdx} = L;
-            PROBLEM_CONSTANTS.U_Library{cycleIdx} = U;
-            PROBLEM_CONSTANTS.P_Library{cycleIdx} = P;
+            PROBLEM_CONSTANTS.MatLibrary{cycleIdx} = Mat; % Store original matrix
+            PROBLEM_CONSTANTS.InverseLibrary{cycleIdx} = inv(Mat);
+            sol = PROBLEM_CONSTANTS.InverseLibrary{cycleIdx} * indep;
+        else
+            % SUBSEQUENT CYCLES: Perform Identity Test. CHANGED
+            % We build the matrix FRESH even though we have the cache
+            Mat_fresh = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
+            Mat_cached = PROBLEM_CONSTANTS.MatLibrary{cycleIdx};
+            
+            % BIT-FOR-BIT COMPARISON
+            diff_bits = Mat_fresh - Mat_cached;
+            max_err = max(abs(diff_bits(:)));
+            
+            if current_step < PROBLEM_CONSTANTS.stepsPerCycle * 2
+                fprintf('Step %d (Cycle 2, index %d): Matrix Identity Error = %.2e\n', ...
+                    current_step + 1, cycleIdx, max_err);
+                if max_err > 0
+                    fprintf('!!! BUG DETECTED: Matrix drifted by %.2e at Step %d\n', max_err, current_step + 1);
+                end
+            end
+            
+            % Apply the cached inverse
+            sol = PROBLEM_CONSTANTS.InverseLibrary{cycleIdx} * indep;
         end
-        % Apply LU factors: stable solve
-        sol = PROBLEM_CONSTANTS.U_Library{cycleIdx} \ (PROBLEM_CONSTANTS.L_Library{cycleIdx} \ (PROBLEM_CONSTANTS.P_Library{cycleIdx} * indep));
     else
-        % Oscillating Gravity without Caching: Iterative Solver with Warm Start.
-        Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
-        eta_rest = previous_conditions.bath_surface(cPoints+1:nr);
-        phi = previous_conditions.bath_potential;
-        p = previous_conditions.pressure;
-        v = previous_conditions.center_of_mass_velocity;
-        z = previous_conditions.center_of_mass;
-        x0 = [eta_rest; phi; p; v; z];
-        [sol, ~] = gmres(Mat, indep, [], 1e-8, 100, [], [], x0); 
-    end
 
     next_condition = previous_conditions;
     next_condition.bath_surface = [sol(end)* ones(cPoints, 1); sol(1:nr-cPoints)];
