@@ -30,9 +30,33 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
     
     indep = [b; CoM_vel - dt/Fr * g_prefactor - force_term; CoM];
     
-    % --- Solver Logic: Forced Fresh Direct Solve. CHANGED ---
-    Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
-    sol = Mat \ indep;
+    % --- Solver Logic ---
+    if gamma == 0 && ~any(isnan(PROBLEM_CONSTANTS.precomputedInverse(:)))
+        % Static Gravity: Use precomputed inverse
+        sol = PROBLEM_CONSTANTS.precomputedInverse * indep;
+    elseif PROBLEM_CONSTANTS.useCaching
+        % Oscillating Gravity with LU Caching. CHANGED
+        if isempty(PROBLEM_CONSTANTS.L_Library{cycleIdx})
+            % FIRST CYCLE: Build and cache LU
+            Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
+            [L, U, P] = lu(Mat);
+            PROBLEM_CONSTANTS.L_Library{cycleIdx} = L;
+            PROBLEM_CONSTANTS.U_Library{cycleIdx} = U;
+            PROBLEM_CONSTANTS.P_Library{cycleIdx} = P;
+        end
+        % Apply LU factors
+        sol = PROBLEM_CONSTANTS.U_Library{cycleIdx} \ (PROBLEM_CONSTANTS.L_Library{cycleIdx} \ (PROBLEM_CONSTANTS.P_Library{cycleIdx} * indep));
+    else
+        % Oscillating Gravity or No Cache: Iterative Solver with Warm Start.
+        Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
+        eta_rest = previous_conditions.bath_surface(cPoints+1:nr);
+        phi = previous_conditions.bath_potential;
+        p = previous_conditions.pressure;
+        v = previous_conditions.center_of_mass_velocity;
+        z = previous_conditions.center_of_mass;
+        x0 = [eta_rest; phi; p; v; z];
+        [sol, ~] = gmres(Mat, indep, [], 1e-8, 100, [], [], x0); 
+    end
 
     next_condition = previous_conditions;
     next_condition.bath_surface = [sol(end)* ones(cPoints, 1); sol(1:nr-cPoints)];
@@ -41,6 +65,11 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
     next_condition.center_of_mass_velocity = sol(end-1);
     next_condition.center_of_mass = sol(end);
     next_condition.time = next_condition.time + dt;
+    
+    % LIVE LOGGING. CHANGED
+    if mod(current_step, 10) == 0
+        fprintf('Step %d: z = %.4f\n', current_step + 1, next_condition.center_of_mass);
+    end
     
     % --- Numerical Guardrail ---
     if any(isnan(sol)) || any(isinf(sol)) || abs(next_condition.center_of_mass) > 10
