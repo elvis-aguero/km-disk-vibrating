@@ -63,6 +63,11 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
     next_condition.center_of_mass = sol(end);
     next_condition.time = next_condition.time + dt;
     
+    % --- Numerical Guardrail. CHANGED ---
+    if any(isnan(sol)) || any(isinf(sol)) || abs(next_condition.center_of_mass) > 10
+        error('Numerical Divergence Detected: CoM = %.2e. Terminating simulation.', next_condition.center_of_mass);
+    end
+    
 end
 
     function Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF)
