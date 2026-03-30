@@ -1,4 +1,0 @@
-Starting simulation on /Users/eaguerov/Documents/Github/km-disk-vibrating/matlab/1_code/simulation_code
-<a href="matlab: opentoline('/Users/eaguerov/Documents/Github/km-disk-vibrating/matlab/1_code/simulation_code/advance_one_step.m',52,1)">52  </a>        sol = Mat\indep;
-if system_dependent('IsDebugMode')==1, dbquit; end
-solve_motion

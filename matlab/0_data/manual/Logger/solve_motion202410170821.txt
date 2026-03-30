@@ -1,2 +1,0 @@
-Starting simulation on /Users/eaguerov/Documents/Github/km-disk-vibrating/matlab/1_code/simulation_code
-Finished simulation on /D50Quant100. Time elapsed: 0.25 minutes

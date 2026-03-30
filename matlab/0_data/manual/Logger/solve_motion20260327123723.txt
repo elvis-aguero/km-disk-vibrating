@@ -1,4 +1,0 @@
-Starting simulation on /Users/eaguerov/Documents/Github/km-disk-vibrating/matlab/1_code/simulation_code
-{Operation terminated by user during <a href="matlab:matlab.lang.internal.introspective.errorDocCallback('solve_motion', '/Users/eaguerov/Documents/Github/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m', 227)" style="font-weight:bold">solve_motion</a> (<a href="matlab: opentoline('/Users/eaguerov/Documents/Github/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m',227,0)">line 227</a>)
-} 
-solve_motion
