@@ -1,4 +1,4 @@
-function solve_motion(NameValueArgs)
+function [t_s, CoM_cm] = solve_motion(NameValueArgs)
 % SOLVE_MOTION Simulates the motion of a disk oscillating in a fluid bath.
 %   This function models the motion of a disk subjected to sinusoidal forces
 %   within a fluid environment using configurable parameters provided through
@@ -8,15 +8,15 @@ function solve_motion(NameValueArgs)
 arguments
     % Unless stated otherwise, all units are cgs. 
     % Default values amount to a water bath
-    NameValueArgs.diskRadius (1, 1) double = .5 % Radius of the oscillating disk, in cm
-    NameValueArgs.diskMass (1, 1) double = 1 % Mass in grams of the disk
+    NameValueArgs.diskRadius (1, 1) double = .2 % Radius of the oscillating disk, in cm
+    NameValueArgs.diskMass (1, 1) double = .0283 % Mass in grams of the disk
     NameValueArgs.forceAmplitude (1, 1) double = 0 % Amplitude of sinusoidal force applied to disk (in dynes)
     NameValueArgs.forceFrequency (1, 1) double = 90 % Frequency of sinusoidal force in Hz
-    NameValueArgs.bathAmplitude (1, 1) double = 0 % Amplitude of bath oscillation in cm. 
+    NameValueArgs.bathAmplitude (1, 1) double = 0.01 % Amplitude of bath oscillation in cm. 
     NameValueArgs.bathFrequency (1, 1) double = 90 % Frequency of bath oscillation in Hz. 
     NameValueArgs.phaseDifference (1, 1) double = -90 % Phase difference between disk forcing and bath oscillation in degrees.
     NameValueArgs.bathDensity (1, 1) double = 1 % Density of bath's fluid in g/cm^3
-    NameValueArgs.bathSurfaceTension (1, 1) double = 72.20 % For water, in dynes/cm
+    NameValueArgs.bathSurfaceTension (1, 1) double = 72.20 % For water, in dynes/cm % density 1.175 g/cm3, eta=0.018 Pa s
     NameValueArgs.bathViscosity (1, 1) double = 0.978e-2 % Viscosity in Stokes (cgs)
     NameValueArgs.g (1, 1) double = 981 % Gravitational constant in cgs
     NameValueArgs.bathDiameter (1, 1) double = 100 % Diameter of the bath wrt to disk Radius
@@ -24,7 +24,8 @@ arguments
     NameValueArgs.temporalResolution (1, 1) double = 20; % Number of temporal steps in one adimensional unit
     NameValueArgs.simulationTime (1, 1) double = 10/90; % Time to be simulated in seconds
     NameValueArgs.debug_flag (1, 1) logical = true; % To show some debugging info
-    NameValueArgs.forceNoCaching (1, 1) logical = false; % Manual override to disable RAM caching
+    NameValueArgs.solverType (1, 1) string = "auto" % "auto": LU-cached if RAM allows, else GMRES. Override with "lu" or "gmres".
+    NameValueArgs.gmresTolerance (1, 1) double = 1e-10 % GMRES convergence tolerance (used when GMRES is active)
 end
 
 % Record the time the script is run
@@ -110,10 +111,10 @@ bath_forcing_amplitude = NameValueArgs.bathAmplitude * bath_angular_freq^2 / g; 
 % Calculate initial velocity offset for zero lab velocity. 
 v_bath_0_adim = (NameValueArgs.bathAmplitude * bath_angular_freq * sin(phase_diff_rad)) / V_unit;
 
-% Calculate informed static ylim. 
+% Calculate informed static ylim.
 A_bath_adim = abs(NameValueArgs.bathAmplitude / L_unit);
 A_forcing_adim = force_adim / (freq_adim^2 + 1e-6); % Rough estimate
-H_limit_adim = 1.5 * (A_bath_adim + A_forcing_adim + 0.5); % Symmetric limit around z=0
+H_limit_adim = 1.5 * (A_bath_adim + A_forcing_adim) + 0.02; % Tighter symmetric limit around z=0
 
 % Steps per cycle must be an integer for periodic physics to be valid.
 if bath_forcing_amplitude == 0
@@ -128,7 +129,24 @@ dt = (2 * pi / effective_w_adim) / stepsPerCycle; % Adjusted adimensional time s
 
 steps = ceil(simulationTime / (dt * T_unit)); % Minimum number of time steps
 
-%Inintial conditions for the fluid
+% --- Resolve solver: LU-cached (default) or GMRES fallback ---
+luSizeBytes = stepsPerCycle * 2 * (2*nr+2)^2 * 8; % rough upper bound: L+U dense matrices
+availRAM    = getAvailableRAM();
+hasPCT      = license('test', 'Distrib_Computing_Toolbox');
+
+if solverType == "auto"
+    if availRAM >= 2 * luSizeBytes
+        resolvedSolver = "lu";
+    else
+        resolvedSolver = "gmres";
+        fprintf('RAM check: LU cache needs ~%.0f MB, available ~%.0f MB. Falling back to GMRES.\n', ...
+            2*luSizeBytes/1e6, availRAM/1e6);
+    end
+else
+    resolvedSolver = solverType; % explicit override by caller
+end
+
+%Initial conditions for the fluid
 etaInitial = zeros(nr,1); %initial surface elevation
 phiInitial = zeros(nr,1); %initial surface potential
 
@@ -154,12 +172,41 @@ PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "precomputedInverse", precomputedInverse, ...
     "ylim_limit", H_limit_adim, "step_counter", 0, ...
     "stepsPerCycle", stepsPerCycle, ...
-    "useCaching", ~NameValueArgs.forceNoCaching, ...
+    "solverType", resolvedSolver, ...
+    "gmresTolerance", NameValueArgs.gmresTolerance, ...
+    "gmres_x0", zeros(2*nr+2, 1), ...
+    "luFutures", {{}}, ...
     "L_Library", {cell(stepsPerCycle, 1)}, ...
     "U_Library", {cell(stepsPerCycle, 1)}, ...
-    "P_Library", {cell(stepsPerCycle, 1)}); % Final production LU caching
+    "P_Library", {cell(stepsPerCycle, 1)});
 
 fprintf("Starting simulation on %s\n", pwd);
+
+% --- Async LU pre-computation ---
+% Fire parfeval futures for all stepsPerCycle LU factorizations before the
+% main loop starts.  Each advance_one_step call fetches only the future it
+% needs (blocks just for that one if not yet ready).
+% Without PCT, falls back to lazy-sync LU: LU computed on first miss inside
+% advance_one_step, cached for all subsequent cycles.
+if resolvedSolver == "lu"
+    if hasPCT
+        fprintf('Firing %d async LU futures (~%.0f MB)...\n', stepsPerCycle, luSizeBytes/1e6);
+        PC_min = struct('weber', We, 'reynolds', Re, 'froude', Fr, ...
+                        'laplacian', laplacian, 'DTN', DTN, ...
+                        'pressure_integral', pressureIntegral(spatialResolution+1, :), ...
+                        'obj_mass', obj_mass_adim);
+        luFutures = cell(stepsPerCycle, 1);
+        for ci = 1:stepsPerCycle
+            g_pf = 1 - bath_forcing_amplitude * cos(bath_freq_adim * ci * dt + phase_diff_rad);
+            luFutures{ci} = parfeval(@computeLU, 3, PC_min, g_pf, dt, nr, spatialResolution+1, dr, surface_force_adim);
+        end
+        PROBLEM_CONSTANTS.luFutures = luFutures;
+    else
+        fprintf('LU caching active (lazy-sync: no Parallel Computing Toolbox detected).\n');
+    end
+else
+    fprintf('Solver: GMRES (tol=%.0e, warm-started).\n', NameValueArgs.gmresTolerance);
+end
 
 % Names of the variables to be saved
 savingvarNames = { ...
@@ -191,39 +238,52 @@ try
             
             eta = recordedConditions{current_index}.bath_surface;
             eta = [flipud(eta(2:width)); eta(1:width)];
-            xplot = dr*(0:nr-1);
-            plot([-fliplr(xplot(2:width)), xplot(1:width)], eta + zb, 'b', 'Linewidth', 2);
+            xplot = dr*(0:nr-1) * L_unit;
+            plot([-fliplr(xplot(2:width)), xplot(1:width)], (eta + zb) * L_unit * 1e4, 'b', 'Linewidth', 2);
             hold on
             
-            x = [1, 1, -1, -1];
+            x = [1, 1, -1, -1] * L_unit;
             z = recordedConditions{current_index}.center_of_mass;
             z_lab = z + zb;
-            y = [z_lab, z_lab+1/10, z_lab+1/10, z_lab];
+            block_height = 0.15 * PROBLEM_CONSTANTS.ylim_limit; % Dimensionless height relative to ylim
+            y = [z_lab, z_lab+block_height, z_lab+block_height, z_lab] * L_unit * 1e4;
             fill(x, y, 'k');
+
+            % Plot bath amplitude markers just outside the axes
+            A_bath_um = (gamma / (Fr * bath_w^2)) * L_unit * 1e4;
+            plot(3.05 * L_unit, A_bath_um, '<r', 'MarkerSize', 8, 'MarkerFaceColor', 'r', 'Clipping', 'off');
+            plot(3.05 * L_unit, -A_bath_um, '<r', 'MarkerSize', 8, 'MarkerFaceColor', 'r', 'Clipping', 'off');
   
-            title(sprintf('   t = %0.3f s, z_{lab} = %.2f', recordedConditions{current_index}.time*T_unit, z_lab*L_unit),'FontSize',16);
+            title(sprintf('   t = %0.3f ms, z_{lab} = %.2f cm', recordedConditions{current_index}.time*T_unit*1000, z_lab*L_unit),'FontSize',16);
+            xlabel("x (cm)"); ylabel("y (\mum)");
             grid on
             hold off;
-            xlim([-3, 3]);
-            ylim([-PROBLEM_CONSTANTS.ylim_limit, PROBLEM_CONSTANTS.ylim_limit]);
+            xlim([-3 * L_unit, 3 * L_unit]);
+            ylim([-PROBLEM_CONSTANTS.ylim_limit * L_unit * 1e4, PROBLEM_CONSTANTS.ylim_limit * L_unit * 1e4]);
             drawnow;
         end
      end 
     
-    % Strip large Libraries before saving
+    % Strip large / non-serializable fields before saving
     if isfield(PROBLEM_CONSTANTS, 'L_Library')
-        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, {'L_Library', 'U_Library', 'P_Library'}); 
+        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, {'L_Library', 'U_Library', 'P_Library'});
+    end
+    if isfield(PROBLEM_CONSTANTS, 'luFutures')
+        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, 'luFutures');
     end
 
     for ii = 1:length(savingvarNames)
-       variableValues{ii} = eval(savingvarNames{ii}); 
+       variableValues{ii} = eval(savingvarNames{ii});
     end
     results_saver("simulationResults", 1:(current_index-1), variableValues, savingvarNames, NameValueArgs);
 
 catch ME
-    % Strip large Libraries before saving errored results. CHANGED
+    % Strip large / non-serializable fields before saving errored results
     if isfield(PROBLEM_CONSTANTS, 'L_Library')
-        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, {'L_Library', 'U_Library', 'P_Library'}); 
+        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, {'L_Library', 'U_Library', 'P_Library'});
+    end
+    if isfield(PROBLEM_CONSTANTS, 'luFutures')
+        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, 'luFutures');
     end
     for ii = 1:length(savingvarNames)
        variableValues{ii} = eval(savingvarNames{ii}); 
@@ -232,6 +292,13 @@ catch ME
     fprintf("Couldn't run simulation"); 
     save(sprintf("error_log%s.mat", datetimeMarker),'ME');
 end 
+
+% Return CoM trajectory in physical units if caller requested outputs
+if nargout > 0
+    valid  = 1:current_index;
+    t_s    = cellfun(@(c) c.time * T_unit,           recordedConditions(valid));
+    CoM_cm = cellfun(@(c) c.center_of_mass * L_unit, recordedConditions(valid));
+end
 
 mypwd = split(pwd, "1_code"); mypwd = mypwd{2};
 fprintf("Finished simulation on %s. Time elapsed: %0.2f minutes\n", mypwd, toc/60);
@@ -246,7 +313,9 @@ function results_saver(fileName, indexes, variables, variableNames, NameValueArg
         sprintf("rho%.2fgcm3-sigma%.2fdynecm-nu%.4fSt", ...
         NameValueArgs.bathDensity, NameValueArgs.bathSurfaceTension, NameValueArgs.bathViscosity), ...
         sprintf("diskRadius%.2gcm-diskMass%.2gg", NameValueArgs.diskRadius, NameValueArgs.diskMass), ...
-        sprintf("forceAmplitude%gdyne-forceFrequency%gHz", NameValueArgs.forceAmplitude, NameValueArgs.forceFrequency/(2*pi))
+        sprintf("forceAmplitude%gdyne-forceFrequency%gHz", NameValueArgs.forceAmplitude, NameValueArgs.forceFrequency/(2*pi)), ...
+        sprintf("bathAmplitude%.4gcm-bathFrequency%gHz-phaseDiff%gdeg", ...
+        NameValueArgs.bathAmplitude, NameValueArgs.bathFrequency, NameValueArgs.phaseDifference)
     };
     for ii = 1:length(folders)
         folder = folders{ii};
@@ -283,12 +352,3 @@ function out = getVarName(var)
     out = inputname(1);
 end
 
-function Mat = buildStaticMatrix(Fr, We, Re, dr, Delta, DTN, pIntegral, Ma, nr, cPoints, dt, SF)
-    Sist = [[eye(nr)-dt*2*Delta/Re,-dt*DTN];...
-        [dt*(eye(nr)/Fr - Delta/We),eye(nr)-dt*2*Delta/Re]]; 
-    Mat =  [[Sist(:,(cPoints+1):2*nr),...
-        [zeros(nr,cPoints);dt*eye(cPoints);zeros(nr-cPoints,cPoints)],...
-        zeros(2*nr,1),Sist(:,1:cPoints)*ones(cPoints,1)];
-        [-SF*dt/dr, zeros(1,2*nr-cPoints-1),-dt*pIntegral(1:cPoints)/Ma, 1 , SF*dt/dr];
-        [zeros(1,2*nr-cPoints),-zeros(1, cPoints)  ,-dt,1]];
-end

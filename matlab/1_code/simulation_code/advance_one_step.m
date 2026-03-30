@@ -32,10 +32,25 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
     % --- Solver Logic ---
     if gamma == 0 && ~any(isnan(PROBLEM_CONSTANTS.precomputedInverse(:)))
         sol = PROBLEM_CONSTANTS.precomputedInverse * indep;
-    elseif PROBLEM_CONSTANTS.useCaching
+    elseif PROBLEM_CONSTANTS.solverType == "gmres"
+        Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
+        [sol, flag] = gmres(Mat, indep, [], PROBLEM_CONSTANTS.gmresTolerance, size(Mat,1), [], [], PROBLEM_CONSTANTS.gmres_x0);
+        if flag ~= 0
+            warning('advance_one_step:gmresNoConverge', ...
+                'GMRES did not converge at step %d (flag=%d)', current_step, flag);
+        end
+        PROBLEM_CONSTANTS.gmres_x0 = sol;
+    elseif PROBLEM_CONSTANTS.solverType == "lu"
         if isempty(PROBLEM_CONSTANTS.L_Library{cycleIdx})
-            Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
-            [L, U, P] = lu(Mat);
+            % Fetch async future if available (fired by solve_motion before the loop)
+            if ~isempty(PROBLEM_CONSTANTS.luFutures) && ~isempty(PROBLEM_CONSTANTS.luFutures{cycleIdx})
+                [L, U, P] = fetchOutputs(PROBLEM_CONSTANTS.luFutures{cycleIdx});
+                PROBLEM_CONSTANTS.luFutures{cycleIdx} = []; % release handle
+            else
+                % Lazy-sync fallback: no PCT available
+                Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
+                [L, U, P] = lu(Mat);
+            end
             PROBLEM_CONSTANTS.L_Library{cycleIdx} = L;
             PROBLEM_CONSTANTS.U_Library{cycleIdx} = U;
             PROBLEM_CONSTANTS.P_Library{cycleIdx} = P;
@@ -44,9 +59,6 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
         U = PROBLEM_CONSTANTS.U_Library{cycleIdx};
         P = PROBLEM_CONSTANTS.P_Library{cycleIdx};
         sol = U \ (L \ (P * indep));
-    else
-        Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
-        sol = Mat \ indep;
     end
 
     % Standard Master Branch Mapping
@@ -64,22 +76,3 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
     end
 end
 
-function Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF)
-    We = PROBLEM_CONSTANTS.weber;
-    Re = PROBLEM_CONSTANTS.reynolds;
-    Delta = PROBLEM_CONSTANTS.laplacian;
-    DTN = PROBLEM_CONSTANTS.DTN;
-    Fr = PROBLEM_CONSTANTS.froude;
-    pIntegral = PROBLEM_CONSTANTS.pressure_integral;
-    Ma = PROBLEM_CONSTANTS.obj_mass;
-
-    % Re-constructing exactly as master
-    Sist = [[eye(nr)-dt*2*Delta/Re,-dt*DTN];...
-            [dt*(eye(nr)/Fr * g_prefactor - Delta/We),eye(nr)-dt*2*Delta/Re]]; 
-      
-    Mat =  [[Sist(:,(cPoints+1):2*nr),...
-        [zeros(nr,cPoints);dt*eye(cPoints);zeros(nr-cPoints,cPoints)],...
-        zeros(2*nr,1),Sist(:,1:cPoints)*ones(cPoints,1)];
-        [-SF*dt/dr, zeros(1,2*nr-cPoints-1),-dt*pIntegral(1:cPoints)/Ma, 1 , SF*dt/dr];
-        [zeros(1,2*nr-cPoints),-zeros(1, cPoints)  ,-dt,1]];
-end

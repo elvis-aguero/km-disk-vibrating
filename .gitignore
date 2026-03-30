@@ -30,6 +30,13 @@ Manifest.toml
 **/*.asv
 *.m~
 
+# Run logs and generated plots (never commit)
+matlab/0_data/manual/Logger/*.txt
+matlab/1_code/sweeper_*.txt
+matlab/1_code/simulation_code/benchmark_*.png
+matlab/1_code/sweep_results/
+matlab/1_code/D20Quant20/
+
 
 # Other files
 .DS_Store
