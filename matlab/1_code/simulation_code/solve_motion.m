@@ -21,7 +21,7 @@ arguments
     NameValueArgs.g (1, 1) double = 981 % Gravitational constant in cgs
     NameValueArgs.bathDiameter (1, 1) double = 100 % Diameter of the bath wrt to disk Radius
     NameValueArgs.spatialResolution (1, 1) double = 50 % Number of numerical radial intervals in one disk radius
-    NameValueArgs.temporalResolution (1, 1) double = 20; % Number of temporal steps in one adimensional unit
+    NameValueArgs.temporalResolution (1, 1) double = 30; % Number of temporal steps in one adimensional unit
     NameValueArgs.simulationTime (1, 1) double = 10/90; % Time to be simulated in seconds
     NameValueArgs.debug_flag (1, 1) logical = true; % To show some debugging info
     NameValueArgs.solverType (1, 1) string = "auto" % "auto": LU-cached if RAM allows, else GMRES. Override with "lu" or "gmres".
@@ -124,23 +124,25 @@ elseif forceAmplitude == 0
 else
     effective_w_adim = bath_freq_adim; % Use bath freq as reference
 end
-stepsPerCycle = round((2 * pi / effective_w_adim) * temporalResolution); 
+stepsPerCycle = temporalResolution; 
 dt = (2 * pi / effective_w_adim) / stepsPerCycle; % Adjusted adimensional time step
 
 steps = ceil(simulationTime / (dt * T_unit)); % Minimum number of time steps
 
 % --- Resolve solver: LU-cached (default) or GMRES fallback ---
-luSizeBytes = stepsPerCycle * 2 * (2*nr+2)^2 * 8; % rough upper bound: L+U dense matrices
+% stepsPerCycle = round(2*pi * temporalResolution), NOT temporalResolution.
+% Each factorization stores L, U, P as full dense matrices: 3*(2*nr+2)^2*8 bytes.
+luSizeBytes = stepsPerCycle * 3 * (2*nr+2)^2 * 8;
 availRAM    = getAvailableRAM();
 hasPCT      = license('test', 'Distrib_Computing_Toolbox');
 
 if solverType == "auto"
-    if availRAM >= 2 * luSizeBytes
+    if availRAM >= luSizeBytes
         resolvedSolver = "lu";
     else
         resolvedSolver = "gmres";
-        fprintf('RAM check: LU cache needs ~%.0f MB, available ~%.0f MB. Falling back to GMRES.\n', ...
-            2*luSizeBytes/1e6, availRAM/1e6);
+        fprintf('RAM check: LU cache needs ~%.1f GB (%d matrices x %.0f MB), available ~%.1f GB. Falling back to GMRES.\n', ...
+            luSizeBytes/1e9, stepsPerCycle, luSizeBytes/stepsPerCycle/1e6, availRAM/1e9);
     end
 else
     resolvedSolver = solverType; % explicit override by caller
@@ -190,7 +192,7 @@ fprintf("Starting simulation on %s\n", pwd);
 % advance_one_step, cached for all subsequent cycles.
 if resolvedSolver == "lu"
     if hasPCT
-        fprintf('Firing %d async LU futures (~%.0f MB)...\n', stepsPerCycle, luSizeBytes/1e6);
+        fprintf('Firing %d async LU futures (~%.1f GB)...\n', stepsPerCycle, luSizeBytes/1e9);
         PC_min = struct('weber', We, 'reynolds', Re, 'froude', Fr, ...
                         'laplacian', laplacian, 'DTN', DTN, ...
                         'pressure_integral', pressureIntegral(spatialResolution+1, :), ...
