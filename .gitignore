@@ -30,6 +30,9 @@ Manifest.toml
 **/*.asv
 *.m~
 
+# Simulation results (data, not source)
+matlab/0_data/simulationResults/
+
 # Run logs and generated plots (never commit)
 matlab/0_data/manual/Logger/*.txt
 matlab/1_code/sweeper_*.txt

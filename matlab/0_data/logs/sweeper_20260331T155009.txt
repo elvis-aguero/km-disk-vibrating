@@ -1,0 +1,104 @@
+Sweep started: 31-Mar-2026 15:50:09
+Axes: gamma=[0.05         0.2         0.5]  frequency=[10  20  30  40  50  60  70  80  90] Hz
+Fixed params:
+            diskRadius: 0.2000
+              diskMass: 0.0283
+        forceAmplitude: 0
+        forceFrequency: 90
+       phaseDifference: -90
+           bathDensity: 1.1750
+    bathSurfaceTension: 66.5000
+         bathViscosity: 0.1532
+          bathDiameter: 100
+     spatialResolution: 50
+    temporalResolution: 60
+        simulationTime: 0.6667
+            debug_flag: 0
+            solverType: "auto"
+
+Total cases: 27
+
+[1/27]  gamma=0.050  f=10 Hz  -> A=0.0124 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[2/27]  gamma=0.200  f=10 Hz  -> A=0.0497 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[3/27]  gamma=0.500  f=10 Hz  -> A=0.1242 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[4/27]  gamma=0.050  f=20 Hz  -> A=0.0031 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[5/27]  gamma=0.200  f=20 Hz  -> A=0.0124 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[6/27]  gamma=0.500  f=20 Hz  -> A=0.0311 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[7/27]  gamma=0.050  f=30 Hz  -> A=0.0014 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[8/27]  gamma=0.200  f=30 Hz  -> A=0.0055 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[9/27]  gamma=0.500  f=30 Hz  -> A=0.0138 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[10/27]  gamma=0.050  f=40 Hz  -> A=0.0008 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[11/27]  gamma=0.200  f=40 Hz  -> A=0.0031 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[12/27]  gamma=0.500  f=40 Hz  -> A=0.0078 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[13/27]  gamma=0.050  f=50 Hz  -> A=0.0005 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[14/27]  gamma=0.200  f=50 Hz  -> A=0.0020 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[15/27]  gamma=0.500  f=50 Hz  -> A=0.0050 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[16/27]  gamma=0.050  f=60 Hz  -> A=0.0003 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[17/27]  gamma=0.200  f=60 Hz  -> A=0.0014 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[18/27]  gamma=0.500  f=60 Hz  -> A=0.0035 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[19/27]  gamma=0.050  f=70 Hz  -> A=0.0003 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[20/27]  gamma=0.200  f=70 Hz  -> A=0.0010 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[21/27]  gamma=0.500  f=70 Hz  -> A=0.0025 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[22/27]  gamma=0.050  f=80 Hz  -> A=0.0002 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[23/27]  gamma=0.200  f=80 Hz  -> A=0.0008 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[24/27]  gamma=0.500  f=80 Hz  -> A=0.0019 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[25/27]  gamma=0.050  f=90 Hz  -> A=0.0002 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[26/27]  gamma=0.200  f=90 Hz  -> A=0.0006 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+[27/27]  gamma=0.500  f=90 Hz  -> A=0.0015 cm
+  ERROR after 0.0 s: Error: File: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code/solve_motion.m Line: 295 Column: 5
+Function definition is misplaced or improperly nested.
+
+Sweep finished: 31-Mar-2026 15:50:09
+Summary: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/sweep_results/summary_20260331T155009.csv

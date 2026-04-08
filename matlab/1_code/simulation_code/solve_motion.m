@@ -1,7 +1,7 @@
-function [t_s, CoM_cm] = solve_motion(NameValueArgs)
+function [t_s, CoM_cm, eta_history_cm] = solve_motion(NameValueArgs)
 % SOLVE_MOTION Simulates the motion of a disk oscillating in a fluid bath.
-%   This function models the motion of a disk subjected to sinusoidal forces
-%   within a fluid environment using configurable parameters provided through
+%   This function models the motion of a disk and a bath, both subjected to 
+%   sinusoidal forces using configurable parameters provided through
 %   name-value arguments.
 
 % Parse input arguments using name-value pairs and set default values
@@ -50,7 +50,11 @@ addpath(currfold);
 precomputedInverse = nan; 
 cd ..
 % Start logging if debugging is enabled
-if debug_flag == true; diary(sprintf("../0_data/manual/Logger/solve_motion%s.txt", datetimeMarker)); end
+if debug_flag == true
+    logDir = fullfile(fileparts(mfilename('fullpath')), '..', '..', '0_data', 'logs');
+    if ~exist(logDir, 'dir'); mkdir(logDir); end
+    diary(fullfile(logDir, sprintf("solve_motion%s.txt", datetimeMarker))); 
+end
 
 % Set up folder for data saving
 fold = fullfile(pwd, sprintf("D%dQuant%d", spatialResolution, bathDiameter));
@@ -130,10 +134,10 @@ dt = (2 * pi / effective_w_adim) / stepsPerCycle; % Adjusted adimensional time s
 steps = ceil(simulationTime / (dt * T_unit)); % Minimum number of time steps
 
 % --- Resolve solver: LU-cached (default) or GMRES fallback ---
-% stepsPerCycle = round(2*pi * temporalResolution), NOT temporalResolution.
+% stepsPerCycle = round(2*pi * temporalResolution)
 % Each factorization stores L, U, P as full dense matrices: 3*(2*nr+2)^2*8 bytes.
-luSizeBytes = stepsPerCycle * 3 * (2*nr+2)^2 * 8;
-availRAM    = getAvailableRAM();
+luSizeBytes = stepsPerCycle * 3 * (2*nr+2)^2 * 8; %Estimated bytes needed in memory
+availRAM    = getAvailableRAM(); %Max RAM available to the computer
 hasPCT      = license('test', 'Distrib_Computing_Toolbox');
 
 if solverType == "auto"
@@ -292,7 +296,10 @@ catch ME
     end
     results_saver("errored_results", 1:(current_index-1), variableValues, savingvarNames, NameValueArgs);
     fprintf("Couldn't run simulation"); 
-    save(sprintf("error_log%s.mat", datetimeMarker),'ME');
+    
+    logDir = fullfile(fileparts(mfilename('fullpath')), '..', '..', '0_data', 'logs');
+    if ~exist(logDir, 'dir'); mkdir(logDir); end
+    save(fullfile(logDir, sprintf("error_log%s.mat", datetimeMarker)),'ME');
 end 
 
 % Return CoM trajectory in physical units if caller requested outputs
@@ -300,6 +307,10 @@ if nargout > 0
     valid  = 1:current_index;
     t_s    = cellfun(@(c) c.time * T_unit,           recordedConditions(valid));
     CoM_cm = cellfun(@(c) c.center_of_mass * L_unit, recordedConditions(valid));
+
+    % Collect the full bath surface history (each column is one time step)
+    % Size: [nr x steps]
+    eta_history_cm = cell2mat(cellfun(@(c) c.bath_surface, recordedConditions(valid), 'UniformOutput', false)') * L_unit;
 end
 
 mypwd = split(pwd, "1_code"); mypwd = mypwd{2};
@@ -311,6 +322,10 @@ end
 
 function results_saver(fileName, indexes, variables, variableNames, NameValueArgs)
     currfold = pwd;
+    % Root all results in 0_data/simulationResults/, never inside simulation_code/
+    dataRoot = fullfile(fileparts(mfilename('fullpath')), '..', '..', '0_data', 'simulationResults');
+    if ~exist(dataRoot, 'dir'); mkdir(dataRoot); end
+    cd(dataRoot);
     folders = { ...
         sprintf("rho%.2fgcm3-sigma%.2fdynecm-nu%.4fSt", ...
         NameValueArgs.bathDensity, NameValueArgs.bathSurfaceTension, NameValueArgs.bathViscosity), ...
@@ -353,4 +368,3 @@ end
 function out = getVarName(var)
     out = inputname(1);
 end
-

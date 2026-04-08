@@ -1,0 +1,161 @@
+Sweep started: 31-Mar-2026 15:53:48
+Axes: gamma=[0.05         0.2         0.5]  frequency=[10  20  30  40  50  60  70  80  90] Hz
+Fixed params:
+            diskRadius: 0.2000
+              diskMass: 0.0283
+        forceAmplitude: 0
+        forceFrequency: 90
+       phaseDifference: -90
+           bathDensity: 1.1750
+    bathSurfaceTension: 66.5000
+         bathViscosity: 0.1532
+          bathDiameter: 100
+     spatialResolution: 50
+    temporalResolution: 60
+        simulationTime: 0.6667
+            debug_flag: 0
+            solverType: "auto"
+
+Total cases: 27
+
+[1/27]  gamma=0.050  f=10 Hz  -> A=0.0124 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to parallel pool with 6 workers.
+Finished simulation on /simulation_code. Time elapsed: 5.97 minutes
+  Done in 363.7 s  |CoM|_max=3.532e-02 cm  |CoM|_rms=2.932e-02 cm
+[2/27]  gamma=0.200  f=10 Hz  -> A=0.0497 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.28 minutes
+  Done in 322.6 s  |CoM|_max=3.469e-02 cm  |CoM|_rms=2.939e-02 cm
+[3/27]  gamma=0.500  f=10 Hz  -> A=0.1242 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Couldn't run simulationFinished simulation on /simulation_code. Time elapsed: 3.90 minutes
+  Done in 239.9 s  |CoM|_max=1.990e+00 cm  |CoM|_rms=3.348e-01 cm
+[4/27]  gamma=0.050  f=20 Hz  -> A=0.0031 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.36 minutes
+  Done in 327.4 s  |CoM|_max=3.685e-02 cm  |CoM|_rms=2.933e-02 cm
+[5/27]  gamma=0.200  f=20 Hz  -> A=0.0124 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.81 minutes
+  Done in 354.9 s  |CoM|_max=3.817e-02 cm  |CoM|_rms=2.945e-02 cm
+[6/27]  gamma=0.500  f=20 Hz  -> A=0.0311 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.70 minutes
+  Done in 347.6 s  |CoM|_max=1.729e-01 cm  |CoM|_rms=4.334e-02 cm
+[7/27]  gamma=0.050  f=30 Hz  -> A=0.0014 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.05 minutes
+  Done in 308.4 s  |CoM|_max=3.689e-02 cm  |CoM|_rms=2.934e-02 cm
+[8/27]  gamma=0.200  f=30 Hz  -> A=0.0055 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.39 minutes
+  Done in 328.9 s  |CoM|_max=3.774e-02 cm  |CoM|_rms=2.941e-02 cm
+[9/27]  gamma=0.500  f=30 Hz  -> A=0.0138 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.23 minutes
+  Done in 319.3 s  |CoM|_max=3.980e-02 cm  |CoM|_rms=2.976e-02 cm
+[10/27]  gamma=0.050  f=40 Hz  -> A=0.0008 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.19 minutes
+  Done in 316.5 s  |CoM|_max=3.651e-02 cm  |CoM|_rms=2.936e-02 cm
+[11/27]  gamma=0.200  f=40 Hz  -> A=0.0031 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.49 minutes
+  Done in 335.1 s  |CoM|_max=3.741e-02 cm  |CoM|_rms=2.939e-02 cm
+[12/27]  gamma=0.500  f=40 Hz  -> A=0.0078 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.44 minutes
+  Done in 332.0 s  |CoM|_max=3.999e-02 cm  |CoM|_rms=2.958e-02 cm
+[13/27]  gamma=0.050  f=50 Hz  -> A=0.0005 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.32 minutes
+  Done in 324.7 s  |CoM|_max=3.706e-02 cm  |CoM|_rms=2.935e-02 cm
+[14/27]  gamma=0.200  f=50 Hz  -> A=0.0020 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.14 minutes
+  Done in 313.9 s  |CoM|_max=3.790e-02 cm  |CoM|_rms=2.937e-02 cm
+[15/27]  gamma=0.500  f=50 Hz  -> A=0.0050 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.35 minutes
+  Done in 326.8 s  |CoM|_max=3.965e-02 cm  |CoM|_rms=2.947e-02 cm
+[16/27]  gamma=0.050  f=60 Hz  -> A=0.0003 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.18 minutes
+  Done in 316.4 s  |CoM|_max=3.695e-02 cm  |CoM|_rms=2.939e-02 cm
+[17/27]  gamma=0.200  f=60 Hz  -> A=0.0014 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.13 minutes
+  Done in 313.0 s  |CoM|_max=3.749e-02 cm  |CoM|_rms=2.940e-02 cm
+[18/27]  gamma=0.500  f=60 Hz  -> A=0.0035 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.22 minutes
+  Done in 318.7 s  |CoM|_max=3.869e-02 cm  |CoM|_rms=2.946e-02 cm
+[19/27]  gamma=0.050  f=70 Hz  -> A=0.0003 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.12 minutes
+  Done in 312.4 s  |CoM|_max=3.678e-02 cm  |CoM|_rms=2.938e-02 cm
+[20/27]  gamma=0.200  f=70 Hz  -> A=0.0010 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.34 minutes
+  Done in 326.0 s  |CoM|_max=3.702e-02 cm  |CoM|_rms=2.939e-02 cm
+[21/27]  gamma=0.500  f=70 Hz  -> A=0.0025 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.24 minutes
+  Done in 320.1 s  |CoM|_max=3.771e-02 cm  |CoM|_rms=2.942e-02 cm
+[22/27]  gamma=0.050  f=80 Hz  -> A=0.0002 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.12 minutes
+  Done in 312.2 s  |CoM|_max=3.697e-02 cm  |CoM|_rms=2.943e-02 cm
+[23/27]  gamma=0.200  f=80 Hz  -> A=0.0008 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.32 minutes
+  Done in 324.8 s  |CoM|_max=3.725e-02 cm  |CoM|_rms=2.943e-02 cm
+[24/27]  gamma=0.500  f=80 Hz  -> A=0.0019 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.23 minutes
+  Done in 319.9 s  |CoM|_max=3.784e-02 cm  |CoM|_rms=2.945e-02 cm
+[25/27]  gamma=0.050  f=90 Hz  -> A=0.0002 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.52 minutes
+  Done in 337.1 s  |CoM|_max=3.688e-02 cm  |CoM|_rms=2.938e-02 cm
+[26/27]  gamma=0.200  f=90 Hz  -> A=0.0006 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.55 minutes
+  Done in 338.7 s  |CoM|_max=3.705e-02 cm  |CoM|_rms=2.939e-02 cm
+[27/27]  gamma=0.500  f=90 Hz  -> A=0.0015 cm
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+Firing 60 async LU futures (~36.0 GB)...
+Finished simulation on /simulation_code. Time elapsed: 5.56 minutes
+  Done in 339.7 s  |CoM|_max=3.751e-02 cm  |CoM|_rms=2.940e-02 cm
+
+Sweep finished: 31-Mar-2026 18:19:30
+Summary: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/sweep_results/summary_20260331T181930.csv
+Parallel pool using the 'Processes' profile is shutting down.

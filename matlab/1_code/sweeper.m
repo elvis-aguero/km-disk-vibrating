@@ -13,8 +13,8 @@
 function sweeper()
 
 %% ---- SWEEP PARAMETERS --------------------------------------------------
-sweep.gamma         = [0.5, 1.0, 1.5];        % dimensionless bath acceleration Gamma = A*w^2/g
-sweep.bathFrequency = [60, 70, 80, 90, 100];   % Hz
+sweep.gamma         = [0.05, 0.2, 0.5];        % dimensionless bath acceleration Gamma = A*w^2/g
+sweep.bathFrequency = 10:10:100;   % Hz
 
 %% ---- FIXED PARAMETERS --------------------------------------------------
 g_cgs                    = 981;       % cm/s^2
@@ -24,13 +24,13 @@ fixed.diskMass           = 0.0283;    % g
 fixed.forceAmplitude     = 0.0;       % dynes
 fixed.forceFrequency     = 90;        % Hz  (sets time unit; bath drives motion)
 fixed.phaseDifference    = -90;       % degrees
-fixed.bathDensity        = 1.0;       % g/cm^3
-fixed.bathSurfaceTension = 72.20;     % dynes/cm
-fixed.bathViscosity      = 0.978e-2;  % Stokes
-fixed.bathDiameter       = 20;        % disk radii
-fixed.spatialResolution  = 5;         % intervals per disk radius
-fixed.temporalResolution = 20;        % steps per adimensional unit
-fixed.simulationTime     = 5/90;      % s  (5 forcing periods)
+fixed.bathDensity        = 1.175;     % g/cm^3
+fixed.bathSurfaceTension = 66.5;     % dynes/cm
+fixed.bathViscosity      = 0.18/1.175;  % Stokes
+fixed.bathDiameter       = 100;        % disk radii
+fixed.spatialResolution  = 50;         % intervals per disk radius
+fixed.temporalResolution = 60;        % steps per adimensional unit
+fixed.simulationTime     = 30/90;      % s
 fixed.debug_flag         = false;
 fixed.solverType         = "auto";
 %% -----------------------------------------------------------------------
@@ -39,8 +39,9 @@ fixed.solverType         = "auto";
 codeFolder = fullfile(fileparts(mfilename('fullpath')), 'simulation_code');
 addpath(codeFolder);
 
-% Output directory for CSVs
-outDir = fullfile(fileparts(mfilename('fullpath')), 'sweep_results');
+% Output directory for CSVs (timestamped subfolder)
+timestamp = datestr(now, 'yyyymmdd_HHMMSS');
+outDir = fullfile(fileparts(mfilename('fullpath')), '..', '0_data', 'sweep_results', ['sweep_', timestamp]);
 if ~exist(outDir, 'dir'); mkdir(outDir); end
 
 % Build Cartesian product of sweep axes
@@ -48,8 +49,9 @@ if ~exist(outDir, 'dir'); mkdir(outDir); end
 nCases   = numel(GG);
 
 % Logging
-logFile = fullfile(fileparts(mfilename('fullpath')), ...
-    sprintf('sweeper_%s.txt', datestr(datetime(), 30)));
+logDir = fullfile(fileparts(mfilename('fullpath')), '..', '0_data', 'logs');
+if ~exist(logDir, 'dir'); mkdir(logDir); end
+logFile = fullfile(logDir, sprintf('sweeper_%s.txt', datestr(datetime(), 30)));
 diary(logFile);
 fprintf('Sweep started: %s\n', datestr(datetime()));
 fprintf('Axes: gamma=[%s]  frequency=[%s] Hz\n', ...
@@ -64,10 +66,13 @@ for ii = 1:nCases
     gamma_i = GG(ii);
     freq_i  = FF(ii);
     omega_i = 2 * pi * freq_i;
-    A_i     = gamma_i * g_cgs / omega_i^2;   % bath amplitude for this Gamma
+    
+    % F / (m*g) = gamma  =>  F = gamma * m * g
+    F_i = gamma_i * fixed.diskMass * g_cgs; 
+    A_forcing_i = (gamma_i * g_cgs) / omega_i^2;
 
-    fprintf('[%d/%d]  gamma=%.3f  f=%g Hz  -> A=%.4f cm\n', ...
-        ii, nCases, gamma_i, freq_i, A_i);
+    fprintf('[%d/%d]  gamma_forcing=%.3f  f=%g Hz  -> F=%.4f dyn, A_f=%.4e cm\n', ...
+        ii, nCases, gamma_i, freq_i, F_i, A_forcing_i);
 
     % CSV file for this run
     csvFile = fullfile(outDir, ...
@@ -75,18 +80,18 @@ for ii = 1:nCases
 
     if exist(csvFile, 'file')
         fprintf('  Skipping (CSV exists)\n');
-        summaryRows{ii} = {gamma_i, freq_i, A_i, NaN, NaN, NaN, 'skipped'};
+        summaryRows{ii} = {gamma_i, freq_i, 0, NaN, NaN, NaN, 'skipped'};
         continue
     end
 
     t0 = tic;
     try
-        [t_s, CoM_cm] = solve_motion( ...
+        [t_s, CoM_cm, eta_history_cm] = solve_motion( ...
             'diskRadius',         fixed.diskRadius, ...
             'diskMass',           fixed.diskMass, ...
-            'forceAmplitude',     fixed.forceAmplitude, ...
-            'forceFrequency',     fixed.forceFrequency, ...
-            'bathAmplitude',      A_i, ...
+            'forceAmplitude',     F_i, ...
+            'forceFrequency',     freq_i, ...
+            'bathAmplitude',      0.0, ...
             'bathFrequency',      freq_i, ...
             'phaseDifference',    fixed.phaseDifference, ...
             'bathDensity',        fixed.bathDensity, ...
@@ -95,28 +100,33 @@ for ii = 1:nCases
             'bathDiameter',       fixed.bathDiameter, ...
             'spatialResolution',  fixed.spatialResolution, ...
             'temporalResolution', fixed.temporalResolution, ...
-            'simulationTime',     fixed.simulationTime, ...
+            'simulationTime',     30/freq_i, ...
             'debug_flag',         fixed.debug_flag, ...
             'solverType',         fixed.solverType);
+
+        % Post-processing: Calculate max elevation in outer boundary region
+        % (Outer 1 disk diameter = 2 disk radii)
+        boundary_nodes = ceil(2 * fixed.spatialResolution);
+        eta_boundary_cm = max(abs(eta_history_cm(end-boundary_nodes+1:end, :)), [], 1);
 
         elapsed = toc(t0);
 
         % Write CoM CSV: header + data
         fid = fopen(csvFile, 'w');
-        fprintf(fid, 'time_s,CoM_cm\n');
-        fprintf(fid, '%.6e,%.6e\n', [t_s(:), CoM_cm(:)]');
+        fprintf(fid, 'time_s,CoM_cm,eta_boundary_cm\n');
+        fprintf(fid, '%.6e,%.6e,%.6e\n', [t_s(:), CoM_cm(:), eta_boundary_cm(:)]');
         fclose(fid);
 
         CoM_max = max(abs(CoM_cm));
         CoM_rms = sqrt(mean(CoM_cm.^2));
         fprintf('  Done in %.1f s  |CoM|_max=%.3e cm  |CoM|_rms=%.3e cm\n', ...
             elapsed, CoM_max, CoM_rms);
-        summaryRows{ii} = {gamma_i, freq_i, A_i, CoM_max, CoM_rms, elapsed, 'ok'};
+        summaryRows{ii} = {gamma_i, freq_i, A_forcing_i, CoM_max, CoM_rms, elapsed, 'ok'};
 
     catch ME
         elapsed = toc(t0);
         fprintf('  ERROR after %.1f s: %s\n', elapsed, ME.message);
-        summaryRows{ii} = {gamma_i, freq_i, A_i, NaN, NaN, elapsed, 'error'};
+        summaryRows{ii} = {gamma_i, freq_i, A_forcing_i, NaN, NaN, elapsed, 'error'};
     end
 end
 

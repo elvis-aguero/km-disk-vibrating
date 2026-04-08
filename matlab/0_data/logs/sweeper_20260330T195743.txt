@@ -1,0 +1,82 @@
+Sweep started: 30-Mar-2026 19:57:43
+Axes: gamma=[0.05         0.2         0.5]  frequency=[10   20   30   40   50   60   70   80   90  100] Hz
+Fixed params:
+            diskRadius: 0.2000
+              diskMass: 0.0283
+        forceAmplitude: 0
+        forceFrequency: 90
+       phaseDifference: -90
+           bathDensity: 1.1750
+    bathSurfaceTension: 66.5000
+         bathViscosity: 0.1532
+          bathDiameter: 100
+     spatialResolution: 50
+        simulationTime: 0.6667
+            debug_flag: 0
+            solverType: "auto"
+
+Total cases: 30
+
+[1/30]  gamma=0.050  f=10 Hz  -> A=0.0124 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[2/30]  gamma=0.200  f=10 Hz  -> A=0.0497 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[3/30]  gamma=0.500  f=10 Hz  -> A=0.1242 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[4/30]  gamma=0.050  f=20 Hz  -> A=0.0031 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[5/30]  gamma=0.200  f=20 Hz  -> A=0.0124 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[6/30]  gamma=0.500  f=20 Hz  -> A=0.0311 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[7/30]  gamma=0.050  f=30 Hz  -> A=0.0014 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[8/30]  gamma=0.200  f=30 Hz  -> A=0.0055 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[9/30]  gamma=0.500  f=30 Hz  -> A=0.0138 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[10/30]  gamma=0.050  f=40 Hz  -> A=0.0008 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[11/30]  gamma=0.200  f=40 Hz  -> A=0.0031 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[12/30]  gamma=0.500  f=40 Hz  -> A=0.0078 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[13/30]  gamma=0.050  f=50 Hz  -> A=0.0005 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[14/30]  gamma=0.200  f=50 Hz  -> A=0.0020 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[15/30]  gamma=0.500  f=50 Hz  -> A=0.0050 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[16/30]  gamma=0.050  f=60 Hz  -> A=0.0003 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[17/30]  gamma=0.200  f=60 Hz  -> A=0.0014 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[18/30]  gamma=0.500  f=60 Hz  -> A=0.0035 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[19/30]  gamma=0.050  f=70 Hz  -> A=0.0003 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[20/30]  gamma=0.200  f=70 Hz  -> A=0.0010 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[21/30]  gamma=0.500  f=70 Hz  -> A=0.0025 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[22/30]  gamma=0.050  f=80 Hz  -> A=0.0002 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[23/30]  gamma=0.200  f=80 Hz  -> A=0.0008 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[24/30]  gamma=0.500  f=80 Hz  -> A=0.0019 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[25/30]  gamma=0.050  f=90 Hz  -> A=0.0002 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[26/30]  gamma=0.200  f=90 Hz  -> A=0.0006 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[27/30]  gamma=0.500  f=90 Hz  -> A=0.0015 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[28/30]  gamma=0.050  f=100 Hz  -> A=0.0001 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[29/30]  gamma=0.200  f=100 Hz  -> A=0.0005 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+[30/30]  gamma=0.500  f=100 Hz  -> A=0.0012 cm
+  ERROR after 0.0 s: Unrecognized field name "temporalResolution".
+
+Sweep finished: 30-Mar-2026 19:57:43
+Summary: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/sweep_results/summary_20260330T195743.csv
