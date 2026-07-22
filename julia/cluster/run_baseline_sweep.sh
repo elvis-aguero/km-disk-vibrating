@@ -22,14 +22,27 @@
 #   - --partition / --account: uncomment and fill in below; every cluster's accounting
 #     setup is different and this can't be guessed.
 #   - --cpus-per-task / --mem / --time: 16 cores / 32GB / 24h is a starting guess. The
-#     nr=2500 domain's system matrices are ~2500x2500 dense LU factors (~50MB each,
-#     cached per cycle-phase); MATLAB historically took ~200-1500s per case serially, so
-#     30 cases threaded across N cores should land well under a day, but tune from your
-#     own first run's actual wall-clock (see the "elapsed_s" field in summary.csv).
+#     nr=2500 domain's LU factors are dense n=5002 matrices — a FULL LU cache (one factor
+#     per cycle-phase, 40-60 of them) is ~10-12GB, so with 16 threads each potentially
+#     wanting their own cache, :auto will almost always fall back to the slower-but-
+#     memory-safe GMRES path at this domain size under a 32GB job (see
+#     available_memory_bytes()'s docstring in src/solver/solver_dispatch.jl). That's
+#     intentional and safe, not a bug to work around by raising --mem to the ~192GB a
+#     fully-:lu 16-way sweep would actually need — MATLAB historically took ~200-1500s per
+#     case serially, so 30 cases threaded across N cores should still land well under a
+#     day even on GMRES; tune --time from your own first run's actual wall-clock (see the
+#     "elapsed_s" field in summary.csv) rather than fighting for more memory.
 #   - `module load julia`: this loads Julia via environment modules, the common setup on
 #     clusters like Brown's Oscar. Run `module avail julia` on your cluster and adjust the
 #     name/version, or delete this line entirely if Julia is already on PATH (e.g. via
 #     juliaup in your home directory).
+#
+# Julia's Sys.free_memory() is NOT cgroup-aware — under SLURM it reports the whole node's
+# free memory, not this job's actual --mem allocation, which caused a real OOM kill before
+# available_memory_bytes() started preferring $SLURM_MEM_PER_NODE (which SLURM sets
+# automatically from --mem above) over it. If you ever need to override the detected
+# budget entirely (e.g. debugging on a shared node where even that isn't reliable), export
+# KMDISK_RAM_BUDGET_BYTES before this script's `julia` invocations.
 #
 # #SBATCH --partition=batch
 # #SBATCH --account=your_allocation_here

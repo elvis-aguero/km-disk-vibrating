@@ -45,12 +45,13 @@ exists (same semantics as `sweeper.m`).
 The DTN matrix for `(spec.fixed.spatialResolution, spec.fixed.bathDiameter)` is resolved
 and loaded exactly once, before the threaded loop starts, and shared read-only across
 every case (a sweep holds the domain fixed across its whole grid) — avoiding redundant
-per-thread loads of what can be a tens-of-MB matrix. Free memory is divided by
+per-thread loads of what can be a tens-of-MB matrix. `available_memory_bytes()` (not raw
+`Sys.free_memory()` — see its docstring for why that matters under SLURM) is divided by
 `Threads.nthreads()` up front so each case's `solverType=:auto` decision accounts for
 everything else running concurrently, rather than each case assuming it alone owns the
-machine's free memory (a real robustness gap `getAvailableRAM()`-per-case in MATLAB does
-not have to contend with in quite the same way, since MATLAB's `parfor` workers are
-separate processes).
+whole budget (a real robustness gap `getAvailableRAM()`-per-case in MATLAB does not have
+to contend with in quite the same way, since MATLAB's `parfor` workers are separate
+processes).
 """
 function run_sweep(spec::SweepSpec, outdir::AbstractString; dtn_registry::Union{Nothing,DTNManifest} = nothing,
                     dtn::Union{Nothing,AbstractMatrix{<:Real}} = nothing)
@@ -67,9 +68,9 @@ function run_sweep(spec::SweepSpec, outdir::AbstractString; dtn_registry::Union{
     end
 
     nthreads = max(1, Threads.nthreads())
-    ram_per_case = max(1, Sys.free_memory() ÷ nthreads)
+    ram_per_case = max(1, available_memory_bytes() ÷ nthreads)
 
-    @info "sweep starting" n_cases = n gammas = spec.gammas freqs_hz = spec.bathFrequenciesHz threads = nthreads outdir = outdir
+    @info "sweep starting" n_cases = n gammas = spec.gammas freqs_hz = spec.bathFrequenciesHz threads = nthreads ram_per_case_bytes = ram_per_case outdir = outdir
 
     Threads.@threads :dynamic for i in 1:n
         gamma, freqHz = cases[i]

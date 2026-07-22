@@ -41,6 +41,7 @@ export SimulationParams, Problem, Units, build_problem, with_overrides,
        assemble_system_matrix, assemble_system_matrix!, build_template, materialize!, assemble_rhs!,
        LUCache, get_or_factorize!, hit_rate,
        StepPhase, step_phase, g_prefactor, force_term, resolve_solver_type, estimated_lu_cache_bytes, build_step_solver,
+       available_memory_bytes, MEMORY_SAFETY_FACTOR,
        compute_eta_boundary, write_case_csv, write_timeseries_csv, write_summary_csv,
        config_digest, run_id, save_result,
        setup_logging, default_log_dir

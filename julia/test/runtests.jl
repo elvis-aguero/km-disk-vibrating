@@ -19,6 +19,7 @@ const RUN_SLOW = get(ENV, "KMDISK_RUN_SLOW_TESTS", "0") == "1"
         include("unit/test_system_matrix.jl")
         include("unit/test_fit.jl")
         include("unit/test_convergence_check.jl")
+        include("unit/test_solver_dispatch.jl")
     end
 
     @testset "integration" begin

@@ -71,6 +71,40 @@ function estimated_lu_cache_bytes(stepsPerCycle::Integer, n::Integer)
     return stepsPerCycle * (n^2 * sizeof(Float64) + n * sizeof(Int))
 end
 
+# Applied to whatever available_memory_bytes() auto-detects (never to an explicit
+# KMDISK_RAM_BUDGET_BYTES override, which the caller has presumably already sized
+# deliberately) — the LU cache is the dominant but not the only consumer of a step's
+# resident memory (the DTN matrix, system-matrix template, GC overhead, and Julia's own
+# runtime all add up too), and a real cluster run got OOM-killed sizing :auto's decision
+# right up against the detected total with no headroom at all.
+const MEMORY_SAFETY_FACTOR = 0.7
+
+"""
+    available_memory_bytes() -> Int
+
+The RAM budget `:auto` solver-type resolution should size itself against. In order:
+
+1. `\$KMDISK_RAM_BUDGET_BYTES`, if set — an explicit override, used as-is (no safety
+   margin applied; size it however you intend).
+2. SLURM's `\$SLURM_MEM_PER_NODE` (megabytes; set automatically when a job requests
+   `--mem`, e.g. from `julia/cluster/run_baseline_sweep.sh`), times `MEMORY_SAFETY_FACTOR`.
+3. `Sys.free_memory()`, times `MEMORY_SAFETY_FACTOR` — correct on an unshared, non-SLURM
+   machine, but **not cgroup-aware**: under SLURM (or any container/cgroup), it reports
+   the whole node's free memory via libuv, not this job's actual `--mem` allocation. On a
+   shared cluster node this can wildly overstate what a job can actually use — exactly
+   what caused a real OOM kill: `:auto` sized a 16-thread sweep's LU caches against the
+   apparent free memory of the *whole node*, not the job's real 32GB cgroup limit, and
+   every thread happily tried to fit its own multi-GB cache within that illusory budget.
+"""
+function available_memory_bytes()
+    override = get(ENV, "KMDISK_RAM_BUDGET_BYTES", "")
+    isempty(override) || return parse(Int, override)
+
+    slurm_mem_mb = get(ENV, "SLURM_MEM_PER_NODE", "")
+    detected = isempty(slurm_mem_mb) ? Sys.free_memory() : parse(Int, slurm_mem_mb) * 1024 * 1024
+    return floor(Int, detected * MEMORY_SAFETY_FACTOR)
+end
+
 """
     resolve_solver_type(requested, stepsPerCycle, n, ram_budget_bytes) -> Symbol
 
@@ -103,15 +137,15 @@ end
     build_step_solver(problem, requested_type, gmres_tol; ram_budget_bytes=nothing) -> (solver, resolved_type)
 
 Builds the system-matrix template once and constructs whichever concrete step solver
-`resolve_solver_type` chooses. `ram_budget_bytes` defaults to `Sys.free_memory()`; a sweep
-orchestrator running many cases concurrently should instead pass a per-case share of that
-budget (see `sweep.jl`), so that concurrently-running cases don't each independently
-assume they have the whole machine's free memory.
+`resolve_solver_type` chooses. `ram_budget_bytes` defaults to `available_memory_bytes()`;
+a sweep orchestrator running many cases concurrently should instead pass a per-case share
+of that budget (see `sweep.jl`), so that concurrently-running cases don't each
+independently assume they have the whole budget to themselves.
 """
 function build_step_solver(problem::Problem, requested_type::Symbol, gmres_tol::Float64;
                             ram_budget_bytes::Union{Nothing,Integer} = nothing)
     n = 2 * problem.nr + 2
-    budget = ram_budget_bytes === nothing ? Sys.free_memory() : ram_budget_bytes
+    budget = ram_budget_bytes === nothing ? available_memory_bytes() : ram_budget_bytes
     resolved = resolve_solver_type(requested_type, problem.stepsPerCycle, n, budget)
     tmpl = build_template(problem)
     scratch = Matrix{Float64}(undef, n, n)
