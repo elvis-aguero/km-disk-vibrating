@@ -60,7 +60,7 @@ so an expected/anticipated failure mode doesn't need exception-based control flo
 """
 function advance_one_step!(state::SimulationState, problem::Problem, solver::AbstractStepSolver, buffers::StepBuffers)
     dt = problem.dt
-    phase = StepPhase(state.step_counter, problem.stepsPerCycle)
+    phase = step_phase(state.step_counter, problem.stepsPerCycle)
     state.step_counter += 1
 
     g_pf = g_prefactor(problem, phase, dt)

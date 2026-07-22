@@ -24,7 +24,18 @@ struct StepPhase
     cycle_index::Int   # mod(global_step, stepsPerCycle) + 1; LU-cache lookup key ONLY
 end
 
-StepPhase(global_step::Int, stepsPerCycle::Int) =
+"""
+    step_phase(global_step, stepsPerCycle) -> StepPhase
+
+Constructs a `StepPhase` from a global step counter and the cycle length, computing
+`cycle_index` from them. Deliberately a plain function, not a second `StepPhase(::Int,
+::Int)` outer constructor — that would have the exact same argument signature as the
+struct's own default (auto-generated) positional constructor `StepPhase(global_step,
+cycle_index)` and silently overwrite it (caught by Julia's precompilation-time
+method-overwriting check, not by anything short of actually loading the package — see
+the repo-level notes on how this port was authored).
+"""
+step_phase(global_step::Int, stepsPerCycle::Int) =
     StepPhase(global_step, mod(global_step, stepsPerCycle) + 1)
 
 """

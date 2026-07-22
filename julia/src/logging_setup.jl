@@ -20,7 +20,7 @@ not the stdlib ones.
 """
     default_log_dir() -> String
 
-`$KMDISK_LOG_DIR` if set, else `julia/logs/` (created if missing).
+`\$KMDISK_LOG_DIR` if set, else `julia/logs/` (created if missing).
 """
 function default_log_dir()
     dir = get(ENV, "KMDISK_LOG_DIR", joinpath(@__DIR__, "..", "logs"))
