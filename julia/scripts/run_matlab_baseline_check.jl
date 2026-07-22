@@ -23,6 +23,7 @@ if !@isdefined(FaradayDisk)
     include("_bootstrap.jl")
 end
 using Dates  # Dates.now()/format below; not re-exported by `using FaradayDisk`
+using Logging  # global_logger() below; not re-exported by `using FaradayDisk`
 include("run_sweep.jl")
 include("run_validation_overlay.jl")
 
