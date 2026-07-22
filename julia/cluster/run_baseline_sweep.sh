@@ -2,8 +2,8 @@
 #SBATCH --job-name=km-disk-baseline-sweep
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=16
-#SBATCH --mem=32G
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=64G
 #SBATCH --time=24:00:00
 #SBATCH --output=%x-%j.out
 #SBATCH --error=%x-%j.err
