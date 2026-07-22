@@ -122,8 +122,7 @@ rasterizing/vector backend — this path is exercised by
 **Opt-in live plotting during a run** (`scripts/live_plot.jl`, port of `solve_motion.m`'s
 `drawnow` debug-plot block):
 ```julia
-using FaradayDisk
-include("julia/scripts/live_plot.jl")
+include("julia/scripts/live_plot.jl")   # bootstraps its own env (live/Project.toml) — see below
 
 cb = make_live_plot_callback(problem)          # problem from build_problem(params, dtn)
 run_simulation(params; dtn = dtn, on_step = cb)
@@ -133,7 +132,12 @@ steps): the bath surface profile near the disk, the disk's own height, and the b
 amplitude as a guide line. GLMakie needs a real display/GPU context, so — unlike the
 CairoMakie overlay plotting above — this is **not exercised by CI at all**, and was never
 run locally even once while writing this port (see "Important: how this port was authored,
-and its current status" above).
+and its current status" above). GLMakie also lives in its own environment
+(`scripts/live/Project.toml`), separate from the other scripts' shared one — it's the only
+dependency in this whole repo that needs a real OpenGL/GLFW-capable display to even
+*install*, so keeping it out of the environment every other script (migration, sweep,
+overlay) also instantiates means a machine without one (a headless cluster node, say)
+never has to build it just to run something that never touches it.
 Treat it as unverified until someone with local Julia and a display confirms it works.
 Never pass this callback into `run_sweep`/`run_sweep_case` — sweep cases run concurrently
 via `Threads.@threads`, and touching a GLMakie window from more than one thread isn't safe.
@@ -143,6 +147,50 @@ via `Threads.@threads`, and touching a GLMakie window from more than one thread 
 julia --project=julia julia/test/runtests.jl               # fast tier (seconds)
 KMDISK_RUN_SLOW_TESTS=1 julia --project=julia julia/test/runtests.jl   # + slow tier (hours)
 ```
+
+## Running the full validation sweep on a SLURM cluster
+
+The full 30-case (gamma x frequency) sweep at the real `D50Quant100` domain (`nr=2500`) is
+the genuinely slow, real-accuracy run — historically ~200-1500s/case in MATLAB — and is
+what actually produces a comparison against the digitized experimental data. It's meant to
+be submitted as a batch job, not run at a terminal:
+
+```sh
+sbatch julia/cluster/run_baseline_sweep.sh
+```
+
+Read the comments at the top of that script before your first submission — it has
+placeholder `#SBATCH --partition`/`--account` lines you need to fill in for your cluster,
+and a `module load julia` line that assumes an environment-modules setup (e.g. Brown's
+Oscar); adjust or delete it if Julia is provided differently on yours. It:
+
+1. Migrates the legacy MATLAB DTN `.mat` caches to JLD2 once (skipped on every later
+   submission once `julia/data/dtn_cache/manifest.toml` exists — this never regenerates
+   the operator, only loads the cached one, per the registry design in
+   `src/dtn/dtn_registry.jl`).
+2. Runs `scripts/run_matlab_baseline_check.jl`, multithreaded across the job's allocated
+   cores (`Threads.@threads` over the sweep's Cartesian grid — see the design notes on why
+   this port uses `Threads.jl` rather than `Distributed.jl`/MPI, so there's no benefit to
+   requesting more than one node or task).
+3. Writes everything into one folder per run, `output/<job_id>_<timestamp>/`, gitignored:
+   ```
+   output/<job_id>_<timestamp>/
+     sweep/
+       cases/gamma..._f...Hz.csv    — per-case (time_s, CoM_cm, eta_boundary_cm) traces
+       summary.csv                    — one row/case: gamma, freq, amplitude, status, ...
+       val_amp_<name>.{png,pdf}       — amplitude-ratio overlay vs. experiment
+       val_phase_<name>.{png,pdf}     — phase-difference overlay vs. experiment
+     logs/                          — structured .log + .jsonl logs for this run
+   ```
+   SLURM's own stdout/stderr (`<job-name>-<job_id>.out`/`.err`) land next to the script
+   itself, per its `#SBATCH --output`/`--error` directives, so they're visible while the
+   job is still queued or starting.
+
+The `pass_primary`/`pass_incident_guard` fields the script prints (and logs) are exactly
+the RMSE-vs-experiment thresholds described in "Why the early-stop check was rewritten"
+below — a passing run means the corrected convergence check and solver reproduce the
+known-good pre-regression MATLAB baseline (~0.10 amplitude RMSE, ~5.7° phase RMSE), not
+the buggy sweep's (~1.09, ~285°).
 
 ## Test coverage
 

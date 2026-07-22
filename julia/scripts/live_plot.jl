@@ -13,8 +13,7 @@ as unverified until someone with local Julia and a display runs it and reports b
 
 Usage:
 
-    using FaradayDisk
-    include("scripts/live_plot.jl")
+    include("scripts/live_plot.jl")   # no prior `using FaradayDisk`/Pkg.activate needed
 
     dtn = ...  # e.g. via generate_dtn or load_dtn
     problem = build_problem(params, dtn)
@@ -26,10 +25,26 @@ Never pass a callback built by this file as the `dtn_registry`/sweep path's `on_
 mutating a GLMakie window from more than one thread at once is not safe. This is exactly
 why `on_step` defaults to `nothing` and is never set by the sweep orchestrator itself (see
 `simulate.jl`'s docstring).
+
+Bootstraps its OWN environment (`live/Project.toml`), not the shared one every other
+script in this directory uses (`../Project.toml` via `_bootstrap.jl`) — see
+`live/Project.toml`'s comment for why GLMakie is kept out of the shared environment.
+Activating a different project than whatever was already active is exactly what every
+other script here does too when run standalone; it only matters if you `include` this
+file into a session where you'd already activated `../Project.toml` yourself and wanted to
+keep using it afterwards.
 """
 
 if !@isdefined(FaradayDisk)
-    include("_bootstrap.jl")
+    import Pkg
+    Pkg.activate(joinpath(@__DIR__, "live"))
+    let manifest = Pkg.project().dependencies
+        if !haskey(manifest, "FaradayDisk")
+            Pkg.develop(path = joinpath(@__DIR__, ".."))
+        end
+    end
+    Pkg.instantiate()
+    using FaradayDisk
 end
 using GLMakie
 

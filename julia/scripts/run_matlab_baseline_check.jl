@@ -67,8 +67,17 @@ function run_matlab_baseline_check(; outdir::Union{Nothing,String} = nothing)
             amp_plot = plots.amp_png, phase_plot = plots.phase_png)
 end
 
+"""
+    main()
+
+CLI entry point. Takes one optional positional argument, the output directory (e.g. for a
+cluster job to point results at a job-specific `output/<job_id>/sweep` path instead of the
+default auto-timestamped `julia/data/results/sweeps/baseline_check_<ts>/`); with no
+argument, behaves exactly as before.
+"""
 function main()
-    result = run_matlab_baseline_check()
+    outdir = isempty(ARGS) ? nothing : ARGS[1]
+    result = run_matlab_baseline_check(; outdir = outdir)
     println("Amplitude RMSE: ", result.amp_rmse, " (threshold ", AMPLITUDE_RMSE_THRESHOLD, ")")
     println("Phase RMSE (deg): ", result.phase_rmse_deg, " (threshold ", PHASE_RMSE_DEG_THRESHOLD, ")")
     println("Passes primary threshold: ", result.pass_primary)
