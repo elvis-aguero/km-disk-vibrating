@@ -1,6 +1,5 @@
 #!/usr/bin/env julia
-"""
-One-off migration: convert the existing MATLAB-generated DTN `.mat` caches into
+#= One-off migration: convert the existing MATLAB-generated DTN `.mat` caches into
 Julia-native JLD2 files and register them in `julia/data/dtn_cache/manifest.toml`.
 
 Run from the repo root: `julia julia/scripts/migrate_dtn_caches.jl`
@@ -21,7 +20,9 @@ so a wrong `D` would mean a numerically wrong matrix, not just a misnamed one. I
 native and migrated matrices disagree, the manifest is pointed at the freshly generated
 (native) matrix instead of the migrated one, and the discrepancy is recorded in its
 `source_file` provenance field so it's auditable later.
-"""
+
+Block comment, not a docstring: see _bootstrap.jl's header for why a bare top-level string
+directly followed by `include(...)` here would fail to parse. =#
 
 include("_bootstrap.jl")
 using MAT

@@ -1,6 +1,5 @@
 #!/usr/bin/env julia
-"""
-Runs the (gamma, frequency) parameter sweep — port of `matlab/1_code/sweeper.m` — using
+#= Runs the (gamma, frequency) parameter sweep — port of `matlab/1_code/sweeper.m` — using
 the same fixed parameters and Cartesian grid (gamma in {0.05, 0.2, 0.5}, frequency
 10:10:100 Hz, 30 cases). Output goes to `julia/data/results/sweeps/<timestamp>/`.
 
@@ -9,7 +8,9 @@ Usage: `julia -t auto julia/scripts/run_sweep.jl`
 Only runs `main()` when executed directly — `default_sweep_spec()` is reused by
 `run_matlab_baseline_check.jl` and `test/slow/test_matlab_baseline_validation.jl` via
 `include`, so the exact sweep grid/parameters are defined in exactly one place.
-"""
+
+Block comment, not a docstring: see _bootstrap.jl's header for why a bare top-level string
+directly followed by an `if` here would fail to parse. =#
 
 if !@isdefined(FaradayDisk)
     include("_bootstrap.jl")

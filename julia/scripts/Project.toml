@@ -1,15 +1,20 @@
-name = "FaradayDiskScripts"
-uuid = "3c8f1e9d-2a5b-4c7e-9f6a-8d4b5e2c1a90"
+# No [name]/[uuid] here: this environment is only ever used via `--project=julia/scripts`
+# / Pkg.activate, never `using FaradayDiskScripts` — giving it one made Pkg treat it as an
+# installable package requiring its own src/<Name>.jl entry point, which broke
+# Pkg.develop(path="..") for the real dependency below (FaradayDisk) with "expected the
+# file src/FaradayDiskScripts.jl to exist" (confirmed on a real cluster run, then
+# reproduced and fixed locally once Julia became installable in this environment).
 
 [deps]
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+FaradayDisk = "9b1b7c1a-4b6f-4a3e-8f0e-1c5e9d2a7f6b"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
-CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 
 [compat]
-julia = "1.10"
 MAT = "0.10"
+julia = "1.10"
 
 # CairoMakie (run_validation_overlay.jl, run_matlab_baseline_check.jl) is a pure
 # rasterizing/vector backend and works headlessly, so it's a normal dependency here and
@@ -21,8 +26,9 @@ MAT = "0.10"
 # and instantiating it, putting GLMakie here would risk failing migrate_dtn_caches.jl /
 # run_matlab_baseline_check.jl / run_sweep.jl on machines that never touch it. It instead
 # lives in its own environment, `live/Project.toml` — see live_plot.jl's own bootstrap.
-
-# FaradayDisk itself is intentionally not listed here as a registered/path dependency —
-# `[sources]` path entries require a newer Pkg than this project's julia="1.10" floor
-# guarantees. Each script instead bootstraps it explicitly with `Pkg.develop(path=".."))`
-# on first run (see `_bootstrap.jl`), which has worked identically since early Julia 1.x.
+#
+# FaradayDisk is listed above as a plain [deps] entry (added by `Pkg.develop`, which
+# records the actual dev path in Manifest.toml, gitignored) rather than a `[sources]`
+# path entry — `[sources]` requires a newer Pkg than this project's julia="1.10" compat
+# floor guarantees. Each script bootstraps this via `Pkg.develop(path="..")` on first run
+# (see `_bootstrap.jl`), which has worked identically since early Julia 1.x.

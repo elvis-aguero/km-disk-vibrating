@@ -1,6 +1,5 @@
 #!/usr/bin/env julia
-"""
-Computes steady-state amplitude/phase for every case in a Julia sweep output directory,
+#= Computes steady-state amplitude/phase for every case in a Julia sweep output directory,
 compares against the digitized experimental measurements, and plots both — the full
 functional equivalent of `overlay_validation.py`, reusing the shared `fit_oscillation`
 (see `src/convergence.jl`) instead of re-deriving the least-squares regression a third
@@ -16,7 +15,9 @@ by CI.
 
 This file only *defines* functions when `include`d by another script/test; it only runs
 `main()` when executed directly (`julia run_validation_overlay.jl <sweep_dir>`).
-"""
+
+Block comment, not a docstring: see _bootstrap.jl's header for why a bare top-level string
+directly followed by an `if` here would fail to parse. =#
 
 if !@isdefined(FaradayDisk)
     include("_bootstrap.jl")

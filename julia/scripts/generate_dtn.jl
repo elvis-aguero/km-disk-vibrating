@@ -1,6 +1,5 @@
 #!/usr/bin/env julia
-"""
-Generate a DTN cache natively in Julia for a given domain, and register it.
+#= Generate a DTN cache natively in Julia for a given domain, and register it.
 
 Usage: `julia -t auto julia/scripts/generate_dtn.jl <spatialResolution> <bathDiameter>`
 
@@ -12,7 +11,9 @@ WARNING: the largest domains in this repo (nr=2500) took MATLAB's `parfor`-based
 generator on the order of hours; some legacy variants (`ParRadDTNStops.m`) even had
 ad hoc checkpoint/restart logic specifically because a single run might not finish in one
 sitting. Expect this to be slow for large `nr` regardless of the language.
-"""
+
+Block comment, not a docstring: see _bootstrap.jl's header for why a bare top-level string
+directly followed by `include(...)` here would fail to parse. =#
 
 include("_bootstrap.jl")
 using JLD2

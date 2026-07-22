@@ -1,6 +1,5 @@
 #!/usr/bin/env julia
-"""
-Tier-4 validation: runs the full 30-case sweep (the same grid as `default_sweep_spec()`
+#= Tier-4 validation: runs the full 30-case sweep (the same grid as `default_sweep_spec()`
 in `run_sweep.jl`/`sweeper.m`) with the *corrected* convergence check, computes
 amplitude/phase RMSE against the digitized experimental data, and checks the result
 against thresholds anchored to the known-good pre-regression MATLAB baseline
@@ -16,7 +15,9 @@ script and that test share `run_matlab_baseline_check()` so there is exactly one
 implementation of "run sweep, fit, compare, compute RMSE" to keep correct.
 
 Usage: `julia -t auto julia/scripts/run_matlab_baseline_check.jl`
-"""
+
+Block comment, not a docstring: see _bootstrap.jl's header for why a bare top-level string
+directly followed by an `if` here would fail to parse. =#
 
 if !@isdefined(FaradayDisk)
     include("_bootstrap.jl")

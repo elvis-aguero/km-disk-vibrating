@@ -1,6 +1,5 @@
 #!/usr/bin/env julia
-"""
-Opt-in live visualization of a running simulation, via GLMakie.
+#= Opt-in live visualization of a running simulation, via GLMakie.
 
 STATUS / CAVEAT: this is the single least-verified file in the whole port. Every other
 module and script here at least got real feedback from GitHub Actions CI once pushed; this
@@ -33,7 +32,9 @@ Activating a different project than whatever was already active is exactly what 
 other script here does too when run standalone; it only matters if you `include` this
 file into a session where you'd already activated `../Project.toml` yourself and wanted to
 keep using it afterwards.
-"""
+
+Block comment, not a docstring: see _bootstrap.jl's header for why a bare top-level string
+directly followed by an `if` here would fail to parse. =#
 
 if !@isdefined(FaradayDisk)
     import Pkg

@@ -1,5 +1,4 @@
-"""
-Shared bootstrap included at the top of every script in this directory.
+#= Shared bootstrap included at the top of every script in this directory.
 
 Activates this directory's own environment (`scripts/Project.toml`, which pulls in
 `MAT.jl`/`JLD2.jl`/`TOML.jl` — dependencies only the migration/generation scripts need,
@@ -9,7 +8,12 @@ in-place if it isn't already resolved. `Pkg.develop(path=...)` is used deliberat
 instead of a `[sources]` entry in `Project.toml` — the latter needs a newer Pkg than this
 project's `julia = "1.10"` compat floor guarantees; `Pkg.develop` has worked the same way
 since early Julia 1.x.
-"""
+
+NOTE: this is a block comment, not a triple-quoted docstring, deliberately — a bare
+top-level string immediately followed by a non-declaration statement (like the `import`
+below) is parsed by Julia as an attempt to document that statement, which fails with
+"cannot document the following expression" for anything that isn't a function/struct/
+const/module/etc. declaration. Hit for real on a cluster run; see julia/README.md. =#
 import Pkg
 
 Pkg.activate(@__DIR__)

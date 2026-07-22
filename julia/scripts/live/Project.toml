@@ -1,12 +1,15 @@
-name = "FaradayDiskLive"
-uuid = "f3e8a1c2-9b4d-4e7f-8a2c-1d5e6f7a8b90"
-
 [deps]
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 
 [compat]
 julia = "1.10"
 
+# No [name]/[uuid]: this environment is only ever used via Pkg.activate + --project, never
+# `using FaradayDiskLive` — giving it a name/uuid made Pkg treat it as an installable
+# package requiring its own src/<Name>.jl entry point, which broke Pkg.develop(path=...)
+# for the *real* dependency (FaradayDisk) with "expected the file src/FaradayDiskLive.jl
+# to exist" (the exact same bug hit and fixed in ../Project.toml — see its comment).
+#
 # Deliberately its own environment, separate from ../Project.toml (the shared
 # migrate/generate/sweep/overlay scripts env): GLMakie needs a real OpenGL/GLFW-capable
 # display to precompile, which most headless cluster/CI nodes don't have. Every other
