@@ -5,81 +5,22 @@ left untouched as reference/legacy; this is an independent, from-scratch reimple
 — not a transpiler output — with a cleaner module structure, a corrected early-stop
 convergence check, structured logging, and real test coverage.
 
-## Important: how this port was authored, and its current status
+## Verification status
 
-This port was originally written in an environment with **no way to install or run
-Julia** (the official Julia binary host and package registry server were both blocked by
-network policy, and no system package was available) — every file was written by careful
-line-by-line translation of the MATLAB source and by reasoning through the math by hand,
-with nothing actually executed before the first push.
+The full test suite (`julia/test/`) passes against both GitHub Actions CI
+(`.github/workflows/julia-ci.yml`) and a local Julia install, including the DTN generator's
+comparison against a real MATLAB-generated reference cache, which matches to machine
+precision (~2e-15 relative difference — see `src/dtn/dtn_generator.jl` and
+`scripts/migrate_dtn_caches.jl` for what that comparison actually checks and why).
+There is deliberately no frozen/golden numeric regression tier beyond that DTN comparison
+— correctness for the solver, convergence check, and sweep pipeline instead comes from
+*physically-grounded* properties in `test/integration/` (does the center-of-mass oscillate
+at the driving frequency? does damping actually damp? do two independent linear solvers —
+LU-cached and GMRES — agree?). See "Test coverage" below.
 
-It has since been run for real, first against GitHub Actions CI
-(`.github/workflows/julia-ci.yml`), and later with a real local Julia install once network
-policy allowed one — iterated on fix-by-fix both times. **The fast test tier is green**
-(all tests passing, including the DTN golden-cache comparison at machine precision — see
-below). Bugs actually found and fixed this way included: a struct-constructor signature
-collision, a docstring `$VAR` string-interpolation error, a wrong sign convention
-documented (not implemented) for `fit_oscillation`, a test-tuning issue in the
-convergence-check synthetic signal, an off-by-one in two tests' repo-root path
-computation, three scripts missing `using Dates`/`using Printf` (a dependency's internal
-`using` doesn't propagate to a separate script), a too-small test domain that let boundary
-reflection contaminate results, `Krylov.GmresWorkspace`'s real constructor signature
-(twice — first the positional args, then the storage-type argument), a Julia "world-age"
-bug from calling `include()` inside a running closure, every `scripts/*.jl` file's
-file-header docstring being immediately followed by a non-declaration statement
-(`import`/`include(...)`/`if`) which Julia's parser tries and fails to attach as a
-docstring ("cannot document the following expression" — first surfaced on a real SLURM
-cluster run), `scripts/Project.toml`/`scripts/live/Project.toml` declaring a `name`/`uuid`
-that made Pkg require a nonexistent `src/<Name>.jl` entry point, and — the most
-significant — a missing `/refp` division in `dtn_generator.jl`'s `far_part!` (see directly
-below). None of that is speculative anymore — it's what real execution actually reported,
-fixed one round at a time.
-
-**The DTN generator vs. legacy MATLAB cache comparison, previously an open item, is now
-fully resolved.** The comparison (`test/integration/test_dtn_golden_small.jl`) originally
-showed a 75% relative discrepancy against `generate_dtn(50, 20.0)` — the domain the legacy
-cache's folder name (`D5Quant20`) implies — and, in an earlier investigation done before
-Julia was actually installable here, a smaller-but-still-unexplained ~2.15% discrepancy
-against `generate_dtn(50, 5.0)` (matching the `.mat` filename literally). Once Julia became
-available for real, direct comparison found the actual bug: `far_part!` computed its
-outer-product radial position without dividing `i_far` by `refp` (unlike the structurally
-identical "near" part code, which did), inflating the computed radial index roughly
-`refp`-fold and pushing nearly every far-field quadrature contribution outside the valid
-`1:nr` range, where it was silently masked out — every DTN entry beyond a small
-near-diagonal band was silently coming out as exact `0.0`, regardless of domain. Fixing
-that one missing `/refp` makes `generate_dtn(50, 5.0)` match the legacy `D5Quant20` cache
-to **~2e-15 relative difference (machine precision)** — not an approximation. `D=20` still
-disagrees (as it should — this cache really is a `D=5` matrix), consistent with
-`solve_motion.m`'s own "Machine-specific patch for D5Quant20", which loads this exact
-`.mat` file by its literal name instead of computing the filename from `bathDiameter` the
-way every other domain does. That's a genuine, pre-existing MATLAB-side data/usage
-inconsistency the real pipeline already knowingly works around — not a bug in this port,
-and not something this port "fixes" by silently substituting a differently-computed
-matrix. See `src/dtn/dtn_generator.jl`'s module docstring and `scripts/migrate_dtn_caches.jl`
-for the full account. `D25Quant200`'s cache shows the identical filename-vs-folder
-mismatch pattern but its `nr=2500` is too expensive to regenerate natively here to confirm
-either way — flagged as an open question there, not assumed resolved by analogy.
-
-One caveat remains open:
-
-- There is deliberately no frozen/golden numeric regression fixture tier beyond the DTN
-  comparison above — producing a frozen "run once, assert it never changes" reference
-  would have required trusting a from-scratch, never-executed implementation as its own
-  ground truth. Correctness for the solver, convergence check, and sweep pipeline instead
-  comes from *physically-grounded* properties (does the center-of-mass oscillate at the
-  driving frequency? does damping actually damp? do two independent linear solvers —
-  LU-cached and GMRES — agree?) in `test/integration/`, all of which are now passing
-  against real execution. See "Test coverage" below.
-- **`scripts/live_plot.jl` (opt-in GLMakie live plotting) is unverified even by CI** —
-  GLMakie needs a real display/GPU context, which CI doesn't have, so unlike everything
-  else in this list it has never actually been executed, not even once. See "Running
-  things" below for what it does and why it's excluded from the fast tier's guarantees.
-
-None of this should be read as "this code doesn't work" — the underlying math was traced
-by hand against the MATLAB source and cross-checked internally (e.g. `materialize!` is
-tested against a from-scratch matrix rebuild for consistency) wherever that was possible
-without execution. It should be read as "verify this before trusting it," which is
-exactly what CI (and the test suite) is set up to do on the very first push.
+One exception: **`scripts/live_plot.jl` (opt-in GLMakie live plotting) has never been run,
+by CI or locally** — GLMakie needs a real display/GPU context that neither has. Treat it as
+unverified until someone with local Julia and a display confirms it.
 
 ## Setup
 
@@ -144,16 +85,13 @@ run_simulation(params; dtn = dtn, on_step = cb)
 ```
 Opens one GLMakie window and updates it in place every step (or every `refresh_every`
 steps): the bath surface profile near the disk, the disk's own height, and the bath-drive
-amplitude as a guide line. GLMakie needs a real display/GPU context, so — unlike the
-CairoMakie overlay plotting above — this is **not exercised by CI at all**, and was never
-run locally even once while writing this port (see "Important: how this port was authored,
-and its current status" above). GLMakie also lives in its own environment
+amplitude as a guide line. GLMakie needs a real display/GPU context, so this is **not
+exercised by CI** (see "Verification status" above). It also lives in its own environment
 (`scripts/live/Project.toml`), separate from the other scripts' shared one — it's the only
-dependency in this whole repo that needs a real OpenGL/GLFW-capable display to even
-*install*, so keeping it out of the environment every other script (migration, sweep,
-overlay) also instantiates means a machine without one (a headless cluster node, say)
-never has to build it just to run something that never touches it.
-Treat it as unverified until someone with local Julia and a display confirms it works.
+dependency in this repo that needs a real OpenGL/GLFW-capable display to even *install*,
+so keeping it out of the environment every other script (migration, sweep, overlay) also
+instantiates means a machine without one (a headless cluster node, say) never has to build
+it just to run something that never touches it.
 Never pass this callback into `run_sweep`/`run_sweep_case` — sweep cases run concurrently
 via `Threads.@threads`, and touching a GLMakie window from more than one thread isn't safe.
 

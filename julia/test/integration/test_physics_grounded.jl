@@ -1,11 +1,9 @@
 """
 Physically-grounded integration tests, run on a small, fast domain (nr=150) so the whole
 group runs in seconds, not minutes. These test properties expected from the physics
-itself, not frozen "the answer was N last time" golden numbers — this suite was written
-without the ability to run Julia to generate golden reference output (see the repo-level
-notes on how this port was authored), so correctness has to be established this way for
-anything beyond the DTN-generator comparison (`test_dtn_golden_small.jl`) and the
-synthetic-signal convergence-check tests (`unit/test_convergence_check.jl`).
+itself, not frozen "the answer was N last time" golden numbers — correctness for anything
+beyond the DTN-generator comparison (`test_dtn_golden_small.jl`) and the synthetic-signal
+convergence-check tests (`unit/test_convergence_check.jl`) is established this way.
 
 A shared DTN matrix (bathDiameter=60, spatialResolution=5 -> nr=150) is generated once and
 reused across every case in this file to avoid recomputing it repeatedly. bathDiameter was
@@ -153,11 +151,9 @@ end
     end
 
     @testset "7: the divergence guard actually triggers on a genuinely blown-up state" begin
-        # Rather than hunting for physical parameters empirically known to cause blow-up
-        # (which cannot be verified without a working Julia environment — see the
-        # repo-level notes on how this port was authored), this exercises the real
-        # advance_one_step! guard directly against a state already far past the
-        # threshold, as if a previous (unshown) step had gone unstable.
+        # Rather than hunting for physical parameters known to cause blow-up, this
+        # exercises the real advance_one_step! guard directly against a state already far
+        # past the threshold, as if a previous (unshown) step had gone unstable.
         p = SimulationParams(bathDiameter = 60.0, spatialResolution = 5.0, temporalResolution = 40,
                               forceAmplitude = 0.0, bathAmplitude = 0.0, startStatic = true, solverType = :lu)
         problem = build_problem(p, _PG_DTN)

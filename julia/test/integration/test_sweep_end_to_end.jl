@@ -49,9 +49,8 @@ end
         @testset "validation overlay, where usable, produces finite roughly-O(1) amplitude ratios" begin
             # Not asserting cases is non-empty: whether this small test domain has enough
             # room before the 30-period run hits boundary-reflection truncation depends on
-            # wave-speed details not verified empirically here (see the repo-level notes
-            # on how this port was authored). What matters is that whatever *does* come
-            # back is physically sane, not blown up or NaN.
+            # wave-speed details not checked here. What matters is that whatever *does*
+            # come back is physically sane, not blown up or NaN.
             cases = compute_sim_overlay(outdir)
             @info "sweep end-to-end overlay" n_usable_cases = length(cases)
             for c in cases

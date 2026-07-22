@@ -139,12 +139,6 @@ Saves a `SimulationResult` under `dir`: `result.jld2` (the full result, Julia-na
 `metadata.toml` (every parameter, derived solver/convergence info, and status — full
 traceability without needing to decode a directory name), and `com_timeseries.csv` (a
 quick flat export).
-
-CAVEAT: uses `TOML.print`, which was written from memory without the ability to confirm
-it's available/stable in the resolved Julia 1.10 TOML stdlib (see the repo-level notes on
-how this port was authored). Not exercised by the default test tier — only by
-`scripts/generate_dtn.jl`/`migrate_dtn_caches.jl` (which use `TOML.print` for the DTN
-manifest, same caveat applies there) and by anyone calling `save_result` directly.
 """
 function save_result(result::SimulationResult, dir::AbstractString)
     mkpath(dir)

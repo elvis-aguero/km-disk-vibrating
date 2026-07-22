@@ -1,14 +1,11 @@
 #!/usr/bin/env julia
 #= Opt-in live visualization of a running simulation, via GLMakie.
 
-STATUS / CAVEAT: this is the single least-verified file in the whole port. Every other
-module and script here at least got real feedback from GitHub Actions CI once pushed; this
-one cannot be, since GLMakie needs a real display/GPU context (unlike CairoMakie, which is
-headless-safe and is exercised by `test/integration/test_plotting.jl`) and so is
-deliberately excluded from `julia-ci.yml` entirely. It has also never been run locally even
-once during development — no working Julia install was available while writing this port
-(see the repo-level README section on how this port was authored). Treat every line below
-as unverified until someone with local Julia and a display runs it and reports back.
+CAVEAT: this is the one file in this repo that has never actually been run, by CI or
+locally. GLMakie needs a real display/GPU context (unlike CairoMakie, which is
+headless-safe and is exercised by `test/integration/test_plotting.jl`), so it's
+deliberately excluded from `julia-ci.yml`. Treat every line below as unverified until
+someone with local Julia and a display runs it and reports back.
 
 Usage:
 
