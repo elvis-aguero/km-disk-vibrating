@@ -4,7 +4,7 @@ using MAT
     # Gated behind KMDISK_RUN_SLOW_TESTS: generating nr=2500 DTN matrices took MATLAB's
     # parfor-based generator on the order of hours historically for the largest domains;
     # even with Threads.jl this must never run on every push.
-    repo_root = normpath(joinpath(@__DIR__, "..", "..", "..", ".."))
+    repo_root = normpath(joinpath(@__DIR__, "..", "..", ".."))
 
     domains = [
         (spatialResolution = 50.0, bathDiameter = 100.0, nr = 2500,

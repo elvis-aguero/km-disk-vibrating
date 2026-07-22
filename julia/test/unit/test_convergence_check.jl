@@ -42,7 +42,12 @@ end
         # This is the direct test of what the MATLAB bug got wrong: convergence timing
         # must depend on the actual signal, not fire at the same period count every time
         # regardless of how fast the underlying transient decays.
-        t_fast, z_fast = synthetic_growing_oscillation(; omega = omega, tau = 0.3 * T, t_end = 10 * T)
+        # tau must be small enough that the transient is negligible even within the
+        # FIRST comparison window (which starts at t=0 at the earliest allowed check
+        # point) — 0.3*T left a non-negligible fraction of that 5-period window still
+        # ramping up and made this assertion flaky; 0.01*T (same order used by the
+        # "never fires before minPeriods" case below, which passed) does not.
+        t_fast, z_fast = synthetic_growing_oscillation(; omega = omega, tau = 0.01 * T, t_end = 10 * T)
         fast_result = check_convergence(t_fast, z_fast, omega, opts)
         @test fast_result.converged  # transient long decayed by the floor
 

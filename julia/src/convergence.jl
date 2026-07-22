@@ -46,12 +46,15 @@ not_converged(periods_elapsed::Real) = ConvergenceResult(false, periods_elapsed,
 """
     fit_oscillation(t, z, ω) -> (amplitude, phase, offset)
 
-Least-squares fit of `z(t) ≈ amplitude*cos(ω*t - phase) + offset` via the design matrix
-`[cos(ωt) sin(ωt) 1]`. Ported from the fit already used in `overlay_validation.py`
-(`M = [cos(ωt), sin(ωt), 1]`, `amplitude = hypot(X0,X1)`, `phase = atan2(-X1,X0)`). The
-constant column absorbs any DC offset (e.g. the static-equilibrium depth), so the
-recovered amplitude/phase are insensitive to that offset — precisely the property the
-old rolling-mean check lacked.
+Least-squares fit of `z(t) ≈ amplitude*cos(ω*t + phase) + offset` via the design matrix
+`[cos(ωt) sin(ωt) 1]` (note the `+`: `X = [amplitude*cos(phase), -amplitude*sin(phase),
+offset]`, so `phase = atan2(-X1,X0)` recovers the `+phase` convention below, not `-phase`
+— confirmed against a synthetic-signal test after the first real test run caught the sign
+flipped in this docstring and in `test/unit/test_fit.jl`). Ported from the fit already
+used in `overlay_validation.py` (`M = [cos(ωt), sin(ωt), 1]`, `amplitude = hypot(X0,X1)`,
+`phase = atan2(-X1,X0)`). The constant column absorbs any DC offset (e.g. the
+static-equilibrium depth), so the recovered amplitude/phase are insensitive to that
+offset — precisely the property the old rolling-mean check lacked.
 """
 function fit_oscillation(t::AbstractVector{<:Real}, z::AbstractVector{<:Real}, ω::Real)
     length(t) == length(z) || throw(ArgumentError("t and z must have the same length"))

@@ -22,6 +22,7 @@ This file only *defines* functions when `include`d by another script/test; it on
 if !@isdefined(FaradayDisk)
     include("_bootstrap.jl")
 end
+using Printf  # @printf below; not re-exported by `using FaradayDisk` even though FaradayDisk itself depends on it
 
 const REPO_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const EXPERIMENTAL_DIR = joinpath(REPO_ROOT, "matlab", "0_data", "external", "experimental_measurements")

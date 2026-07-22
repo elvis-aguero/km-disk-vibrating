@@ -32,7 +32,7 @@ end
 matching MATLAB's `gmres(...,[],tol,n,...)`.
 """
 function build_gmres_solver(n::Int, tol::Float64)
-    workspace = Krylov.GmresWorkspace(n, n, n)
+    workspace = Krylov.GmresWorkspace(n, n, Float64; memory = n)
     return GMRESSolver(workspace, tol, zeros(n), true)
 end
 

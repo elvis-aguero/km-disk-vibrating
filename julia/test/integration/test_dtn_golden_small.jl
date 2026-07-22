@@ -4,7 +4,7 @@ using MAT
     # This is the load-bearing test for the highest-risk file in this port
     # (src/dtn/dtn_generator.jl — see its module docstring): it was transcribed from
     # DTNVectorized.m without the ability to run either MATLAB or Julia to check it.
-    repo_root = normpath(joinpath(@__DIR__, "..", "..", "..", ".."))
+    repo_root = normpath(joinpath(@__DIR__, "..", "..", ".."))
     mat_path = joinpath(repo_root, "matlab", "1_code", "D5Quant20", "DTNnew345nr50D5refp10.mat")
 
     if !isfile(mat_path)

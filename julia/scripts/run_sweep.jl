@@ -14,6 +14,7 @@ Only runs `main()` when executed directly — `default_sweep_spec()` is reused b
 if !@isdefined(FaradayDisk)
     include("_bootstrap.jl")
 end
+using Dates  # Dates.now()/format below; not re-exported by `using FaradayDisk`
 
 """
     default_sweep_spec() -> SweepSpec
