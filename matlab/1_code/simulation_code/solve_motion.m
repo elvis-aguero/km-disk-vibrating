@@ -26,6 +26,9 @@ arguments
     NameValueArgs.debug_flag (1, 1) logical = true; % To show some debugging info
     NameValueArgs.solverType (1, 1) string = "auto" % "auto": LU-cached if RAM allows, else GMRES. Override with "lu" or "gmres".
     NameValueArgs.gmresTolerance (1, 1) double = 1e-10 % GMRES convergence tolerance (used when GMRES is active)
+    NameValueArgs.startStatic (1, 1) logical = true % Whether to start at static equilibrium
+    NameValueArgs.earlyStop (1, 1) logical = true % Whether to enable early stopping on convergence
+    NameValueArgs.convergenceTol (1, 1) double = 0.02 % Convergence tolerance (stdev of rolling mean / |mean|)
 end
 
 % Record the time the script is run
@@ -153,17 +156,63 @@ else
 end
 
 %Initial conditions for the fluid
-etaInitial = zeros(nr,1); %initial surface elevation
+if startStatic
+    % Solve for static equilibrium of the disk-fluid system
+    cPoints = spatialResolution + 1;
+    A_static = eye(nr)/Fr - laplacian/We;
+    M_static = zeros(nr + 1, nr + 1);
+    rhs_static = zeros(nr + 1, 1);
+    
+    % 1. Equations for r > R_disk
+    row_idx = 1;
+    for i = (cPoints+1):nr
+        M_static(row_idx, 1:(nr-cPoints)) = A_static(i, (cPoints+1):nr);
+        M_static(row_idx, nr+1) = sum(A_static(i, 1:cPoints));
+        row_idx = row_idx + 1;
+    end
+    
+    % 2. Equations for r <= R_disk
+    for i = 1:cPoints
+        M_static(row_idx, 1:(nr-cPoints)) = A_static(i, (cPoints+1):nr);
+        M_static(row_idx, nr - cPoints + i) = 1.0;
+        M_static(row_idx, nr+1) = sum(A_static(i, 1:cPoints));
+        row_idx = row_idx + 1;
+    end
+    
+    % 3. Disk force balance equation
+    M_static(row_idx, 1) = surface_force_adim / dr;
+    M_static(row_idx, (nr - cPoints + 1):nr) = pressureIntegral(cPoints, 1:cPoints) / obj_mass_adim;
+    M_static(row_idx, nr+1) = -surface_force_adim / dr;
+    rhs_static(row_idx) = 1.0 / Fr;
+    
+    sol_static = M_static \ rhs_static;
+    
+    eta_out = sol_static(1:(nr-cPoints));
+    pInitial = sol_static((nr-cPoints+1):nr);
+    zInitial = sol_static(nr+1);
+    etaInitial = [zInitial * ones(cPoints, 1); eta_out];
+    
+    if debug_flag
+        fprintf('Static equilibrium found: z_CoM = %.6f (%.6f cm)\n', zInitial, zInitial * L_unit);
+    end
+else
+    etaInitial = zeros(nr,1);
+    pInitial = zeros(spatialResolution+1, 1);
+    zInitial = 0;
+end
+
 phiInitial = zeros(nr,1); %initial surface potential
 
 % Define the current state of the system
 current_conditions = struct( ...
     "dt", dt(1), "time", 0, ...
-    "center_of_mass", 0, "center_of_mass_velocity", v_bath_0_adim, ... 
-    "bath_surface", etaInitial, "bath_potential", phiInitial, "pressure", zeros(spatialResolution+1, 1));
+    "center_of_mass", zInitial, "center_of_mass_velocity", v_bath_0_adim, ... 
+    "bath_surface", etaInitial, "bath_potential", phiInitial, "pressure", pInitial);
 current_index = 1; %iteration counter
 recordedConditions = cell(steps, 1);
 recordedConditions{current_index} = current_conditions;
+z_CoM_history = zeros(steps, 1);
+z_CoM_history(current_index) = zInitial;
 
 % Store problem constants for use in the simulation
 PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
@@ -195,21 +244,7 @@ fprintf("Starting simulation on %s\n", pwd);
 % Without PCT, falls back to lazy-sync LU: LU computed on first miss inside
 % advance_one_step, cached for all subsequent cycles.
 if resolvedSolver == "lu"
-    if hasPCT
-        fprintf('Firing %d async LU futures (~%.1f GB)...\n', stepsPerCycle, luSizeBytes/1e9);
-        PC_min = struct('weber', We, 'reynolds', Re, 'froude', Fr, ...
-                        'laplacian', laplacian, 'DTN', DTN, ...
-                        'pressure_integral', pressureIntegral(spatialResolution+1, :), ...
-                        'obj_mass', obj_mass_adim);
-        luFutures = cell(stepsPerCycle, 1);
-        for ci = 1:stepsPerCycle
-            g_pf = 1 - bath_forcing_amplitude * cos(bath_freq_adim * ci * dt + phase_diff_rad);
-            luFutures{ci} = parfeval(@computeLU, 3, PC_min, g_pf, dt, nr, spatialResolution+1, dr, surface_force_adim);
-        end
-        PROBLEM_CONSTANTS.luFutures = luFutures;
-    else
-        fprintf('LU caching active (lazy-sync: no Parallel Computing Toolbox detected).\n');
-    end
+    fprintf('LU caching active (lazy-sync: in-memory factorization on demand).\n');
 else
     fprintf('Solver: GMRES (tol=%.0e, warm-started).\n', NameValueArgs.gmresTolerance);
 end
@@ -231,6 +266,7 @@ try
                advance_one_step(recordedConditions{current_index}, ...
                        PROBLEM_CONSTANTS);
         current_index = current_index + 1;
+        z_CoM_history(current_index) = recordedConditions{current_index}.center_of_mass;
 
         if PROBLEM_CONSTANTS.DEBUG_FLAG == true
             width = 6; 
@@ -267,6 +303,37 @@ try
             xlim([-3 * L_unit, 3 * L_unit]);
             ylim([-PROBLEM_CONSTANTS.ylim_limit * L_unit * 1e4, PROBLEM_CONSTANTS.ylim_limit * L_unit * 1e4]);
             drawnow;
+        end
+        
+        % --- Rolling Average Convergence Check for Early Stopping ---
+        % Evaluates the 1-period rolling average Z_roll over every step in the last period.
+        % If std(Z_roll) / |mean(Z_roll)| < convergenceTol (e.g. 0.02), baseline drift has stabilized without aliasing.
+        if earlyStop && mod(current_index - 1, 10) == 0 && (current_index - 1) >= 3 * stepsPerCycle
+            k = current_index - 1;
+            cycle_steps = stepsPerCycle;
+            
+            % Extract CoM positions directly from numeric history vector (zero cellfun overhead)
+            idx_range = (k - 2 * cycle_steps + 1) : k;
+            z_all = z_CoM_history(idx_range);
+            
+            % Compute 1-period rolling average for every step in the last period
+            z_roll = zeros(cycle_steps, 1);
+            for p = 1:cycle_steps
+                z_roll(p) = mean(z_all(p : p + cycle_steps - 1));
+            end
+            
+            mean_roll = mean(z_roll);
+            std_roll = std(z_roll);
+            ratio = std_roll / max(abs(mean_roll), 1e-6);
+            
+            if ratio < convergenceTol
+                if debug_flag
+                    fprintf('  [Early Stop] Converged at step %d (%.2f cycles, t = %.3f s). std(Z_roll)/|mean| = %.2e < %.2f\n', ...
+                        k, k / cycle_steps, recordedConditions{current_index}.time * T_unit, ratio, convergenceTol);
+                end
+                recordedConditions = recordedConditions(1:current_index);
+                break;
+            end
         end
      end 
     

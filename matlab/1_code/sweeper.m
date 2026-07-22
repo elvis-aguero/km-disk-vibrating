@@ -33,6 +33,9 @@ fixed.temporalResolution = 60;        % steps per adimensional unit
 fixed.simulationTime     = 30/90;      % s
 fixed.debug_flag         = false;
 fixed.solverType         = "auto";
+fixed.startStatic        = true;
+fixed.earlyStop          = true;
+fixed.convergenceTol     = 0.02;
 %% -----------------------------------------------------------------------
 
 % Locate simulation_code on the path
@@ -62,7 +65,7 @@ fprintf('Total cases: %d\n\n', nCases);
 % Summary table accumulators
 summaryRows = cell(nCases, 1);
 
-for ii = 1:nCases
+parfor ii = 1:nCases
     gamma_i = GG(ii);
     freq_i  = FF(ii);
     omega_i = 2 * pi * freq_i;
@@ -71,15 +74,12 @@ for ii = 1:nCases
     F_i = gamma_i * fixed.diskMass * g_cgs; 
     A_forcing_i = (gamma_i * g_cgs) / omega_i^2;
 
-    fprintf('[%d/%d]  gamma_forcing=%.3f  f=%g Hz  -> F=%.4f dyn, A_f=%.4e cm\n', ...
-        ii, nCases, gamma_i, freq_i, F_i, A_forcing_i);
-
     % CSV file for this run
     csvFile = fullfile(outDir, ...
         sprintf('CoM_gamma%.3f_f%gHz.csv', gamma_i, freq_i));
 
     if exist(csvFile, 'file')
-        fprintf('  Skipping (CSV exists)\n');
+        fprintf('PROGRESS [%d/%d SKIPPED]: gamma=%.3f, f=%g Hz (CSV exists)\n', ii, nCases, gamma_i, freq_i);
         summaryRows{ii} = {gamma_i, freq_i, 0, NaN, NaN, NaN, 'skipped'};
         continue
     end
@@ -102,7 +102,10 @@ for ii = 1:nCases
             'temporalResolution', fixed.temporalResolution, ...
             'simulationTime',     30/freq_i, ...
             'debug_flag',         fixed.debug_flag, ...
-            'solverType',         fixed.solverType);
+            'solverType',         fixed.solverType, ...
+            'startStatic',        fixed.startStatic, ...
+            'earlyStop',          fixed.earlyStop, ...
+            'convergenceTol',     fixed.convergenceTol);
 
         % Post-processing: Calculate max elevation in outer boundary region
         % (Outer 1 disk diameter = 2 disk radii)
@@ -119,8 +122,8 @@ for ii = 1:nCases
 
         CoM_max = max(abs(CoM_cm));
         CoM_rms = sqrt(mean(CoM_cm.^2));
-        fprintf('  Done in %.1f s  |CoM|_max=%.3e cm  |CoM|_rms=%.3e cm\n', ...
-            elapsed, CoM_max, CoM_rms);
+        fprintf('PROGRESS [%d/%d COMPLETED]: gamma=%.3f, f=%g Hz in %.1f s (|CoM|_max=%.3e cm, |CoM|_rms=%.3e cm)\n', ...
+            ii, nCases, gamma_i, freq_i, elapsed, CoM_max, CoM_rms);
         summaryRows{ii} = {gamma_i, freq_i, A_forcing_i, CoM_max, CoM_rms, elapsed, 'ok'};
 
     catch ME

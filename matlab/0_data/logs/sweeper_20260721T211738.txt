@@ -1,0 +1,149 @@
+Sweep started: 21-Jul-2026 21:17:38
+Axes: gamma=[0.05         0.2         0.5]  frequency=[10   20   30   40   50   60   70   80   90  100] Hz
+Fixed params:
+            diskRadius: 0.2000
+              diskMass: 0.0283
+        forceAmplitude: 0
+        forceFrequency: 90
+       phaseDifference: -90
+           bathDensity: 1.1750
+    bathSurfaceTension: 66.5000
+         bathViscosity: 0.1532
+          bathDiameter: 100
+     spatialResolution: 50
+    temporalResolution: 60
+        simulationTime: 0.3333
+            debug_flag: 0
+            solverType: "auto"
+           startStatic: 1
+             earlyStop: 1
+        convergenceTol: 0.0200
+
+Total cases: 30
+
+Starting parallel pool (parpool) using the 'Processes' profile ...
+21-Jul-2026 21:18:55: Job Running. Waiting for parallel pool workers to connect ...
+Connected to parallel pool with 6 workers.
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Finished simulation on /simulation_code. Time elapsed: 21.23 minutes
+PROGRESS [5/30 COMPLETED]: gamma=0.200, f=20 Hz in 1275.1 s (|CoM|_max=3.402e-02 cm, |CoM|_rms=2.910e-02 cm)
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Finished simulation on /simulation_code. Time elapsed: 23.28 minutes
+PROGRESS [6/30 COMPLETED]: gamma=0.500, f=20 Hz in 1397.2 s (|CoM|_max=4.021e-02 cm, |CoM|_rms=2.941e-02 cm)
+Finished simulation on /simulation_code. Time elapsed: 23.44 minutes
+PROGRESS [2/30 COMPLETED]: gamma=0.200, f=10 Hz in 1406.7 s (|CoM|_max=3.631e-02 cm, |CoM|_rms=2.932e-02 cm)
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Finished simulation on /simulation_code. Time elapsed: 23.50 minutes
+PROGRESS [1/30 COMPLETED]: gamma=0.050, f=10 Hz in 1411.0 s (|CoM|_max=3.105e-02 cm, |CoM|_rms=2.920e-02 cm)
+Finished simulation on /simulation_code. Time elapsed: 23.55 minutes
+PROGRESS [3/30 COMPLETED]: gamma=0.500, f=10 Hz in 1413.6 s (|CoM|_max=4.688e-02 cm, |CoM|_rms=3.075e-02 cm)
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Finished simulation on /simulation_code. Time elapsed: 23.57 minutes
+PROGRESS [4/30 COMPLETED]: gamma=0.050, f=20 Hz in 1415.0 s (|CoM|_max=3.094e-02 cm, |CoM|_rms=2.917e-02 cm)
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Finished simulation on /simulation_code. Time elapsed: 22.09 minutes
+PROGRESS [16/30 COMPLETED]: gamma=0.050, f=60 Hz in 1326.3 s (|CoM|_max=3.036e-02 cm, |CoM|_rms=2.877e-02 cm)
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Finished simulation on /simulation_code. Time elapsed: 24.41 minutes
+PROGRESS [10/30 COMPLETED]: gamma=0.050, f=40 Hz in 1465.4 s (|CoM|_max=3.038e-02 cm, |CoM|_rms=2.912e-02 cm)
+Finished simulation on /simulation_code. Time elapsed: 24.47 minutes
+PROGRESS [12/30 COMPLETED]: gamma=0.500, f=40 Hz in 1468.6 s (|CoM|_max=3.381e-02 cm, |CoM|_rms=2.902e-02 cm)
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Finished simulation on /simulation_code. Time elapsed: 24.87 minutes
+PROGRESS [18/30 COMPLETED]: gamma=0.500, f=60 Hz in 1492.9 s (|CoM|_max=3.198e-02 cm, |CoM|_rms=2.867e-02 cm)
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Finished simulation on /simulation_code. Time elapsed: 24.66 minutes
+Finished simulation on /simulation_code. Time elapsed: 24.73 minutes
+PROGRESS [14/30 COMPLETED]: gamma=0.200, f=50 Hz in 1480.1 s (|CoM|_max=3.120e-02 cm, |CoM|_rms=2.893e-02 cm)
+PROGRESS [8/30 COMPLETED]: gamma=0.200, f=30 Hz in 1484.3 s (|CoM|_max=3.251e-02 cm, |CoM|_rms=2.911e-02 cm)
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Finished simulation on /simulation_code. Time elapsed: 21.11 minutes
+PROGRESS [15/30 COMPLETED]: gamma=0.500, f=50 Hz in 1267.3 s (|CoM|_max=3.274e-02 cm, |CoM|_rms=2.887e-02 cm)
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Finished simulation on /simulation_code. Time elapsed: 24.01 minutes
+PROGRESS [9/30 COMPLETED]: gamma=0.500, f=30 Hz in 1440.6 s (|CoM|_max=3.602e-02 cm, |CoM|_rms=2.914e-02 cm)
+Finished simulation on /simulation_code. Time elapsed: 23.86 minutes
+PROGRESS [11/30 COMPLETED]: gamma=0.200, f=40 Hz in 1431.6 s (|CoM|_max=3.151e-02 cm, |CoM|_rms=2.907e-02 cm)
+Finished simulation on /simulation_code. Time elapsed: 23.70 minutes
+PROGRESS [7/30 COMPLETED]: gamma=0.050, f=30 Hz in 1422.2 s (|CoM|_max=3.076e-02 cm, |CoM|_rms=2.918e-02 cm)
+Finished simulation on /simulation_code. Time elapsed: 23.73 minutes
+PROGRESS [13/30 COMPLETED]: gamma=0.050, f=50 Hz in 1424.0 s (|CoM|_max=3.043e-02 cm, |CoM|_rms=2.897e-02 cm)
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Finished simulation on /simulation_code. Time elapsed: 23.87 minutes
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+PROGRESS [17/30 COMPLETED]: gamma=0.200, f=60 Hz in 1432.9 s (|CoM|_max=3.090e-02 cm, |CoM|_rms=2.873e-02 cm)
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Finished simulation on /simulation_code. Time elapsed: 21.31 minutes
+PROGRESS [19/30 COMPLETED]: gamma=0.050, f=70 Hz in 1279.3 s (|CoM|_max=3.019e-02 cm, |CoM|_rms=2.853e-02 cm)
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Finished simulation on /simulation_code. Time elapsed: 24.84 minutes
+PROGRESS [24/30 COMPLETED]: gamma=0.500, f=80 Hz in 1491.1 s (|CoM|_max=3.082e-02 cm, |CoM|_rms=2.822e-02 cm)
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Finished simulation on /simulation_code. Time elapsed: 25.25 minutes
+PROGRESS [22/30 COMPLETED]: gamma=0.050, f=80 Hz in 1515.4 s (|CoM|_max=3.004e-02 cm, |CoM|_rms=2.830e-02 cm)
+Finished simulation on /simulation_code. Time elapsed: 25.34 minutes
+PROGRESS [21/30 COMPLETED]: gamma=0.500, f=70 Hz in 1520.5 s (|CoM|_max=3.136e-02 cm, |CoM|_rms=2.845e-02 cm)
+Finished simulation on /simulation_code. Time elapsed: 25.38 minutes
+PROGRESS [23/30 COMPLETED]: gamma=0.200, f=80 Hz in 1523.5 s (|CoM|_max=3.023e-02 cm, |CoM|_rms=2.827e-02 cm)
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Finished simulation on /simulation_code. Time elapsed: 25.36 minutes
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+PROGRESS [20/30 COMPLETED]: gamma=0.200, f=70 Hz in 1522.4 s (|CoM|_max=3.057e-02 cm, |CoM|_rms=2.850e-02 cm)
+Starting simulation on /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/simulation_code
+LU caching active (lazy-sync: in-memory factorization on demand).
+Finished simulation on /simulation_code. Time elapsed: 18.94 minutes
+PROGRESS [25/30 COMPLETED]: gamma=0.050, f=90 Hz in 1137.7 s (|CoM|_max=2.992e-02 cm, |CoM|_rms=2.807e-02 cm)
+Finished simulation on /simulation_code. Time elapsed: 22.88 minutes
+PROGRESS [29/30 COMPLETED]: gamma=0.200, f=100 Hz in 1374.0 s (|CoM|_max=2.958e-02 cm, |CoM|_rms=2.784e-02 cm)
+Finished simulation on /simulation_code. Time elapsed: 23.88 minutes
+PROGRESS [28/30 COMPLETED]: gamma=0.050, f=100 Hz in 1433.6 s (|CoM|_max=2.974e-02 cm, |CoM|_rms=2.786e-02 cm)
+Finished simulation on /simulation_code. Time elapsed: 24.30 minutes
+Finished simulation on /simulation_code. Time elapsed: 24.17 minutes
+PROGRESS [27/30 COMPLETED]: gamma=0.500, f=90 Hz in 1458.7 s (|CoM|_max=3.034e-02 cm, |CoM|_rms=2.801e-02 cm)
+PROGRESS [30/30 COMPLETED]: gamma=0.500, f=100 Hz in 1451.0 s (|CoM|_max=2.991e-02 cm, |CoM|_rms=2.781e-02 cm)
+Finished simulation on /simulation_code. Time elapsed: 24.40 minutes
+PROGRESS [26/30 COMPLETED]: gamma=0.200, f=90 Hz in 1464.7 s (|CoM|_max=2.990e-02 cm, |CoM|_rms=2.805e-02 cm)
+
+Sweep finished: 21-Jul-2026 23:20:54
+Summary: /Users/harrislab/Documents/GitHub/km-disk-vibrating/matlab/1_code/../0_data/sweep_results/sweep_20260721_211738/summary_20260721T232054.csv
