@@ -45,3 +45,14 @@ matlab/1_code/D20Quant20/
 .DS_Store
 
 lol.txt
+
+# Julia port: generated run/sweep output and logs (not source, not committed fixtures)
+julia/logs/
+julia/data/results/
+
+# Julia port: cluster job output (julia/cluster/run_baseline_sweep.sh), one folder per run
+output/
+
+# Julia port: DTN cache migrated/generated from the legacy MATLAB .mat files, and its
+# manifest — regenerate locally via julia/scripts/migrate_dtn_caches.jl, don't commit
+julia/data/dtn_cache/

@@ -1,0 +1,18 @@
+name = "FaradayDiskLive"
+uuid = "f3e8a1c2-9b4d-4e7f-8a2c-1d5e6f7a8b90"
+
+[deps]
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+
+[compat]
+julia = "1.10"
+
+# Deliberately its own environment, separate from ../Project.toml (the shared
+# migrate/generate/sweep/overlay scripts env): GLMakie needs a real OpenGL/GLFW-capable
+# display to precompile, which most headless cluster/CI nodes don't have. Every other
+# script in this directory bootstraps by activating ../ and calling Pkg.instantiate() —
+# if GLMakie were listed there too, instantiating that shared environment (which
+# migrate_dtn_caches.jl / run_matlab_baseline_check.jl also do, and neither touches
+# GLMakie at all) would try to build GLMakie and could fail the whole run on a machine
+# that will never actually use it. See live_plot.jl's own bootstrap for how this gets
+# activated instead.
