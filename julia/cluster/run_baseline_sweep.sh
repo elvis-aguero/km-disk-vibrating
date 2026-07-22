@@ -38,9 +38,42 @@ set -euo pipefail
 
 module load julia 2>/dev/null || true
 
-# --- locate the repo root, independent of the submission directory ---
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# --- locate the repo root ---
+# NOT via ${BASH_SOURCE[0]}/dirname alone: under `sbatch`, Slurm copies this script into a
+# spool directory on the compute node (e.g. /var/spool/slurmd/...) and executes it from
+# there, so BASH_SOURCE[0] resolves to that spooled copy, not the file in your checkout —
+# deriving the repo root from it lands on something like /var/spool, where mkdir below
+# fails with "Permission denied" (confirmed against a real cluster run). Slurm sets
+# SLURM_SUBMIT_DIR to wherever `sbatch` was actually invoked from, which is the right
+# anchor for a batch job; only fall back to BASH_SOURCE when running this script directly
+# with bash (no Slurm involved, so no spooling to work around).
+if [[ -n "${SLURM_SUBMIT_DIR:-}" ]]; then
+    START_DIR="$SLURM_SUBMIT_DIR"
+else
+    START_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+fi
+
+# Walk up from START_DIR to find the repo root, rather than assuming a fixed number of
+# ".." levels — this way it's correct whether sbatch was run from the repo root itself or
+# from a subdirectory of it (e.g. `cd julia/cluster && sbatch run_baseline_sweep.sh`).
+REPO_ROOT=""
+CANDIDATE="$START_DIR"
+while true; do
+    if [[ -f "$CANDIDATE/julia/cluster/run_baseline_sweep.sh" ]]; then
+        REPO_ROOT="$CANDIDATE"
+        break
+    fi
+    [[ "$CANDIDATE" == "/" ]] && break
+    CANDIDATE="$(dirname "$CANDIDATE")"
+done
+
+if [[ -z "$REPO_ROOT" ]]; then
+    echo "Error: could not locate the km-disk-vibrating repo root starting from '$START_DIR'." >&2
+    echo "Submit this job with 'sbatch' from inside your repo checkout (a subdirectory is" >&2
+    echo "fine too), or run this script directly with bash from its own location." >&2
+    exit 1
+fi
+
 cd "$REPO_ROOT"
 
 THREADS="${SLURM_CPUS_PER_TASK:-4}"
@@ -58,11 +91,13 @@ julia --version
 #     val_phase_<name>.{png,pdf}     -- phase-difference overlay vs. experiment
 #   logs/                          -- structured .log (human-readable) + .jsonl
 #                                     (machine-parseable) logs, one pair per run
-#   <job-name>-<job_id>.out/.err   -- this SLURM job's own stdout/stderr (written directly
-#                                     by SLURM next to this script, per the #SBATCH
-#                                     --output/--error directives above; not moved into
-#                                     output/ so you can tail them while the job is queued
-#                                     or still starting up)
+#
+# This job's own stdout/stderr (<job-name>-<job_id>.out/.err, per the #SBATCH
+# --output/--error directives above) land in whatever directory you ran `sbatch` from —
+# Slurm resolves relative --output/--error paths against the submission directory, not
+# this script's own location — so they won't be inside output/<job_id>_<timestamp>/
+# itself; that's fine, and lets you tail them while the job is still queued or starting,
+# before this script has even created that directory.
 RUN_ID="${SLURM_JOB_ID:-local}_$(date +%Y%m%d_%H%M%S)"
 OUTDIR="$REPO_ROOT/output/$RUN_ID"
 mkdir -p "$OUTDIR/sweep" "$OUTDIR/logs"
