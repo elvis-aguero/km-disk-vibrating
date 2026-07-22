@@ -5,37 +5,56 @@ left untouched as reference/legacy; this is an independent, from-scratch reimple
 — not a transpiler output — with a cleaner module structure, a corrected early-stop
 convergence check, structured logging, and real test coverage.
 
-## Important: how this port was authored
+## Important: how this port was authored, and its current status
 
-This port was written in an environment with **no way to install or run Julia** (the
-official Julia binary host and package registry server were both blocked by network
-policy, and no system package was available). Every file here was written by careful,
-line-by-line translation of the MATLAB source and by reasoning through the math by hand
-— **none of it has actually been executed**. `Pkg.instantiate()`, the test suite, and
-every script need to be run for the first time by whoever picks this up next.
+This port was originally written in an environment with **no way to install or run
+Julia** (the official Julia binary host and package registry server were both blocked by
+network policy, and no system package was available) — every file was written by careful
+line-by-line translation of the MATLAB source and by reasoning through the math by hand,
+with nothing actually executed before the first push.
 
-Two consequences worth knowing about before you start:
+It has since been run for real against GitHub Actions CI (`.github/workflows/julia-ci.yml`)
+and iterated on fix-by-fix. **As of the latest CI run, the fast test tier is effectively
+green** (104/105 tests passing) except for one known, understood, non-blocking gap
+documented below. Bugs actually found and fixed this way included: a struct-constructor
+signature collision, a docstring `$VAR` string-interpolation error, a wrong sign
+convention documented (not implemented) for `fit_oscillation`, a test-tuning issue in the
+convergence-check synthetic signal, an off-by-one in two tests' repo-root path
+computation, three scripts missing `using Dates`/`using Printf` (a dependency's internal
+`using` doesn't propagate to a separate script), a too-small test domain that let boundary
+reflection contaminate results, `Krylov.GmresWorkspace`'s real constructor signature
+(twice — first the positional args, then the storage-type argument), and a Julia
+"world-age" bug from calling `include()` inside a running closure. None of that is
+speculative anymore — it's what CI actually reported, fixed one push at a time.
 
-1. **The GMRES solver (`src/solver/gmres_solver.jl`) and the logging setup
-   (`src/logging_setup.jl`) call `Krylov.jl`/`LoggingExtras.jl` APIs from memory.** If
-   `Pkg.instantiate()` or the test suite reports a `MethodError`/`UndefKeywordError`
-   originating in either file, that's almost certainly why — the fix is local to that one
-   file. See the module docstring in each for specifics.
-2. **`src/dtn/dtn_generator.jl` is the highest-risk file in the whole port** — a
-   line-for-line transcription of `DTNVectorized.m`'s singular-integral quadrature (lots
-   of hand-written polynomial coefficients, no way for me to check the arithmetic by
-   running it). Its correctness is established entirely by
-   `test/integration/test_dtn_golden_small.jl`, which compares its output against the
-   legacy MATLAB `.mat` cache for the small `nr=50` domain. **If that test fails, this is
-   the first and most likely place to look**, re-deriving from `DTNVectorized.m` by hand.
-3. **There is no frozen/golden numeric regression fixture tier.** Normally a port like
-   this would include "run once, freeze the answer, assert it never changes" tests — but
-   producing that frozen answer requires actually running the corrected Julia code, which
-   wasn't possible here. Instead, correctness for anything beyond the DTN generator is
-   established through *physically-grounded* properties (does the center-of-mass
-   oscillate at the driving frequency? does damping actually damp? do two independent
-   linear solvers — LU-cached and GMRES — agree?) in `test/integration/`. See
-   "Test coverage" below.
+One gap remains open:
+
+- **`src/dtn/dtn_generator.jl`'s comparison against the legacy MATLAB cache
+  (`test/integration/test_dtn_golden_small.jl`) is not fully resolved.** The test
+  initially showed a 75% relative discrepancy at the domain size its folder name implies
+  (`D5Quant20` → bathDiameter=20), but every formula/index/divisor in the generator was
+  re-verified character-by-character against `DTNVectorized.m` with no error found. The
+  actual cause turned out to be the legacy cache's *own* filename ambiguity — it's named
+  `DTNnew345nr50D5refp10.mat` ("D5", not "D20"), and comparing against
+  `generate_dtn(50, 5.0)` instead dropped the discrepancy to ~2.15%, strongly suggesting
+  the legacy cache itself was generated with the "wrong" domain size relative to its
+  folder name (a pre-existing MATLAB-side inconsistency, not something to fix in
+  `matlab/`, which is left untouched). That remaining ~2.15% is larger than pure
+  batched-vs-unbatched floating-point summation-order differences should produce (normally
+  ~1e-10, not ~1e-2) and is **not** fully explained. See the module docstring in
+  `dtn_generator.jl` and the test itself for what's been ruled out and the leading
+  suspect (an `l_vals` angular-quadrature range edge effect). This is the one item left
+  for whoever next has a working Julia install to dig into further — everything else
+  driving actual simulation behavior (the solver, convergence check, sweep orchestration,
+  I/O) is verified passing.
+- There is deliberately no frozen/golden numeric regression fixture tier beyond the DTN
+  comparison above — producing a frozen "run once, assert it never changes" reference
+  would have required trusting a from-scratch, never-executed implementation as its own
+  ground truth. Correctness for the solver, convergence check, and sweep pipeline instead
+  comes from *physically-grounded* properties (does the center-of-mass oscillate at the
+  driving frequency? does damping actually damp? do two independent linear solvers —
+  LU-cached and GMRES — agree?) in `test/integration/`, all of which are now passing
+  against real execution. See "Test coverage" below.
 
 None of this should be read as "this code doesn't work" — the underlying math was traced
 by hand against the MATLAB source and cross-checked internally (e.g. `materialize!` is

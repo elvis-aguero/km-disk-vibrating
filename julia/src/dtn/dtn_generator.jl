@@ -9,17 +9,30 @@ that do not change the result: (1) MATLAB's `num_batches=20` chunking of the ang
 quadrature (`l_vals`) existed only to bound per-*process* memory inside `parfor` workers
 (each a separate OS process) — Julia's `Threads.@threads` runs in one shared address
 space, so the angular quadrature is evaluated in one pass instead of 20 batches
-(mathematically identical; floating-point summation order differs slightly, so results
-match MATLAB to circa `1e-10` relative rather than bit-for-bit); (2) MATLAB's
+(mathematically should be near-identical; see the STATUS note below for why the observed
+gap is somewhat larger than pure floating-point reordering suggests); (2) MATLAB's
 `accumarray(idx, val, [nr,1])` scatter-add is replaced by `accumulate_masked!`, a small
 helper with the same semantics.
 
 WARNING: this is the highest-risk file in the port. It was transcribed without the
 ability to run either MATLAB or Julia to check it (no network access to install Julia in
-the environment this was written in). Its correctness is established entirely by the
-`test/integration/test_dtn_golden_small.jl` comparison against the migrated nr=50 MATLAB
-reference cache — treat that test as load-bearing, not incidental, and re-derive this
-file from `DTNVectorized.m` by hand if it ever fails.
+the environment this was written in). Its correctness is checked by
+`test/integration/test_dtn_golden_small.jl` against the legacy `D5Quant20` MATLAB
+reference cache — treat that test as load-bearing, not incidental.
+
+STATUS (as of the first real CI runs against this port): every formula, index range, and
+divisor here was re-verified character-by-character against `DTNVectorized.m` and no
+discrepancy from the MATLAB source was found. Comparing against the legacy cache initially
+showed a 75% relative discrepancy — traced not to a transcription bug but to the legacy
+cache's own filename ambiguity (`DTNnew345nr50D5refp10.mat` encodes "D5", not "D20" as the
+normal naming convention and its `D5Quant20` folder's implied bathDiameter=20 would
+suggest) — re-comparing against `generate_dtn(50, 5.0)` (matching the filename literally)
+dropped the gap to ~2.15%. That residual ~2% is larger than pure batched-vs-unbatched
+floating-point summation-order differences should produce (normally ~1e-10-scale, not
+~1e-2), and is NOT fully explained — see `test_dtn_golden_small.jl` for candidate causes
+(an `l_vals` angular-quadrature range edge effect is the leading suspect) and re-derive
+this file from `DTNVectorized.m` by hand if that test ever regresses further or the gap
+needs closing precisely.
 """
 
 const DTN_DEFAULT_REFP = 10
