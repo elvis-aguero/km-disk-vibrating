@@ -3,7 +3,13 @@
 # it defines aren't visible to the *currently executing* dynamic call, only to calls
 # dispatched afresh afterwards. A first CI run hit exactly this (`MethodError: ... The
 # applicable method may be too new`) when this was nested inside the testset.
-include(joinpath(@__DIR__, "..", "..", "scripts", "run_validation_overlay.jl"))
+#
+# Guarded (not a bare include): test_plotting.jl includes the same script — redefining
+# `struct OverlayCase` a second time in the same process is unsafe/rejected by Julia,
+# unlike redefining plain functions, which is always fine.
+if !@isdefined(OverlayCase)
+    include(joinpath(@__DIR__, "..", "..", "scripts", "run_validation_overlay.jl"))
+end
 
 @testset "sweep end-to-end" begin
     mktempdir() do outdir

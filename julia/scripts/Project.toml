@@ -5,10 +5,18 @@ uuid = "3c8f1e9d-2a5b-4c7e-9f6a-8d4b5e2c1a90"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 
 [compat]
 julia = "1.10"
 MAT = "0.10"
+
+# GLMakie (scripts/live_plot.jl only) needs a display/OpenGL context and is never
+# exercised by CI (headless GLMakie is unreliable to set up reliably) — see that file's
+# module docstring. CairoMakie (run_validation_overlay.jl, run_matlab_baseline_check.jl)
+# is a pure rasterizing/vector backend and works headlessly, so it IS covered by a CI
+# test (see julia/test/integration/test_plotting.jl).
 
 # FaradayDisk itself is intentionally not listed here as a registered/path dependency —
 # `[sources]` path entries require a newer Pkg than this project's julia="1.10" floor

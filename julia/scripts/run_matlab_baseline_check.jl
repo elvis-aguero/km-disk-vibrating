@@ -53,13 +53,18 @@ function run_matlab_baseline_check(; outdir::Union{Nothing,String} = nothing)
     stats = rmse_against_experiment(cases, joinpath(EXPERIMENTAL_DIR, "ampiezza_solo_misure_3.csv"),
                                      joinpath(EXPERIMENTAL_DIR, "fase_solo_misure_3.csv"))
 
+    sweep_name = basename(rstrip(outdir, '/'))
+    plots = plot_validation_overlay(cases, joinpath(EXPERIMENTAL_DIR, "ampiezza_solo_misure_3.csv"),
+                                     joinpath(EXPERIMENTAL_DIR, "fase_solo_misure_3.csv"), outdir, sweep_name)
+
     pass_primary = stats.amp_rmse <= AMPLITUDE_RMSE_THRESHOLD && stats.phase_rmse_deg <= PHASE_RMSE_DEG_THRESHOLD
     pass_incident_guard = stats.amp_rmse < AMPLITUDE_RMSE_MUST_BEAT && stats.phase_rmse_deg < PHASE_RMSE_DEG_MUST_BEAT
 
-    @info "baseline check complete" amp_rmse = stats.amp_rmse phase_rmse_deg = stats.phase_rmse_deg pass_primary = pass_primary pass_incident_guard = pass_incident_guard outdir = outdir
+    @info "baseline check complete" amp_rmse = stats.amp_rmse phase_rmse_deg = stats.phase_rmse_deg pass_primary = pass_primary pass_incident_guard = pass_incident_guard outdir = outdir amp_plot = plots.amp_png phase_plot = plots.phase_png
 
     return (amp_rmse = stats.amp_rmse, phase_rmse_deg = stats.phase_rmse_deg, n_amp = stats.n_amp,
-            n_phase = stats.n_phase, outdir = outdir, pass_primary = pass_primary, pass_incident_guard = pass_incident_guard)
+            n_phase = stats.n_phase, outdir = outdir, pass_primary = pass_primary, pass_incident_guard = pass_incident_guard,
+            amp_plot = plots.amp_png, phase_plot = plots.phase_png)
 end
 
 function main()

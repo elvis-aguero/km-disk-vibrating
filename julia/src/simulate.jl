@@ -19,7 +19,8 @@ struct SimulationResult
 end
 
 """
-    run_simulation(params; dtn_registry=default_registry(), dtn=nothing, ram_budget_bytes=nothing) -> SimulationResult
+    run_simulation(params; dtn_registry=default_registry(), dtn=nothing, ram_budget_bytes=nothing,
+                   on_step=nothing) -> SimulationResult
 
 Runs one simulation to completion (or until early-stop convergence, or divergence).
 Entry point equivalent to `solve_motion.m`. `ram_budget_bytes` defaults to
@@ -31,13 +32,24 @@ If `dtn` is provided directly (an already-loaded matrix), it is used as-is and
 bathDiameter)` load the (potentially tens-of-MB) DTN matrix once and share it read-only
 across every case, instead of every case re-reading it from disk.
 
+`on_step`, if given, is called as `on_step(state, problem, step_count)` after every
+completed step (including the one that triggers divergence, but not called for the
+initial pre-loop state). This is the *only* hook for per-step visualization — MATLAB's
+per-step `drawnow` debug plot has no direct equivalent baked into the loop itself, since
+that would force a plotting dependency onto every user of this function. Instead, an
+opt-in live-plotting callback lives entirely outside the core package in
+`scripts/live_plot.jl` (`make_live_plot_callback`) and is passed in through this
+parameter; `run_sweep`/`run_sweep_case` never set it, since a multithreaded sweep must
+never try to open plot windows from multiple threads at once.
+
 The internal time-stepping loop, and the convergence check applied to it, both operate
 entirely in the solver's dimensionless units (matching `problem.effective_w`) — the
 result is only converted to physical units (seconds, cm) once, at the end, for output.
 """
 function run_simulation(params::SimulationParams; dtn_registry::Union{Nothing,DTNManifest} = nothing,
                          dtn::Union{Nothing,AbstractMatrix{<:Real}} = nothing,
-                         ram_budget_bytes::Union{Nothing,Integer} = nothing)
+                         ram_budget_bytes::Union{Nothing,Integer} = nothing,
+                         on_step::Union{Nothing,Function} = nothing)
     t_wall_start = time()
 
     if dtn === nothing
@@ -87,6 +99,8 @@ function run_simulation(params::SimulationParams; dtn_registry::Union{Nothing,DT
         push!(time_hist, state.time)
         push!(com_hist, state.center_of_mass)
         push!(eta_hist, copy(state.bath_surface))
+
+        on_step === nothing || on_step(state, problem, step_count)
 
         if outcome == :diverged
             status = :diverged

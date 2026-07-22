@@ -1,19 +1,18 @@
 #!/usr/bin/env julia
 """
-Computes steady-state amplitude/phase for every case in a Julia sweep output directory
-and compares against the digitized experimental measurements — the numerical core of
-`overlay_validation.py`, ported to reuse the shared `fit_oscillation` (see
-`src/convergence.jl`) instead of re-deriving the least-squares regression a third time.
+Computes steady-state amplitude/phase for every case in a Julia sweep output directory,
+compares against the digitized experimental measurements, and plots both — the full
+functional equivalent of `overlay_validation.py`, reusing the shared `fit_oscillation`
+(see `src/convergence.jl`) instead of re-deriving the least-squares regression a third
+time.
 
-Deliberately does NOT reproduce the PNG/PDF plotting from `overlay_validation.py` — doing
-so would mean adding a plotting dependency (Plots.jl/Makie) to this port without being
-able to install or run it to verify it actually works (see the network-access caveat in
-`src/solver/gmres_solver.jl`). Instead, this writes a plain CSV table of
-(gamma, freq, ampNorm, phaseDiff) per case plus the summary RMSE numbers, which is
-sufficient for both human inspection and the automated MATLAB-baseline check in
-`run_matlab_baseline_check.jl` / `test/slow/test_matlab_baseline_validation.jl` (which
-`include`s this file rather than duplicating its logic). Adding plot output is a natural
-follow-up once Julia is available to verify a plotting library end-to-end.
+Plotting uses CairoMakie (a pure rasterizing/vector backend — no display/OpenGL context
+needed, so it runs headlessly in CI; see `test/integration/test_plotting.jl`, which
+exercises `plot_validation_overlay` directly and is the actual verification this code has
+had, since it could not be run locally when written — see julia/README.md). For a truly
+*live*, per-step view during a running simulation (MATLAB's per-step `drawnow`), see
+`scripts/live_plot.jl` instead, which needs GLMakie and a real display and is NOT covered
+by CI.
 
 This file only *defines* functions when `include`d by another script/test; it only runs
 `main()` when executed directly (`julia run_validation_overlay.jl <sweep_dir>`).
@@ -23,6 +22,7 @@ if !@isdefined(FaradayDisk)
     include("_bootstrap.jl")
 end
 using Printf  # @printf below; not re-exported by `using FaradayDisk` even though FaradayDisk itself depends on it
+using CairoMakie
 
 const REPO_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const EXPERIMENTAL_DIR = joinpath(REPO_ROOT, "matlab", "0_data", "external", "experimental_measurements")
@@ -174,6 +174,99 @@ function write_overlay_csv(path::AbstractString, cases::Vector{OverlayCase})
     return path
 end
 
+# --- Plotting (port of overlay_validation.py's matplotlib figures to CairoMakie) ---
+
+const _EXP_COLORS = Dict(0.05 => RGBf(0.6, 1.0, 0.6), 0.20 => RGBf(0.35, 0.75, 0.35), 0.50 => RGBf(0.1, 0.5, 0.1))
+const _SIM_PALETTE = [:royalblue, :darkorange, :seagreen, :crimson, :purple, :saddlebrown, :teal, :magenta]
+
+function _exp_color(g::Real)
+    for (k, c) in _EXP_COLORS
+        isapprox(k, g; atol = 1e-3) && return c
+    end
+    return :gray  # unrecognized gamma — still plots, just uncolor-coded
+end
+
+function _sim_color(u_gammas::Vector{Float64}, g::Real)
+    idx = findfirst(x -> isapprox(x, g; atol = 1e-3), u_gammas)
+    return _SIM_PALETTE[mod1(idx === nothing ? 1 : idx, length(_SIM_PALETTE))]
+end
+
+"""
+    _plot_overlay_panel!(fig_pos, cases, exp_data, value_field, u_gammas, xlims_, ylims_,
+                          xticks_, yticks_, title_, ylabel_)
+
+Draws one panel (amplitude or phase): experimental error-bar scatter in the background,
+per-gamma simulation `scatterlines!` on top, matching `overlay_validation.py`'s layering
+and color scheme (light/medium/dark green for gamma 0.05/0.20/0.50).
+"""
+function _plot_overlay_panel!(fig_pos, cases::Vector{OverlayCase}, exp_data::Dict{String,Vector{Float64}},
+                               value_field::Symbol, u_gammas::Vector{Float64}, xlims_::Tuple, ylims_::Tuple,
+                               xticks_, yticks_, title_::AbstractString, ylabel_::AbstractString)
+    ax = Axis(fig_pos; xlabel = "f (Hz)", ylabel = ylabel_, title = title_)
+    xlims!(ax, xlims_...)
+    ylims!(ax, ylims_...)
+    ax.xticks = xticks_
+    ax.yticks = yticks_
+
+    for g in sort(unique(exp_data["gamma"]))
+        idx = findall(x -> isapprox(x, g; atol = 1e-3), exp_data["gamma"])
+        isempty(idx) && continue
+        errorbars!(ax, exp_data["frequency_Hz"][idx], exp_data["value"][idx],
+                   exp_data["error_lower"][idx], exp_data["error_upper"][idx];
+                   color = :black, whiskerwidth = 6)
+        scatter!(ax, exp_data["frequency_Hz"][idx], exp_data["value"][idx];
+                 color = _exp_color(g), strokecolor = :black, strokewidth = 1, markersize = 12,
+                 label = "Exp Γ=$(round(g, digits = 2))")
+    end
+
+    for g in u_gammas
+        gcases = sort(filter(c -> isapprox(c.gamma, g; atol = 1e-3), cases), by = c -> c.freq)
+        isempty(gcases) && continue
+        freqs = [c.freq for c in gcases]
+        values = [getfield(c, value_field) for c in gcases]
+        scatterlines!(ax, freqs, values; color = _sim_color(u_gammas, g), linewidth = 2, markersize = 8,
+                      label = "Sim Γ=$(round(g, digits = 2))")
+    end
+
+    axislegend(ax; position = :rt, framevisible = true, labelsize = 11)
+    return ax
+end
+
+"""
+    plot_validation_overlay(cases, exp_amp_path, exp_phase_path, out_dir, sweep_name) -> NamedTuple
+
+Writes `val_amp_<sweep_name>.png/.pdf` and `val_phase_<sweep_name>.png/.pdf` under
+`out_dir`, matching `overlay_validation.py`'s output naming and figure layout (axis
+limits/ticks, title, legend). Returns the four output paths.
+"""
+function plot_validation_overlay(cases::Vector{OverlayCase}, exp_amp_path::AbstractString,
+                                  exp_phase_path::AbstractString, out_dir::AbstractString, sweep_name::AbstractString)
+    isempty(cases) && error("plot_validation_overlay: no cases to plot")
+    mkpath(out_dir)
+    u_gammas = sort(unique(c.gamma for c in cases))
+
+    exp_amp = read_csv_columns(exp_amp_path, ["frequency_Hz", "value", "error_lower", "error_upper", "gamma"])
+    exp_phase = read_csv_columns(exp_phase_path, ["frequency_Hz", "value", "error_lower", "error_upper", "gamma"])
+
+    fig_amp = Figure()
+    _plot_overlay_panel!(fig_amp[1, 1], cases, exp_amp, :ampNorm, u_gammas, (0, 105), (0, 1.2), 0:10:100, 0:0.2:1.2,
+                         "Amplitude Validation Overlay ($sweep_name)", "A_disk / A_base")
+    amp_png = joinpath(out_dir, "val_amp_$(sweep_name).png")
+    amp_pdf = joinpath(out_dir, "val_amp_$(sweep_name).pdf")
+    save(amp_png, fig_amp; px_per_unit = 3)
+    save(amp_pdf, fig_amp)
+
+    fig_phase = Figure()
+    _plot_overlay_panel!(fig_phase[1, 1], cases, exp_phase, :phaseDiff, u_gammas, (0, 105), (0, 360), 0:10:100, 0:90:360,
+                         "Phase Validation Overlay ($sweep_name)", "Phase Difference (deg)")
+    phase_png = joinpath(out_dir, "val_phase_$(sweep_name).png")
+    phase_pdf = joinpath(out_dir, "val_phase_$(sweep_name).pdf")
+    save(phase_png, fig_phase; px_per_unit = 3)
+    save(phase_pdf, fig_phase)
+
+    return (amp_png = amp_png, amp_pdf = amp_pdf, phase_png = phase_png, phase_pdf = phase_pdf)
+end
+
 function main(args)
     length(args) >= 1 || error("usage: run_validation_overlay.jl <sweep_dir>")
     sweep_dir = args[1]
@@ -188,7 +281,14 @@ function main(args)
     println("Validation overlay written to: ", out_csv)
     println("Amplitude RMSE: ", stats.amp_rmse, " (n=", stats.n_amp, ")")
     println("Phase RMSE (deg): ", stats.phase_rmse_deg, " (n=", stats.n_phase, ")")
-    return stats
+
+    sweep_name = basename(rstrip(sweep_dir, '/'))
+    plots = plot_validation_overlay(cases, joinpath(EXPERIMENTAL_DIR, "ampiezza_solo_misure_3.csv"),
+                                     joinpath(EXPERIMENTAL_DIR, "fase_solo_misure_3.csv"), sweep_dir, sweep_name)
+    println("Amplitude plot: ", plots.amp_png, " / ", plots.amp_pdf)
+    println("Phase plot: ", plots.phase_png, " / ", plots.phase_pdf)
+
+    return (stats..., plots...)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

@@ -55,6 +55,10 @@ One gap remains open:
   driving frequency? does damping actually damp? do two independent linear solvers —
   LU-cached and GMRES — agree?) in `test/integration/`, all of which are now passing
   against real execution. See "Test coverage" below.
+- **`scripts/live_plot.jl` (opt-in GLMakie live plotting) is unverified even by CI** —
+  GLMakie needs a real display/GPU context, which CI doesn't have, so unlike everything
+  else in this list it has never actually been executed, not even once. See "Running
+  things" below for what it does and why it's excluded from the fast tier's guarantees.
 
 None of this should be read as "this code doesn't work" — the underlying math was traced
 by hand against the MATLAB source and cross-checked internally (e.g. `materialize!` is
@@ -104,11 +108,35 @@ This also cross-validates the small `D5Quant20` cache against the native generat
 the migration script's docstring for why that particular cache's filename is ambiguous
 enough to warrant a check).
 
-**Validation overlay vs. experimental data** (port of `overlay_validation.py`, numeric
-part only — see its docstring for why plotting was intentionally left out for now):
+**Validation overlay vs. experimental data** (port of `overlay_validation.py`, including
+plotting):
 ```sh
 julia --project=scripts julia/scripts/run_validation_overlay.jl <sweep_dir>
 ```
+Produces `val_amp_<sweep_name>.{png,pdf}` / `val_phase_<sweep_name>.{png,pdf}` in
+`<sweep_dir>` (amplitude ratio and phase-difference overlays vs. the digitized
+experimental data, one panel per, colored by gamma) via CairoMakie, a headless-safe
+rasterizing/vector backend — this path is exercised by
+`test/integration/test_plotting.jl` in the default (fast, CI) test tier.
+
+**Opt-in live plotting during a run** (`scripts/live_plot.jl`, port of `solve_motion.m`'s
+`drawnow` debug-plot block):
+```julia
+using FaradayDisk
+include("julia/scripts/live_plot.jl")
+
+cb = make_live_plot_callback(problem)          # problem from build_problem(params, dtn)
+run_simulation(params; dtn = dtn, on_step = cb)
+```
+Opens one GLMakie window and updates it in place every step (or every `refresh_every`
+steps): the bath surface profile near the disk, the disk's own height, and the bath-drive
+amplitude as a guide line. GLMakie needs a real display/GPU context, so — unlike the
+CairoMakie overlay plotting above — this is **not exercised by CI at all**, and was never
+run locally even once while writing this port (see "Important: how this port was authored,
+and its current status" above).
+Treat it as unverified until someone with local Julia and a display confirms it works.
+Never pass this callback into `run_sweep`/`run_sweep_case` — sweep cases run concurrently
+via `Threads.@threads`, and touching a GLMakie window from more than one thread isn't safe.
 
 **Tests:**
 ```sh
@@ -184,3 +212,5 @@ into `julia/` — see the path resolution in `scripts/migrate_dtn_caches.jl` and
 | `src/simulate.jl` | `solve_motion.m` |
 | `src/sweep.jl` | `sweeper.m` |
 | `src/io.jl` | `results_saver` in `solve_motion.m` / the CSV writers in `sweeper.m` |
+| `scripts/run_validation_overlay.jl` | `overlay_validation.py` |
+| `scripts/live_plot.jl` | the `drawnow` debug-plot block in `solve_motion.m` |
