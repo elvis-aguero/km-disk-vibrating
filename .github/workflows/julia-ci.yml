@@ -1,0 +1,42 @@
+name: Julia CI
+
+on:
+  push:
+    paths:
+      - 'julia/**'
+      - '.github/workflows/julia-ci.yml'
+  pull_request:
+    paths:
+      - 'julia/**'
+      - '.github/workflows/julia-ci.yml'
+
+jobs:
+  test:
+    name: Julia ${{ matrix.julia-version }} - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        julia-version: ['1.10']
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.julia-version }}
+
+      - uses: julia-actions/cache@v2
+        with:
+          cache-registries: "true"
+
+      - uses: julia-actions/julia-buildpkg@v1
+        with:
+          project: julia
+
+      - uses: julia-actions/julia-runtest@v1
+        with:
+          project: julia
+          annotate: true
+        env:
+          JULIA_NUM_THREADS: '2'

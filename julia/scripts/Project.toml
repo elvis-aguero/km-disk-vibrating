@@ -1,0 +1,16 @@
+name = "FaradayDiskScripts"
+uuid = "3c8f1e9d-2a5b-4c7e-9f6a-8d4b5e2c1a90"
+
+[deps]
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
+TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+
+[compat]
+julia = "1.10"
+MAT = "0.10"
+
+# FaradayDisk itself is intentionally not listed here as a registered/path dependency —
+# `[sources]` path entries require a newer Pkg than this project's julia="1.10" floor
+# guarantees. Each script instead bootstraps it explicitly with `Pkg.develop(path=".."))`
+# on first run (see `_bootstrap.jl`), which has worked identically since early Julia 1.x.

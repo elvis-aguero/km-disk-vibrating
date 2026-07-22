@@ -45,3 +45,7 @@ matlab/1_code/D20Quant20/
 .DS_Store
 
 lol.txt
+
+# Julia port: generated run/sweep output and logs (not source, not committed fixtures)
+julia/logs/
+julia/data/results/
