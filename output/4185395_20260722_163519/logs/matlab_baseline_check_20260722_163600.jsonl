@@ -1,0 +1,490 @@
+{"level":"Info","message":"sweep starting","n_cases":30,"gammas":"[0.05, 0.2, 0.5]","freqs_hz":"[10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0]","threads":4,"lu_concurrency":4,"ram_per_case_bytes":12025908428,"outdir":"/oscar/data/dharri15/eaguerov/Github/km-disk-vibrating/output/4185395_20260722_163519/sweep"}
+{"level":"Info","message":"case starting","case":1,"of":30,"gamma":0.05,"freqHz":10.0,"thread":5}
+{"level":"Info","message":"case starting","case":17,"of":30,"gamma":0.2,"freqHz":60.0,"thread":3}
+{"level":"Info","message":"case starting","case":24,"of":30,"gamma":0.5,"freqHz":80.0,"thread":4}
+{"level":"Info","message":"case starting","case":9,"of":30,"gamma":0.5,"freqHz":30.0,"thread":2}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":13.88115,"forceFrequency":80.0,"bathAmplitude":0.0,"bathFrequency":80.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":5.55246,"forceFrequency":60.0,"bathAmplitude":0.0,"bathFrequency":60.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":1.388115,"forceFrequency":10.0,"bathAmplitude":0.0,"bathFrequency":10.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":13.88115,"forceFrequency":30.0,"bathAmplitude":0.0,"bathFrequency":30.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213360998,"z_eq_cm":-0.026396448426721997}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213359555,"z_eq_cm":-0.02639644842671911}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213360998,"z_eq_cm":-0.026396448426721997}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213359555,"z_eq_cm":-0.02639644842671911}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":91,"of_estimate":1801,"percent":5.1,"elapsed_s":191.6,"eta_s":3601.1,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":90,"of_estimate":1800,"percent":5.0,"elapsed_s":193.1,"eta_s":3669.8,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":182,"of_estimate":1801,"percent":10.1,"elapsed_s":193.7,"eta_s":1723.1,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":180,"of_estimate":1800,"percent":10.0,"elapsed_s":195.0,"eta_s":1754.8,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":273,"of_estimate":1801,"percent":15.2,"elapsed_s":195.3,"eta_s":1093.2,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":270,"of_estimate":1800,"percent":15.0,"elapsed_s":196.5,"eta_s":1113.8,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":364,"of_estimate":1801,"percent":20.2,"elapsed_s":196.9,"eta_s":777.4,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":360,"of_estimate":1800,"percent":20.0,"elapsed_s":198.1,"eta_s":792.5,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":455,"of_estimate":1801,"percent":25.3,"elapsed_s":198.5,"eta_s":587.3,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":450,"of_estimate":1800,"percent":25.0,"elapsed_s":199.7,"eta_s":599.1,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":546,"of_estimate":1801,"percent":30.3,"elapsed_s":200.1,"eta_s":460.0,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":90,"of_estimate":1800,"percent":5.0,"elapsed_s":200.8,"eta_s":3814.6,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":540,"of_estimate":1800,"percent":30.0,"elapsed_s":201.3,"eta_s":469.6,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":637,"of_estimate":1801,"percent":35.4,"elapsed_s":202.3,"eta_s":369.6,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":180,"of_estimate":1800,"percent":10.0,"elapsed_s":202.6,"eta_s":1823.1,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":630,"of_estimate":1800,"percent":35.0,"elapsed_s":202.9,"eta_s":376.7,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":270,"of_estimate":1800,"percent":15.0,"elapsed_s":204.1,"eta_s":1156.6,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":720,"of_estimate":1800,"percent":40.0,"elapsed_s":204.4,"eta_s":306.7,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":91,"of_estimate":1801,"percent":5.1,"elapsed_s":204.9,"eta_s":3851.1,"forceFrequency":10.0,"bathFrequency":10.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":720,"periods":12.000000000000059,"amplitude":0.005563787014521068,"phase_deg":33.71556189746367,"amp_rel_change":0.0005593508952988455,"phase_change_deg":1.6040080230705485}
+{"level":"Info","message":"finished simulation","status":"ok","steps":720,"elapsed_s":207.1677758693695}
+{"level":"Info","message":"simulation progress","step":360,"of_estimate":1800,"percent":20.0,"elapsed_s":205.7,"eta_s":822.7,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"case finished","case":24,"of":30,"gamma":0.5,"freqHz":80.0,"status":"ok","elapsed_s":209.5316572189331,"CoM_max_cm":0.031277752180065545,"CoM_rms_cm":0.029226276250110414}
+{"level":"Info","message":"case starting","case":25,"of":30,"gamma":0.05,"freqHz":90.0,"thread":4}
+{"level":"Info","message":"simulation progress","step":810,"of_estimate":1800,"percent":45.0,"elapsed_s":206.0,"eta_s":251.8,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":1.388115,"forceFrequency":90.0,"bathAmplitude":0.0,"bathFrequency":90.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.131982242133607,"z_eq_cm":-0.026396448426721397}
+{"level":"Info","message":"simulation progress","step":182,"of_estimate":1801,"percent":10.1,"elapsed_s":206.9,"eta_s":1840.9,"forceFrequency":10.0,"bathFrequency":10.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":450,"of_estimate":1800,"percent":25.0,"elapsed_s":207.2,"eta_s":621.7,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":900,"of_estimate":1800,"percent":50.0,"elapsed_s":207.6,"eta_s":207.6,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":900,"periods":15.000000000000076,"amplitude":0.003748546573981186,"phase_deg":40.49844694246448,"amp_rel_change":0.012078797796519429,"phase_change_deg":1.0391364845137332}
+{"level":"Info","message":"finished simulation","status":"ok","steps":900,"elapsed_s":209.78490495681763}
+{"level":"Info","message":"case finished","case":17,"of":30,"gamma":0.2,"freqHz":60.0,"status":"ok","elapsed_s":211.69552397727966,"CoM_max_cm":0.030896769028823545,"CoM_rms_cm":0.02925454178847765}
+{"level":"Info","message":"case starting","case":18,"of":30,"gamma":0.5,"freqHz":60.0,"thread":3}
+{"level":"Info","message":"simulation progress","step":273,"of_estimate":1801,"percent":15.2,"elapsed_s":208.6,"eta_s":1167.4,"forceFrequency":10.0,"bathFrequency":10.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":540,"of_estimate":1800,"percent":30.0,"elapsed_s":208.8,"eta_s":487.2,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":364,"of_estimate":1801,"percent":20.2,"elapsed_s":210.2,"eta_s":829.7,"forceFrequency":10.0,"bathFrequency":10.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":630,"of_estimate":1800,"percent":35.0,"elapsed_s":210.3,"eta_s":390.6,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":660,"periods":11.000000000000053,"amplitude":0.029936660781627916,"phase_deg":68.09899287122252,"amp_rel_change":0.00579935253085884,"phase_change_deg":0.14544880819920536}
+{"level":"Info","message":"finished simulation","status":"ok","steps":660,"elapsed_s":212.97766304016113}
+{"level":"Info","message":"case finished","case":9,"of":30,"gamma":0.5,"freqHz":30.0,"status":"ok","elapsed_s":215.00075602531433,"CoM_max_cm":0.03601888465972485,"CoM_rms_cm":0.029475400380870556}
+{"level":"Info","message":"case starting","case":10,"of":30,"gamma":0.05,"freqHz":40.0,"thread":2}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":13.88115,"forceFrequency":60.0,"bathAmplitude":0.0,"bathFrequency":60.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213359555,"z_eq_cm":-0.02639644842671911}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":1.388115,"forceFrequency":40.0,"bathAmplitude":0.0,"bathFrequency":40.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213360998,"z_eq_cm":-0.026396448426721997}
+{"level":"Info","message":"simulation progress","step":455,"of_estimate":1801,"percent":25.3,"elapsed_s":211.7,"eta_s":626.3,"forceFrequency":10.0,"bathFrequency":10.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":546,"of_estimate":1801,"percent":30.3,"elapsed_s":213.3,"eta_s":490.2,"forceFrequency":10.0,"bathFrequency":10.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":637,"of_estimate":1801,"percent":35.4,"elapsed_s":214.8,"eta_s":392.5,"forceFrequency":10.0,"bathFrequency":10.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":660,"periods":11.000000000000053,"amplitude":0.008740742260238759,"phase_deg":132.09984014393083,"amp_rel_change":0.0004614786038929508,"phase_change_deg":0.29613282098935656}
+{"level":"Info","message":"finished simulation","status":"ok","steps":660,"elapsed_s":217.35080885887146}
+{"level":"Info","message":"case finished","case":1,"of":30,"gamma":0.05,"freqHz":10.0,"status":"ok","elapsed_s":219.29405903816223,"CoM_max_cm":0.031110083366976616,"CoM_rms_cm":0.029297989930234077}
+{"level":"Info","message":"case starting","case":2,"of":30,"gamma":0.2,"freqHz":10.0,"thread":5}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":5.55246,"forceFrequency":10.0,"bathAmplitude":0.0,"bathFrequency":10.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213360998,"z_eq_cm":-0.026396448426721997}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":90,"of_estimate":1800,"percent":5.0,"elapsed_s":174.0,"eta_s":3306.6,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":180,"of_estimate":1800,"percent":10.0,"elapsed_s":175.6,"eta_s":1580.6,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":91,"of_estimate":1801,"percent":5.1,"elapsed_s":171.8,"eta_s":3228.7,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":270,"of_estimate":1800,"percent":15.0,"elapsed_s":177.2,"eta_s":1004.2,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":182,"of_estimate":1801,"percent":10.1,"elapsed_s":173.5,"eta_s":1543.5,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":360,"of_estimate":1800,"percent":20.0,"elapsed_s":178.8,"eta_s":715.3,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":273,"of_estimate":1801,"percent":15.2,"elapsed_s":175.2,"eta_s":980.5,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":450,"of_estimate":1800,"percent":25.0,"elapsed_s":180.5,"eta_s":541.4,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":364,"of_estimate":1801,"percent":20.2,"elapsed_s":176.8,"eta_s":697.9,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":540,"of_estimate":1800,"percent":30.0,"elapsed_s":182.0,"eta_s":424.7,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":455,"of_estimate":1801,"percent":25.3,"elapsed_s":178.4,"eta_s":527.7,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":630,"of_estimate":1800,"percent":35.0,"elapsed_s":183.6,"eta_s":340.9,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":546,"of_estimate":1801,"percent":30.3,"elapsed_s":180.0,"eta_s":413.8,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":720,"of_estimate":1800,"percent":40.0,"elapsed_s":185.2,"eta_s":277.7,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":637,"of_estimate":1801,"percent":35.4,"elapsed_s":181.6,"eta_s":331.9,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":810,"of_estimate":1800,"percent":45.0,"elapsed_s":186.7,"eta_s":228.2,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":728,"of_estimate":1801,"percent":40.4,"elapsed_s":183.3,"eta_s":270.1,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":900,"of_estimate":1800,"percent":50.0,"elapsed_s":188.3,"eta_s":188.3,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":819,"of_estimate":1801,"percent":45.5,"elapsed_s":184.8,"eta_s":221.6,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":990,"of_estimate":1800,"percent":55.0,"elapsed_s":189.8,"eta_s":155.3,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":840,"periods":14.00000000000007,"amplitude":0.0019024691676032739,"phase_deg":54.910149785575705,"amp_rel_change":0.002381243202749426,"phase_change_deg":0.23282525033067714}
+{"level":"Info","message":"finished simulation","status":"ok","steps":840,"elapsed_s":186.27436900138855}
+{"level":"Info","message":"case finished","case":10,"of":30,"gamma":0.05,"freqHz":40.0,"status":"ok","elapsed_s":186.28737688064575,"CoM_max_cm":0.03038179804935174,"CoM_rms_cm":0.029269353572146932}
+{"level":"Info","message":"case starting","case":11,"of":30,"gamma":0.2,"freqHz":40.0,"thread":2}
+{"level":"Info","message":"simulation progress","step":90,"of_estimate":1800,"percent":5.0,"elapsed_s":186.2,"eta_s":3537.5,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":5.55246,"forceFrequency":40.0,"bathAmplitude":0.0,"bathFrequency":40.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213360998,"z_eq_cm":-0.026396448426721997}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":1080,"of_estimate":1800,"percent":60.0,"elapsed_s":191.4,"eta_s":127.6,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":180,"of_estimate":1800,"percent":10.0,"elapsed_s":187.8,"eta_s":1689.9,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":1170,"of_estimate":1800,"percent":65.0,"elapsed_s":192.9,"eta_s":103.9,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":1200,"periods":20.000000000000103,"amplitude":0.0004385495855738186,"phase_deg":29.361666870270053,"amp_rel_change":0.0002046321588907534,"phase_change_deg":0.7351299121688442}
+{"level":"Info","message":"finished simulation","status":"ok","steps":1200,"elapsed_s":194.78406715393066}
+{"level":"Info","message":"case finished","case":25,"of":30,"gamma":0.05,"freqHz":90.0,"status":"ok","elapsed_s":194.81851410865784,"CoM_max_cm":0.030249643984019338,"CoM_rms_cm":0.02925284730196587}
+{"level":"Info","message":"case starting","case":26,"of":30,"gamma":0.2,"freqHz":90.0,"thread":4}
+{"level":"Info","message":"simulation progress","step":270,"of_estimate":1800,"percent":15.0,"elapsed_s":189.3,"eta_s":1072.7,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":360,"of_estimate":1800,"percent":20.0,"elapsed_s":190.8,"eta_s":763.3,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":450,"of_estimate":1800,"percent":25.0,"elapsed_s":192.9,"eta_s":578.6,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":5.55246,"forceFrequency":90.0,"bathAmplitude":0.0,"bathFrequency":90.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.131982242133607,"z_eq_cm":-0.026396448426721397}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":540,"of_estimate":1800,"percent":30.0,"elapsed_s":194.4,"eta_s":453.6,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":630,"of_estimate":1800,"percent":35.0,"elapsed_s":195.9,"eta_s":363.9,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":720,"of_estimate":1800,"percent":40.0,"elapsed_s":197.4,"eta_s":296.2,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":810,"of_estimate":1800,"percent":45.0,"elapsed_s":199.0,"eta_s":243.2,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":840,"periods":14.00000000000007,"amplitude":0.00937742640966082,"phase_deg":40.551707926937574,"amp_rel_change":0.013015585433488238,"phase_change_deg":0.9549345635427073}
+{"level":"Info","message":"finished simulation","status":"ok","steps":840,"elapsed_s":205.18146514892578}
+{"level":"Info","message":"case finished","case":18,"of":30,"gamma":0.5,"freqHz":60.0,"status":"ok","elapsed_s":205.18982100486755,"CoM_max_cm":0.031977221868330415,"CoM_rms_cm":0.029260397394775407}
+{"level":"Info","message":"case starting","case":19,"of":30,"gamma":0.05,"freqHz":70.0,"thread":3}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":1.388115,"forceFrequency":70.0,"bathAmplitude":0.0,"bathFrequency":70.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213361326,"z_eq_cm":-0.026396448426722653}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":91,"of_estimate":1801,"percent":5.1,"elapsed_s":253.2,"eta_s":4757.5,"forceFrequency":10.0,"bathFrequency":10.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":182,"of_estimate":1801,"percent":10.1,"elapsed_s":256.6,"eta_s":2282.8,"forceFrequency":10.0,"bathFrequency":10.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":273,"of_estimate":1801,"percent":15.2,"elapsed_s":260.5,"eta_s":1458.0,"forceFrequency":10.0,"bathFrequency":10.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":364,"of_estimate":1801,"percent":20.2,"elapsed_s":262.3,"eta_s":1035.4,"forceFrequency":10.0,"bathFrequency":10.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":455,"of_estimate":1801,"percent":25.3,"elapsed_s":263.8,"eta_s":780.4,"forceFrequency":10.0,"bathFrequency":10.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":546,"of_estimate":1801,"percent":30.3,"elapsed_s":265.4,"eta_s":610.1,"forceFrequency":10.0,"bathFrequency":10.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":637,"of_estimate":1801,"percent":35.4,"elapsed_s":267.0,"eta_s":487.9,"forceFrequency":10.0,"bathFrequency":10.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":660,"periods":11.000000000000053,"amplitude":0.03490260480712603,"phase_deg":132.22495085237566,"amp_rel_change":0.0008099455262657967,"phase_change_deg":0.044289530026304647}
+{"level":"Info","message":"finished simulation","status":"ok","steps":660,"elapsed_s":268.47622203826904}
+{"level":"Info","message":"case finished","case":2,"of":30,"gamma":0.2,"freqHz":10.0,"status":"ok","elapsed_s":268.4976029396057,"CoM_max_cm":0.036320481221773386,"CoM_rms_cm":0.02961158460267424}
+{"level":"Info","message":"case starting","case":3,"of":30,"gamma":0.5,"freqHz":10.0,"thread":5}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":13.88115,"forceFrequency":10.0,"bathAmplitude":0.0,"bathFrequency":10.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213360998,"z_eq_cm":-0.026396448426721997}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":91,"of_estimate":1801,"percent":5.1,"elapsed_s":202.1,"eta_s":3798.5,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":182,"of_estimate":1801,"percent":10.1,"elapsed_s":203.9,"eta_s":1814.0,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":273,"of_estimate":1801,"percent":15.2,"elapsed_s":205.5,"eta_s":1150.2,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":364,"of_estimate":1801,"percent":20.2,"elapsed_s":207.1,"eta_s":817.4,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":455,"of_estimate":1801,"percent":25.3,"elapsed_s":208.6,"eta_s":617.2,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":546,"of_estimate":1801,"percent":30.3,"elapsed_s":210.2,"eta_s":483.2,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":637,"of_estimate":1801,"percent":35.4,"elapsed_s":211.8,"eta_s":386.9,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":660,"periods":11.000000000000053,"amplitude":0.007595859765179121,"phase_deg":54.83412543412238,"amp_rel_change":0.013467991019064105,"phase_change_deg":0.8395162017070277}
+{"level":"Info","message":"finished simulation","status":"ok","steps":660,"elapsed_s":212.90800786018372}
+{"level":"Info","message":"case finished","case":11,"of":30,"gamma":0.2,"freqHz":40.0,"status":"ok","elapsed_s":212.93149709701538,"CoM_max_cm":0.03150981097101429,"CoM_rms_cm":0.02925718563806965}
+{"level":"Info","message":"case starting","case":12,"of":30,"gamma":0.5,"freqHz":40.0,"thread":2}
+{"level":"Info","message":"simulation progress","step":90,"of_estimate":1800,"percent":5.0,"elapsed_s":237.7,"eta_s":4515.9,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":180,"of_estimate":1800,"percent":10.0,"elapsed_s":239.2,"eta_s":2153.0,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":13.88115,"forceFrequency":40.0,"bathAmplitude":0.0,"bathFrequency":40.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213360998,"z_eq_cm":-0.026396448426721997}
+{"level":"Info","message":"simulation progress","step":270,"of_estimate":1800,"percent":15.0,"elapsed_s":241.1,"eta_s":1366.0,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":360,"of_estimate":1800,"percent":20.0,"elapsed_s":242.7,"eta_s":970.6,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":450,"of_estimate":1800,"percent":25.0,"elapsed_s":244.2,"eta_s":732.7,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":540,"of_estimate":1800,"percent":30.0,"elapsed_s":245.8,"eta_s":573.5,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":630,"of_estimate":1800,"percent":35.0,"elapsed_s":247.3,"eta_s":459.3,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":720,"of_estimate":1800,"percent":40.0,"elapsed_s":248.9,"eta_s":373.3,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":810,"of_estimate":1800,"percent":45.0,"elapsed_s":250.4,"eta_s":306.0,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":900,"of_estimate":1800,"percent":50.0,"elapsed_s":251.9,"eta_s":251.9,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":990,"of_estimate":1800,"percent":55.0,"elapsed_s":253.4,"eta_s":207.4,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":1080,"of_estimate":1800,"percent":60.0,"elapsed_s":255.0,"eta_s":170.0,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":1140,"periods":19.0000000000001,"amplitude":0.0017685566221318603,"phase_deg":30.200488470531152,"amp_rel_change":0.007320690023365932,"phase_change_deg":0.9409186419329387}
+{"level":"Info","message":"finished simulation","status":"ok","steps":1140,"elapsed_s":262.2500870227814}
+{"level":"Info","message":"case finished","case":26,"of":30,"gamma":0.2,"freqHz":90.0,"status":"ok","elapsed_s":262.26825308799744,"CoM_max_cm":0.030512892520994706,"CoM_rms_cm":0.029247482229251717}
+{"level":"Info","message":"case starting","case":27,"of":30,"gamma":0.5,"freqHz":90.0,"thread":4}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":13.88115,"forceFrequency":90.0,"bathAmplitude":0.0,"bathFrequency":90.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.131982242133607,"z_eq_cm":-0.026396448426721397}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":90,"of_estimate":1800,"percent":5.0,"elapsed_s":241.3,"eta_s":4585.4,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":180,"of_estimate":1800,"percent":10.0,"elapsed_s":243.0,"eta_s":2187.2,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":270,"of_estimate":1800,"percent":15.0,"elapsed_s":244.6,"eta_s":1386.1,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":360,"of_estimate":1800,"percent":20.0,"elapsed_s":246.2,"eta_s":984.6,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":450,"of_estimate":1800,"percent":25.0,"elapsed_s":249.0,"eta_s":747.0,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":540,"of_estimate":1800,"percent":30.0,"elapsed_s":250.5,"eta_s":584.5,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":630,"of_estimate":1800,"percent":35.0,"elapsed_s":252.0,"eta_s":468.0,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":720,"of_estimate":1800,"percent":40.0,"elapsed_s":253.6,"eta_s":380.4,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":810,"of_estimate":1800,"percent":45.0,"elapsed_s":255.2,"eta_s":311.9,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":900,"of_estimate":1800,"percent":50.0,"elapsed_s":256.7,"eta_s":256.7,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":990,"of_estimate":1800,"percent":55.0,"elapsed_s":258.2,"eta_s":211.3,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":1020,"periods":17.00000000000009,"amplitude":0.0007033020467826974,"phase_deg":35.737469729424745,"amp_rel_change":0.009783755710348634,"phase_change_deg":1.5278989016693174}
+{"level":"Info","message":"finished simulation","status":"ok","steps":1020,"elapsed_s":272.35908102989197}
+{"level":"Info","message":"case finished","case":19,"of":30,"gamma":0.05,"freqHz":70.0,"status":"ok","elapsed_s":272.3778419494629,"CoM_max_cm":0.03030585839291644,"CoM_rms_cm":0.02925661346388909}
+{"level":"Info","message":"case starting","case":20,"of":30,"gamma":0.2,"freqHz":70.0,"thread":3}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":5.55246,"forceFrequency":70.0,"bathAmplitude":0.0,"bathFrequency":70.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213361326,"z_eq_cm":-0.026396448426722653}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":91,"of_estimate":1801,"percent":5.1,"elapsed_s":249.1,"eta_s":4680.8,"forceFrequency":10.0,"bathFrequency":10.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":182,"of_estimate":1801,"percent":10.1,"elapsed_s":251.5,"eta_s":2237.6,"forceFrequency":10.0,"bathFrequency":10.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":273,"of_estimate":1801,"percent":15.2,"elapsed_s":253.1,"eta_s":1416.8,"forceFrequency":10.0,"bathFrequency":10.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":364,"of_estimate":1801,"percent":20.2,"elapsed_s":254.7,"eta_s":1005.6,"forceFrequency":10.0,"bathFrequency":10.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":455,"of_estimate":1801,"percent":25.3,"elapsed_s":256.3,"eta_s":758.1,"forceFrequency":10.0,"bathFrequency":10.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":546,"of_estimate":1801,"percent":30.3,"elapsed_s":258.5,"eta_s":594.2,"forceFrequency":10.0,"bathFrequency":10.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":637,"of_estimate":1801,"percent":35.4,"elapsed_s":260.1,"eta_s":475.2,"forceFrequency":10.0,"bathFrequency":10.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":660,"periods":11.000000000000053,"amplitude":0.08722637993006128,"phase_deg":132.25002490963428,"amp_rel_change":0.001064383557887067,"phase_change_deg":0.006144894149116453}
+{"level":"Info","message":"finished simulation","status":"ok","steps":660,"elapsed_s":263.363529920578}
+{"level":"Info","message":"case finished","case":3,"of":30,"gamma":0.5,"freqHz":10.0,"status":"ok","elapsed_s":263.37580490112305,"CoM_max_cm":0.046880382851798054,"CoM_rms_cm":0.031514653750177736}
+{"level":"Info","message":"case starting","case":4,"of":30,"gamma":0.05,"freqHz":20.0,"thread":5}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":1.388115,"forceFrequency":20.0,"bathAmplitude":0.0,"bathFrequency":20.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213360998,"z_eq_cm":-0.026396448426721997}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":91,"of_estimate":1801,"percent":5.1,"elapsed_s":183.1,"eta_s":3440.4,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":182,"of_estimate":1801,"percent":10.1,"elapsed_s":186.3,"eta_s":1656.8,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":273,"of_estimate":1801,"percent":15.2,"elapsed_s":189.4,"eta_s":1060.3,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":364,"of_estimate":1801,"percent":20.2,"elapsed_s":193.2,"eta_s":762.8,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":455,"of_estimate":1801,"percent":25.3,"elapsed_s":196.4,"eta_s":580.9,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":546,"of_estimate":1801,"percent":30.3,"elapsed_s":199.1,"eta_s":457.7,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":637,"of_estimate":1801,"percent":35.4,"elapsed_s":201.2,"eta_s":367.6,"forceFrequency":40.0,"bathFrequency":40.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":660,"periods":11.000000000000053,"amplitude":0.019011759252245842,"phase_deg":54.8852958286623,"amp_rel_change":0.0014946984852154197,"phase_change_deg":0.6025326298643279}
+{"level":"Info","message":"finished simulation","status":"ok","steps":660,"elapsed_s":237.3613600730896}
+{"level":"Info","message":"case finished","case":12,"of":30,"gamma":0.5,"freqHz":40.0,"status":"ok","elapsed_s":237.38343906402588,"CoM_max_cm":0.03380652870358417,"CoM_rms_cm":0.0293234638497403}
+{"level":"Info","message":"case starting","case":13,"of":30,"gamma":0.05,"freqHz":50.0,"thread":2}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":1.388115,"forceFrequency":50.0,"bathAmplitude":0.0,"bathFrequency":50.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213358342,"z_eq_cm":-0.026396448426716686}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":90,"of_estimate":1800,"percent":5.0,"elapsed_s":178.8,"eta_s":3397.1,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":180,"of_estimate":1800,"percent":10.0,"elapsed_s":181.1,"eta_s":1629.5,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":270,"of_estimate":1800,"percent":15.0,"elapsed_s":182.6,"eta_s":1034.9,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":360,"of_estimate":1800,"percent":20.0,"elapsed_s":184.2,"eta_s":736.9,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":450,"of_estimate":1800,"percent":25.0,"elapsed_s":185.8,"eta_s":557.3,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":540,"of_estimate":1800,"percent":30.0,"elapsed_s":187.3,"eta_s":437.0,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":630,"of_estimate":1800,"percent":35.0,"elapsed_s":190.2,"eta_s":353.2,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":720,"of_estimate":1800,"percent":40.0,"elapsed_s":191.7,"eta_s":287.6,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":810,"of_estimate":1800,"percent":45.0,"elapsed_s":193.2,"eta_s":236.2,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":900,"of_estimate":1800,"percent":50.0,"elapsed_s":194.7,"eta_s":194.7,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":960,"periods":16.00000000000008,"amplitude":0.002826154638055246,"phase_deg":36.13991532638853,"amp_rel_change":0.014190052545173004,"phase_change_deg":1.3503956804583481}
+{"level":"Info","message":"finished simulation","status":"ok","steps":960,"elapsed_s":202.73061203956604}
+{"level":"Info","message":"case finished","case":20,"of":30,"gamma":0.2,"freqHz":70.0,"status":"ok","elapsed_s":202.74264097213745,"CoM_max_cm":0.030725786897944554,"CoM_rms_cm":0.029250360037883148}
+{"level":"Info","message":"case starting","case":21,"of":30,"gamma":0.5,"freqHz":70.0,"thread":3}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":13.88115,"forceFrequency":70.0,"bathAmplitude":0.0,"bathFrequency":70.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213361326,"z_eq_cm":-0.026396448426722653}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":90,"of_estimate":1800,"percent":5.0,"elapsed_s":233.3,"eta_s":4433.0,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":180,"of_estimate":1800,"percent":10.0,"elapsed_s":235.0,"eta_s":2114.7,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":270,"of_estimate":1800,"percent":15.0,"elapsed_s":237.4,"eta_s":1345.0,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":360,"of_estimate":1800,"percent":20.0,"elapsed_s":238.9,"eta_s":955.7,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":450,"of_estimate":1800,"percent":25.0,"elapsed_s":240.6,"eta_s":721.7,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":540,"of_estimate":1800,"percent":30.0,"elapsed_s":242.1,"eta_s":565.0,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":630,"of_estimate":1800,"percent":35.0,"elapsed_s":243.7,"eta_s":452.6,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":720,"of_estimate":1800,"percent":40.0,"elapsed_s":245.3,"eta_s":367.9,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":810,"of_estimate":1800,"percent":45.0,"elapsed_s":246.8,"eta_s":301.7,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":900,"of_estimate":1800,"percent":50.0,"elapsed_s":248.4,"eta_s":248.4,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":990,"of_estimate":1800,"percent":55.0,"elapsed_s":251.0,"eta_s":205.4,"forceFrequency":90.0,"bathFrequency":90.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":1020,"periods":17.00000000000009,"amplitude":0.004430045638689269,"phase_deg":30.410007588602983,"amp_rel_change":0.014568790711718746,"phase_change_deg":1.4720752498955676}
+{"level":"Info","message":"finished simulation","status":"ok","steps":1020,"elapsed_s":252.03697204589844}
+{"level":"Info","message":"case finished","case":27,"of":30,"gamma":0.5,"freqHz":90.0,"status":"ok","elapsed_s":252.05554914474487,"CoM_max_cm":0.031043184695899246,"CoM_rms_cm":0.02923894856105969}
+{"level":"Info","message":"case starting","case":28,"of":30,"gamma":0.05,"freqHz":100.0,"thread":4}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":1.388115,"forceFrequency":100.0,"bathAmplitude":0.0,"bathFrequency":100.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213358342,"z_eq_cm":-0.026396448426716686}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":91,"of_estimate":1801,"percent":5.1,"elapsed_s":195.1,"eta_s":3665.7,"forceFrequency":20.0,"bathFrequency":20.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":182,"of_estimate":1801,"percent":10.1,"elapsed_s":196.8,"eta_s":1750.3,"forceFrequency":20.0,"bathFrequency":20.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":273,"of_estimate":1801,"percent":15.2,"elapsed_s":198.4,"eta_s":1110.3,"forceFrequency":20.0,"bathFrequency":20.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":364,"of_estimate":1801,"percent":20.2,"elapsed_s":202.6,"eta_s":800.0,"forceFrequency":20.0,"bathFrequency":20.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":455,"of_estimate":1801,"percent":25.3,"elapsed_s":205.6,"eta_s":608.1,"forceFrequency":20.0,"bathFrequency":20.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":546,"of_estimate":1801,"percent":30.3,"elapsed_s":208.2,"eta_s":478.6,"forceFrequency":20.0,"bathFrequency":20.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":637,"of_estimate":1801,"percent":35.4,"elapsed_s":209.7,"eta_s":383.2,"forceFrequency":20.0,"bathFrequency":20.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":720,"periods":12.000000000000059,"amplitude":0.005094360185347985,"phase_deg":90.45104128559906,"amp_rel_change":0.0011088746688497752,"phase_change_deg":0.1825353156177414}
+{"level":"Info","message":"finished simulation","status":"ok","steps":720,"elapsed_s":214.66199493408203}
+{"level":"Info","message":"case finished","case":4,"of":30,"gamma":0.05,"freqHz":20.0,"status":"ok","elapsed_s":214.68602991104126,"CoM_max_cm":0.03093744887025809,"CoM_rms_cm":0.029275528552806077}
+{"level":"Info","message":"case starting","case":5,"of":30,"gamma":0.2,"freqHz":20.0,"thread":5}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":5.55246,"forceFrequency":20.0,"bathAmplitude":0.0,"bathFrequency":20.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213360998,"z_eq_cm":-0.026396448426721997}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":90,"of_estimate":1800,"percent":5.0,"elapsed_s":211.8,"eta_s":4023.6,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":180,"of_estimate":1800,"percent":10.0,"elapsed_s":213.4,"eta_s":1920.2,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":270,"of_estimate":1800,"percent":15.0,"elapsed_s":214.9,"eta_s":1217.9,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":360,"of_estimate":1800,"percent":20.0,"elapsed_s":216.5,"eta_s":865.9,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":450,"of_estimate":1800,"percent":25.0,"elapsed_s":218.0,"eta_s":654.1,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":540,"of_estimate":1800,"percent":30.0,"elapsed_s":219.5,"eta_s":512.3,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":630,"of_estimate":1800,"percent":35.0,"elapsed_s":221.1,"eta_s":410.7,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":720,"of_estimate":1800,"percent":40.0,"elapsed_s":222.8,"eta_s":334.1,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":810,"of_estimate":1800,"percent":45.0,"elapsed_s":224.4,"eta_s":274.3,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":900,"of_estimate":1800,"percent":50.0,"elapsed_s":225.9,"eta_s":225.9,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":900,"periods":15.000000000000076,"amplitude":0.0012978590647030018,"phase_deg":46.382329274241684,"amp_rel_change":0.0013932344129180636,"phase_change_deg":0.39042299932674496}
+{"level":"Info","message":"finished simulation","status":"ok","steps":900,"elapsed_s":228.70167517662048}
+{"level":"Info","message":"case finished","case":13,"of":30,"gamma":0.05,"freqHz":50.0,"status":"ok","elapsed_s":228.72531008720398,"CoM_max_cm":0.03042930330161709,"CoM_rms_cm":0.029264821750774505}
+{"level":"Info","message":"case starting","case":14,"of":30,"gamma":0.2,"freqHz":50.0,"thread":2}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":5.55246,"forceFrequency":50.0,"bathAmplitude":0.0,"bathFrequency":50.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213358342,"z_eq_cm":-0.026396448426716686}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":90,"of_estimate":1800,"percent":5.0,"elapsed_s":190.9,"eta_s":3627.5,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":180,"of_estimate":1800,"percent":10.0,"elapsed_s":192.5,"eta_s":1732.2,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":270,"of_estimate":1800,"percent":15.0,"elapsed_s":194.0,"eta_s":1099.5,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":360,"of_estimate":1800,"percent":20.0,"elapsed_s":195.6,"eta_s":782.2,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":450,"of_estimate":1800,"percent":25.0,"elapsed_s":197.1,"eta_s":591.3,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":540,"of_estimate":1800,"percent":30.0,"elapsed_s":198.6,"eta_s":463.5,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":630,"of_estimate":1800,"percent":35.0,"elapsed_s":200.2,"eta_s":371.7,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":720,"of_estimate":1800,"percent":40.0,"elapsed_s":201.7,"eta_s":302.5,"forceFrequency":70.0,"bathFrequency":70.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":720,"periods":12.000000000000059,"amplitude":0.007091199636687815,"phase_deg":36.50181412589642,"amp_rel_change":0.014698742266283404,"phase_change_deg":0.05330971184739042}
+{"level":"Info","message":"finished simulation","status":"ok","steps":720,"elapsed_s":205.56226682662964}
+{"level":"Info","message":"case finished","case":21,"of":30,"gamma":0.5,"freqHz":70.0,"status":"ok","elapsed_s":205.5900900363922,"CoM_max_cm":0.031570863626138146,"CoM_rms_cm":0.029232862225415948}
+{"level":"Info","message":"case starting","case":22,"of":30,"gamma":0.05,"freqHz":80.0,"thread":3}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":1.388115,"forceFrequency":80.0,"bathAmplitude":0.0,"bathFrequency":80.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213360998,"z_eq_cm":-0.026396448426721997}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":90,"of_estimate":1800,"percent":5.0,"elapsed_s":212.9,"eta_s":4045.8,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":180,"of_estimate":1800,"percent":10.0,"elapsed_s":214.9,"eta_s":1934.3,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":270,"of_estimate":1800,"percent":15.0,"elapsed_s":216.5,"eta_s":1226.7,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":360,"of_estimate":1800,"percent":20.0,"elapsed_s":218.2,"eta_s":872.6,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":450,"of_estimate":1800,"percent":25.0,"elapsed_s":219.7,"eta_s":659.2,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":540,"of_estimate":1800,"percent":30.0,"elapsed_s":221.4,"eta_s":516.5,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":91,"of_estimate":1801,"percent":5.1,"elapsed_s":174.9,"eta_s":3287.3,"forceFrequency":20.0,"bathFrequency":20.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":630,"of_estimate":1800,"percent":35.0,"elapsed_s":222.9,"eta_s":414.0,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":720,"of_estimate":1800,"percent":40.0,"elapsed_s":224.5,"eta_s":336.8,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":182,"of_estimate":1801,"percent":10.1,"elapsed_s":177.1,"eta_s":1575.3,"forceFrequency":20.0,"bathFrequency":20.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":810,"of_estimate":1800,"percent":45.0,"elapsed_s":226.1,"eta_s":276.3,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":273,"of_estimate":1801,"percent":15.2,"elapsed_s":178.7,"eta_s":1000.1,"forceFrequency":20.0,"bathFrequency":20.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":900,"of_estimate":1800,"percent":50.0,"elapsed_s":227.7,"eta_s":227.7,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":364,"of_estimate":1801,"percent":20.2,"elapsed_s":180.3,"eta_s":712.0,"forceFrequency":20.0,"bathFrequency":20.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":990,"of_estimate":1800,"percent":55.0,"elapsed_s":229.3,"eta_s":187.6,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":455,"of_estimate":1801,"percent":25.3,"elapsed_s":182.0,"eta_s":538.3,"forceFrequency":20.0,"bathFrequency":20.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":1080,"of_estimate":1800,"percent":60.0,"elapsed_s":230.9,"eta_s":153.9,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":546,"of_estimate":1801,"percent":30.3,"elapsed_s":183.6,"eta_s":422.0,"forceFrequency":20.0,"bathFrequency":20.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":1170,"of_estimate":1800,"percent":65.0,"elapsed_s":232.4,"eta_s":125.2,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":637,"of_estimate":1801,"percent":35.4,"elapsed_s":185.2,"eta_s":338.4,"forceFrequency":20.0,"bathFrequency":20.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":660,"periods":11.000000000000053,"amplitude":0.02036559342621938,"phase_deg":90.44360874515904,"amp_rel_change":0.013450207142613224,"phase_change_deg":0.06198741042337019}
+{"level":"Info","message":"finished simulation","status":"ok","steps":660,"elapsed_s":190.24320816993713}
+{"level":"Info","message":"case finished","case":5,"of":30,"gamma":0.2,"freqHz":20.0,"status":"ok","elapsed_s":190.26537799835205,"CoM_max_cm":0.03401952558908709,"CoM_rms_cm":0.02935140453870649}
+{"level":"Info","message":"case starting","case":6,"of":30,"gamma":0.5,"freqHz":20.0,"thread":5}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":13.88115,"forceFrequency":20.0,"bathAmplitude":0.0,"bathFrequency":20.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213360998,"z_eq_cm":-0.026396448426721997}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":1260,"of_estimate":1800,"percent":70.0,"elapsed_s":235.2,"eta_s":100.8,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":1260,"periods":21.000000000000025,"amplitude":0.00035866968410178834,"phase_deg":26.66924435339778,"amp_rel_change":0.006230285007230371,"phase_change_deg":1.735239373887623}
+{"level":"Info","message":"finished simulation","status":"ok","steps":1260,"elapsed_s":239.07286190986633}
+{"level":"Info","message":"case finished","case":28,"of":30,"gamma":0.05,"freqHz":100.0,"status":"ok","elapsed_s":239.08935284614563,"CoM_max_cm":0.030272570859350825,"CoM_rms_cm":0.02924997651511928}
+{"level":"Info","message":"case starting","case":29,"of":30,"gamma":0.2,"freqHz":100.0,"thread":4}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":5.55246,"forceFrequency":100.0,"bathAmplitude":0.0,"bathFrequency":100.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213358342,"z_eq_cm":-0.026396448426716686}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":90,"of_estimate":1800,"percent":5.0,"elapsed_s":199.1,"eta_s":3783.5,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":180,"of_estimate":1800,"percent":10.0,"elapsed_s":200.7,"eta_s":1806.6,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":270,"of_estimate":1800,"percent":15.0,"elapsed_s":202.4,"eta_s":1147.1,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":360,"of_estimate":1800,"percent":20.0,"elapsed_s":204.1,"eta_s":816.4,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":450,"of_estimate":1800,"percent":25.0,"elapsed_s":205.7,"eta_s":617.1,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":540,"of_estimate":1800,"percent":30.0,"elapsed_s":207.2,"eta_s":483.5,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":630,"of_estimate":1800,"percent":35.0,"elapsed_s":208.8,"eta_s":387.8,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":720,"of_estimate":1800,"percent":40.0,"elapsed_s":210.4,"eta_s":315.5,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":810,"of_estimate":1800,"percent":45.0,"elapsed_s":211.9,"eta_s":259.0,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":840,"periods":14.00000000000007,"amplitude":0.005192544076818361,"phase_deg":46.406335362926434,"amp_rel_change":0.010654486126648759,"phase_change_deg":0.7861765233164988}
+{"level":"Info","message":"finished simulation","status":"ok","steps":840,"elapsed_s":214.36910009384155}
+{"level":"Info","message":"case finished","case":14,"of":30,"gamma":0.2,"freqHz":50.0,"status":"ok","elapsed_s":214.39335799217224,"CoM_max_cm":0.031199081000509915,"CoM_rms_cm":0.029259957765644336}
+{"level":"Info","message":"case starting","case":15,"of":30,"gamma":0.5,"freqHz":50.0,"thread":2}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":13.88115,"forceFrequency":50.0,"bathAmplitude":0.0,"bathFrequency":50.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213358342,"z_eq_cm":-0.026396448426716686}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":91,"of_estimate":1801,"percent":5.1,"elapsed_s":236.1,"eta_s":4437.2,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":182,"of_estimate":1801,"percent":10.1,"elapsed_s":237.7,"eta_s":2114.4,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":273,"of_estimate":1801,"percent":15.2,"elapsed_s":240.5,"eta_s":1346.3,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":364,"of_estimate":1801,"percent":20.2,"elapsed_s":242.2,"eta_s":956.0,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":455,"of_estimate":1801,"percent":25.3,"elapsed_s":243.7,"eta_s":721.0,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":546,"of_estimate":1801,"percent":30.3,"elapsed_s":245.3,"eta_s":563.8,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":637,"of_estimate":1801,"percent":35.4,"elapsed_s":247.0,"eta_s":451.3,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":728,"of_estimate":1801,"percent":40.4,"elapsed_s":248.6,"eta_s":366.4,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":819,"of_estimate":1801,"percent":45.5,"elapsed_s":250.1,"eta_s":299.9,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":910,"of_estimate":1801,"percent":50.5,"elapsed_s":254.1,"eta_s":248.8,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":1001,"of_estimate":1801,"percent":55.6,"elapsed_s":257.3,"eta_s":205.6,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":1092,"of_estimate":1801,"percent":60.6,"elapsed_s":260.6,"eta_s":169.2,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":91,"of_estimate":1801,"percent":5.1,"elapsed_s":203.1,"eta_s":3816.0,"forceFrequency":20.0,"bathFrequency":20.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":1140,"periods":19.0000000000001,"amplitude":0.0005491373023147241,"phase_deg":32.411550918230056,"amp_rel_change":0.0071677135757146114,"phase_change_deg":0.014002644464852665}
+{"level":"Info","message":"finished simulation","status":"ok","steps":1140,"elapsed_s":264.02358508110046}
+{"level":"Info","message":"case finished","case":22,"of":30,"gamma":0.05,"freqHz":80.0,"status":"ok","elapsed_s":264.0328850746155,"CoM_max_cm":0.030307063435459997,"CoM_rms_cm":0.029256102850593345}
+{"level":"Info","message":"case starting","case":23,"of":30,"gamma":0.2,"freqHz":80.0,"thread":3}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":5.55246,"forceFrequency":80.0,"bathAmplitude":0.0,"bathFrequency":80.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213360998,"z_eq_cm":-0.026396448426721997}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":182,"of_estimate":1801,"percent":10.1,"elapsed_s":204.6,"eta_s":1820.4,"forceFrequency":20.0,"bathFrequency":20.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":273,"of_estimate":1801,"percent":15.2,"elapsed_s":206.2,"eta_s":1154.0,"forceFrequency":20.0,"bathFrequency":20.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":364,"of_estimate":1801,"percent":20.2,"elapsed_s":207.8,"eta_s":820.3,"forceFrequency":20.0,"bathFrequency":20.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":455,"of_estimate":1801,"percent":25.3,"elapsed_s":209.4,"eta_s":619.3,"forceFrequency":20.0,"bathFrequency":20.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":546,"of_estimate":1801,"percent":30.3,"elapsed_s":210.9,"eta_s":484.9,"forceFrequency":20.0,"bathFrequency":20.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":637,"of_estimate":1801,"percent":35.4,"elapsed_s":212.5,"eta_s":388.3,"forceFrequency":20.0,"bathFrequency":20.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":660,"periods":11.000000000000053,"amplitude":0.050903376217417445,"phase_deg":90.44437742019365,"amp_rel_change":0.005699846728338205,"phase_change_deg":0.0030737190624279265}
+{"level":"Info","message":"finished simulation","status":"ok","steps":660,"elapsed_s":214.6609799861908}
+{"level":"Info","message":"case finished","case":6,"of":30,"gamma":0.5,"freqHz":20.0,"status":"ok","elapsed_s":214.68773198127747,"CoM_max_cm":0.04021032801875672,"CoM_rms_cm":0.029966754910875595}
+{"level":"Info","message":"case starting","case":7,"of":30,"gamma":0.05,"freqHz":30.0,"thread":5}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":1.388115,"forceFrequency":30.0,"bathAmplitude":0.0,"bathFrequency":30.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213359555,"z_eq_cm":-0.02639644842671911}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":90,"of_estimate":1800,"percent":5.0,"elapsed_s":252.8,"eta_s":4802.3,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":180,"of_estimate":1800,"percent":10.0,"elapsed_s":254.3,"eta_s":2288.9,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":270,"of_estimate":1800,"percent":15.0,"elapsed_s":256.7,"eta_s":1454.9,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":360,"of_estimate":1800,"percent":20.0,"elapsed_s":258.3,"eta_s":1033.1,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":450,"of_estimate":1800,"percent":25.0,"elapsed_s":259.9,"eta_s":779.6,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":540,"of_estimate":1800,"percent":30.0,"elapsed_s":261.4,"eta_s":610.0,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":630,"of_estimate":1800,"percent":35.0,"elapsed_s":263.0,"eta_s":488.4,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":720,"of_estimate":1800,"percent":40.0,"elapsed_s":266.0,"eta_s":399.0,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":810,"of_estimate":1800,"percent":45.0,"elapsed_s":267.5,"eta_s":327.0,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":900,"of_estimate":1800,"percent":50.0,"elapsed_s":269.1,"eta_s":269.1,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":990,"of_estimate":1800,"percent":55.0,"elapsed_s":270.7,"eta_s":221.5,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":1080,"of_estimate":1800,"percent":60.0,"elapsed_s":272.2,"eta_s":181.5,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":1170,"of_estimate":1800,"percent":65.0,"elapsed_s":274.5,"eta_s":147.8,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":1200,"periods":20.000000000000103,"amplitude":0.001448496385297488,"phase_deg":28.00673370593844,"amp_rel_change":0.009811086945053555,"phase_change_deg":1.2656978486778598}
+{"level":"Info","message":"finished simulation","status":"ok","steps":1200,"elapsed_s":277.3185648918152}
+{"level":"Info","message":"case finished","case":29,"of":30,"gamma":0.2,"freqHz":100.0,"status":"ok","elapsed_s":277.34310507774353,"CoM_max_cm":0.03048723528556967,"CoM_rms_cm":0.029244925606249344}
+{"level":"Info","message":"case starting","case":30,"of":30,"gamma":0.5,"freqHz":100.0,"thread":4}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":13.88115,"forceFrequency":100.0,"bathAmplitude":0.0,"bathFrequency":100.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213358342,"z_eq_cm":-0.026396448426716686}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":90,"of_estimate":1800,"percent":5.0,"elapsed_s":218.5,"eta_s":4152.2,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":180,"of_estimate":1800,"percent":10.0,"elapsed_s":222.2,"eta_s":1999.9,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":270,"of_estimate":1800,"percent":15.0,"elapsed_s":224.8,"eta_s":1274.1,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":360,"of_estimate":1800,"percent":20.0,"elapsed_s":226.5,"eta_s":905.8,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":450,"of_estimate":1800,"percent":25.0,"elapsed_s":228.2,"eta_s":684.6,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":540,"of_estimate":1800,"percent":30.0,"elapsed_s":229.8,"eta_s":536.3,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":630,"of_estimate":1800,"percent":35.0,"elapsed_s":231.5,"eta_s":429.9,"forceFrequency":50.0,"bathFrequency":50.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":660,"periods":11.000000000000053,"amplitude":0.012975757393252189,"phase_deg":46.409313544729365,"amp_rel_change":0.007230669502543861,"phase_change_deg":1.488497874996824}
+{"level":"Info","message":"finished simulation","status":"ok","steps":660,"elapsed_s":248.35163497924805}
+{"level":"Info","message":"case finished","case":15,"of":30,"gamma":0.5,"freqHz":50.0,"status":"ok","elapsed_s":248.37535095214844,"CoM_max_cm":0.032740042707710616,"CoM_rms_cm":0.029266346258756352}
+{"level":"Info","message":"case starting","case":16,"of":30,"gamma":0.05,"freqHz":60.0,"thread":2}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":1.388115,"forceFrequency":60.0,"bathAmplitude":0.0,"bathFrequency":60.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213359555,"z_eq_cm":-0.02639644842671911}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":90,"of_estimate":1800,"percent":5.0,"elapsed_s":203.7,"eta_s":3869.8,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":180,"of_estimate":1800,"percent":10.0,"elapsed_s":205.2,"eta_s":1847.1,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":270,"of_estimate":1800,"percent":15.0,"elapsed_s":206.8,"eta_s":1171.8,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":360,"of_estimate":1800,"percent":20.0,"elapsed_s":208.3,"eta_s":833.4,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":450,"of_estimate":1800,"percent":25.0,"elapsed_s":211.4,"eta_s":634.1,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":540,"of_estimate":1800,"percent":30.0,"elapsed_s":212.9,"eta_s":496.8,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":630,"of_estimate":1800,"percent":35.0,"elapsed_s":214.5,"eta_s":398.3,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":720,"of_estimate":1800,"percent":40.0,"elapsed_s":216.1,"eta_s":324.1,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":780,"periods":13.000000000000064,"amplitude":0.002995346772610427,"phase_deg":68.10782858705245,"amp_rel_change":0.0018764677259558518,"phase_change_deg":0.19831913271318058}
+{"level":"Info","message":"finished simulation","status":"ok","steps":780,"elapsed_s":219.89507293701172}
+{"level":"Info","message":"case finished","case":7,"of":30,"gamma":0.05,"freqHz":30.0,"status":"ok","elapsed_s":219.90797805786133,"CoM_max_cm":0.03076176021060402,"CoM_rms_cm":0.029273836268685936}
+{"level":"Info","message":"case starting","case":8,"of":30,"gamma":0.2,"freqHz":30.0,"thread":5}
+{"level":"Info","message":"starting simulation","diskRadius":0.2,"diskMass":0.0283,"forceAmplitude":5.55246,"forceFrequency":30.0,"bathAmplitude":0.0,"bathFrequency":30.0,"nr":2500,"solverType":"auto","startStatic":true}
+{"level":"Info","message":"static equilibrium solved","z_eq":-0.13198224213359555,"z_eq_cm":-0.02639644842671911}
+{"level":"Info","message":"solver path selected","requested":"auto","resolved":"lu","n":5002,"stepsPerCycle":60}
+{"level":"Info","message":"simulation progress","step":91,"of_estimate":1801,"percent":5.1,"elapsed_s":231.0,"eta_s":4340.0,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":182,"of_estimate":1801,"percent":10.1,"elapsed_s":234.1,"eta_s":2082.5,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":273,"of_estimate":1801,"percent":15.2,"elapsed_s":238.4,"eta_s":1334.1,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":364,"of_estimate":1801,"percent":20.2,"elapsed_s":241.1,"eta_s":951.8,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":455,"of_estimate":1801,"percent":25.3,"elapsed_s":242.6,"eta_s":717.7,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":546,"of_estimate":1801,"percent":30.3,"elapsed_s":245.5,"eta_s":564.3,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":637,"of_estimate":1801,"percent":35.4,"elapsed_s":247.1,"eta_s":451.5,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":728,"of_estimate":1801,"percent":40.4,"elapsed_s":248.7,"eta_s":366.5,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":819,"of_estimate":1801,"percent":45.5,"elapsed_s":250.4,"eta_s":300.2,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":910,"of_estimate":1801,"percent":50.5,"elapsed_s":252.1,"eta_s":246.9,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":1001,"of_estimate":1801,"percent":55.6,"elapsed_s":253.7,"eta_s":202.8,"forceFrequency":80.0,"bathFrequency":80.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":1020,"periods":17.00000000000009,"amplitude":0.0022043266046514205,"phase_deg":32.78119562528178,"amp_rel_change":0.016604144360779536,"phase_change_deg":1.7021493239168421}
+{"level":"Info","message":"finished simulation","status":"ok","steps":1020,"elapsed_s":254.68157505989075}
+{"level":"Info","message":"case finished","case":23,"of":30,"gamma":0.2,"freqHz":80.0,"status":"ok","elapsed_s":254.70279097557068,"CoM_max_cm":0.030630626350328552,"CoM_rms_cm":0.02924693585157788}
+{"level":"Info","message":"simulation progress","step":90,"of_estimate":1800,"percent":5.0,"elapsed_s":212.4,"eta_s":4035.4,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":180,"of_estimate":1800,"percent":10.0,"elapsed_s":214.1,"eta_s":1926.6,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":270,"of_estimate":1800,"percent":15.0,"elapsed_s":215.8,"eta_s":1223.1,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":360,"of_estimate":1800,"percent":20.0,"elapsed_s":217.4,"eta_s":869.8,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":450,"of_estimate":1800,"percent":25.0,"elapsed_s":219.0,"eta_s":657.0,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":540,"of_estimate":1800,"percent":30.0,"elapsed_s":220.9,"eta_s":515.4,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":630,"of_estimate":1800,"percent":35.0,"elapsed_s":222.4,"eta_s":413.1,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":720,"of_estimate":1800,"percent":40.0,"elapsed_s":224.0,"eta_s":336.0,"forceFrequency":100.0,"bathFrequency":100.0,"forceAmplitude":13.88115,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":780,"periods":13.000000000000064,"amplitude":0.0036875426899195623,"phase_deg":29.9564584873287,"amp_rel_change":0.007857769157783063,"phase_change_deg":0.8631711342901269}
+{"level":"Info","message":"finished simulation","status":"ok","steps":780,"elapsed_s":227.6076259613037}
+{"level":"Info","message":"case finished","case":30,"of":30,"gamma":0.5,"freqHz":100.0,"status":"ok","elapsed_s":227.6173131465912,"CoM_max_cm":0.030916564138007314,"CoM_rms_cm":0.02922547610209477}
+{"level":"Info","message":"simulation progress","step":90,"of_estimate":1800,"percent":5.0,"elapsed_s":134.9,"eta_s":2563.1,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":180,"of_estimate":1800,"percent":10.0,"elapsed_s":136.5,"eta_s":1228.5,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":270,"of_estimate":1800,"percent":15.0,"elapsed_s":138.0,"eta_s":782.2,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":360,"of_estimate":1800,"percent":20.0,"elapsed_s":139.6,"eta_s":558.2,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":450,"of_estimate":1800,"percent":25.0,"elapsed_s":141.1,"eta_s":423.2,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":540,"of_estimate":1800,"percent":30.0,"elapsed_s":142.6,"eta_s":332.7,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":630,"of_estimate":1800,"percent":35.0,"elapsed_s":144.1,"eta_s":267.7,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":720,"of_estimate":1800,"percent":40.0,"elapsed_s":145.7,"eta_s":218.5,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":90,"of_estimate":1800,"percent":5.0,"elapsed_s":101.1,"eta_s":1920.5,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":810,"of_estimate":1800,"percent":45.0,"elapsed_s":147.2,"eta_s":180.0,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":180,"of_estimate":1800,"percent":10.0,"elapsed_s":102.5,"eta_s":922.9,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":900,"of_estimate":1800,"percent":50.0,"elapsed_s":148.7,"eta_s":148.7,"forceFrequency":60.0,"bathFrequency":60.0,"forceAmplitude":1.388115,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":960,"periods":16.00000000000008,"amplitude":0.000935467380622444,"phase_deg":40.34812016757606,"amp_rel_change":0.0027670431901931987,"phase_change_deg":0.8077801816348256}
+{"level":"Info","message":"finished simulation","status":"ok","steps":960,"elapsed_s":152.77745294570923}
+{"level":"Info","message":"case finished","case":16,"of":30,"gamma":0.05,"freqHz":60.0,"status":"ok","elapsed_s":152.78777194023132,"CoM_max_cm":0.030357278868728882,"CoM_rms_cm":0.029260574404474656}
+{"level":"Info","message":"simulation progress","step":270,"of_estimate":1800,"percent":15.0,"elapsed_s":104.0,"eta_s":589.4,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":360,"of_estimate":1800,"percent":20.0,"elapsed_s":105.5,"eta_s":421.8,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":450,"of_estimate":1800,"percent":25.0,"elapsed_s":106.9,"eta_s":320.7,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":540,"of_estimate":1800,"percent":30.0,"elapsed_s":108.4,"eta_s":252.8,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"simulation progress","step":630,"of_estimate":1800,"percent":35.0,"elapsed_s":109.8,"eta_s":203.9,"forceFrequency":30.0,"bathFrequency":30.0,"forceAmplitude":5.55246,"bathAmplitude":0.0}
+{"level":"Info","message":"converged","step":660,"periods":11.000000000000053,"amplitude":0.011973438553888846,"phase_deg":68.09451801296676,"amp_rel_change":0.019092625612999303,"phase_change_deg":0.045187410893476}
+{"level":"Info","message":"finished simulation","status":"ok","steps":660,"elapsed_s":111.78593301773071}
+{"level":"Info","message":"case finished","case":8,"of":30,"gamma":0.2,"freqHz":30.0,"status":"ok","elapsed_s":111.79453611373901,"CoM_max_cm":0.03251413502697754,"CoM_rms_cm":0.029281848195712275}
+{"level":"Info","message":"sweep finished","ok":30,"errors":0,"skipped":0,"summary":"/oscar/data/dharri15/eaguerov/Github/km-disk-vibrating/output/4185395_20260722_163519/sweep/summary.csv"}
+{"level":"Debug","message":"Write PNG info:","png_ptr":"Ptr{Nothing}(0x0000000002744080)","height":1350,"width":1800,"bit_depth":8,"color_type":6,"filters":128,"compression_level":1,"compression_strategy":3,"palette":"nothing","typeof(image)":"Matrix{ColorTypes.ARGB32}"}
+{"level":"Debug","message":"Deleting scenes not implemented for backend: CairoMakie.Screen{CairoMakie.IMAGE}"}
+{"level":"Debug","message":"Write PNG info:","png_ptr":"Ptr{Nothing}(0x0000000000926ac0)","height":1350,"width":1800,"bit_depth":8,"color_type":6,"filters":128,"compression_level":1,"compression_strategy":3,"palette":"nothing","typeof(image)":"Matrix{ColorTypes.ARGB32}"}
+{"level":"Debug","message":"Deleting scenes not implemented for backend: CairoMakie.Screen{CairoMakie.IMAGE}"}
+{"level":"Info","message":"baseline check complete","amp_rmse":0.2192526027482141,"phase_rmse_deg":276.0369404923631,"pass_primary":false,"pass_incident_guard":false,"outdir":"/oscar/data/dharri15/eaguerov/Github/km-disk-vibrating/output/4185395_20260722_163519/sweep","amp_plot":"/oscar/data/dharri15/eaguerov/Github/km-disk-vibrating/output/4185395_20260722_163519/sweep/val_amp_sweep.png","phase_plot":"/oscar/data/dharri15/eaguerov/Github/km-disk-vibrating/output/4185395_20260722_163519/sweep/val_phase_sweep.png"}
+{"level":"Error","message":"baseline check FAILED primary threshold"}
