@@ -23,6 +23,7 @@ if !@isdefined(FaradayDisk)
     include("_bootstrap.jl")
 end
 using Printf  # @printf below; not re-exported by `using FaradayDisk` even though FaradayDisk itself depends on it
+using TOML    # TOML.parsefile below; same reason
 using CairoMakie
 
 const REPO_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
@@ -66,18 +67,31 @@ end
     compute_sim_overlay(sweep_dir; g_cgs=981.0, phase_rad_bath=-pi/2) -> Vector{OverlayCase}
 
 Direct port of `overlay_validation.py`'s per-case fit: detects forcing-driven vs
-bath-driven from `summary.csv`, truncates each case's trace at the first sign of
-finite-domain wave reflection (`eta_boundary_cm` crossing 10% of the reference
-amplitude), requires at least 2 full periods of usable data, fits the last
-`min(3, n_periods_available)` periods via the shared `fit_oscillation`, and normalizes
-amplitude by `A_ref = gamma*g_cgs/omega^2`.
+bath-driven, truncates each case's trace at the first sign of finite-domain wave
+reflection (`eta_boundary_cm` crossing 10% of the reference amplitude), requires at least
+2 full periods of usable data, fits the last `min(3, n_periods_available)` periods via the
+shared `fit_oscillation`, and normalizes amplitude by `A_ref = gamma*g_cgs/omega^2`.
+
+Forcing-mode detection prefers `sweep_dir/sweep_metadata.toml`'s `is_bath_driven` flag
+(written by `run_sweep`, which knows the real physics parameters it used) over inferring
+it from `summary.csv`'s `bathAmplitude_cm` column: that column holds a
+forcing-amplitude-*equivalent* value for every case (see `write_summary_csv`), never
+literally zero, so an all-zero check on it can never actually detect a disk-forced sweep —
+confirmed against real sweep data to always misfire "bath-driven" regardless of which
+convention was actually used. The column-based heuristic (matching `overlay_validation.py`)
+is kept only as a fallback for sweep output predating `sweep_metadata.toml`.
 """
 function compute_sim_overlay(sweep_dir::AbstractString; g_cgs::Float64 = 981.0, phase_rad_bath::Float64 = -pi / 2)
-    summary_path = joinpath(sweep_dir, "summary.csv")
+    metadata_path = joinpath(sweep_dir, "sweep_metadata.toml")
     is_bath_driven = true
-    if isfile(summary_path)
-        s = read_csv_columns(summary_path, ["bathAmplitude_cm"])
-        is_bath_driven = !all(iszero, s["bathAmplitude_cm"])
+    if isfile(metadata_path)
+        is_bath_driven = Bool(TOML.parsefile(metadata_path)["is_bath_driven"])
+    else
+        summary_path = joinpath(sweep_dir, "summary.csv")
+        if isfile(summary_path)
+            s = read_csv_columns(summary_path, ["bathAmplitude_cm"])
+            is_bath_driven = !all(iszero, s["bathAmplitude_cm"])
+        end
     end
 
     cases_dir = joinpath(sweep_dir, "cases")

@@ -106,6 +106,7 @@ function run_sweep(spec::SweepSpec, outdir::AbstractString; dtn_registry::Union{
     end
 
     write_summary_csv(joinpath(outdir, "summary.csv"), results)
+    write_sweep_metadata(joinpath(outdir, "sweep_metadata.toml"))
 
     n_ok = count(r -> r.status == :ok, results)
     n_err = count(r -> r.status == :error, results)

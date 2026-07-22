@@ -84,6 +84,25 @@ function write_summary_csv(path::AbstractString, results::AbstractVector{SweepCa
     return path
 end
 
+"""
+    write_sweep_metadata(path)
+
+Records the real forcing convention `run_sweep`/`run_sweep_case` actually use
+(disk-forced: nonzero `forceAmplitude`, `bathAmplitude` fixed at `0.0` for every case —
+see `run_sweep_case` in `sweep.jl`) so `compute_sim_overlay` can key its lab-frame
+correction off the true physics parameters instead of inferring it from `summary.csv`'s
+`bathAmplitude_cm` column. That column is unreliable for this purpose: it holds a
+forcing-amplitude-*equivalent* value (see `write_summary_csv`'s docstring) that is never
+literally zero, so an all-zero check on it can never actually detect a disk-forced sweep.
+"""
+function write_sweep_metadata(path::AbstractString)
+    mkpath(dirname(path))
+    open(path, "w") do io
+        TOML.print(io, Dict{String,Any}("is_bath_driven" => false))
+    end
+    return path
+end
+
 _toml_safe(x::AbstractFloat) = isfinite(x) ? x : string(x)
 _toml_safe(x) = x
 
