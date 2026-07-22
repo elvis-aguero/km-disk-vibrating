@@ -1,3 +1,10 @@
+# include() at file top-level, not inside the @testset/mktempdir body below: calling
+# include() from within a running function creates a Julia "world age" barrier — methods
+# it defines aren't visible to the *currently executing* dynamic call, only to calls
+# dispatched afresh afterwards. A first CI run hit exactly this (`MethodError: ... The
+# applicable method may be too new`) when this was nested inside the testset.
+include(joinpath(@__DIR__, "..", "..", "scripts", "run_validation_overlay.jl"))
+
 @testset "sweep end-to-end" begin
     mktempdir() do outdir
         fixed = SimulationParams(diskRadius = 0.2, diskMass = 0.0283,
@@ -39,7 +46,6 @@
             # wave-speed details not verified empirically here (see the repo-level notes
             # on how this port was authored). What matters is that whatever *does* come
             # back is physically sane, not blown up or NaN.
-            include(joinpath(@__DIR__, "..", "..", "scripts", "run_validation_overlay.jl"))
             cases = compute_sim_overlay(outdir)
             @info "sweep end-to-end overlay" n_usable_cases = length(cases)
             for c in cases

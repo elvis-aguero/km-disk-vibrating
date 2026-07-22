@@ -32,7 +32,9 @@ end
 matching MATLAB's `gmres(...,[],tol,n,...)`.
 """
 function build_gmres_solver(n::Int, tol::Float64)
-    workspace = Krylov.GmresWorkspace(n, n, Float64; memory = n)
+    # S must be the storage (array) type, not the element type — GmresWorkspace
+    # allocates internal buffers via `S(undef, n)`, which only an array type supports.
+    workspace = Krylov.GmresWorkspace(n, n, Vector{Float64}; memory = n)
     return GMRESSolver(workspace, tol, zeros(n), true)
 end
 
