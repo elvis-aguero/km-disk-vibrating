@@ -7,7 +7,6 @@
 
 [deps]
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
-FaradayDisk = "9b1b7c1a-4b6f-4a3e-8f0e-1c5e9d2a7f6b"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
@@ -27,8 +26,13 @@ julia = "1.10"
 # run_matlab_baseline_check.jl / run_sweep.jl on machines that never touch it. It instead
 # lives in its own environment, `live/Project.toml` — see live_plot.jl's own bootstrap.
 #
-# FaradayDisk is listed above as a plain [deps] entry (added by `Pkg.develop`, which
-# records the actual dev path in Manifest.toml, gitignored) rather than a `[sources]`
-# path entry — `[sources]` requires a newer Pkg than this project's julia="1.10" compat
-# floor guarantees. Each script bootstraps this via `Pkg.develop(path="..")` on first run
-# (see `_bootstrap.jl`), which has worked identically since early Julia 1.x.
+# FaradayDisk is NOT listed in [deps] here, and must never be committed as one: each
+# script bootstraps it itself, at runtime, via `Pkg.develop(path="..")` on first use (see
+# `_bootstrap.jl`), which adds a [deps] entry AND a matching Manifest.toml dev-path record
+# together, atomically, on that machine. Committing a [deps] entry without the
+# (gitignored, machine-specific) Manifest.toml that explains how to resolve it is exactly
+# what broke a real cluster run: Pkg saw a FaradayDisk dependency with no path/manifest
+# information behind it and tried to look it up in the public registry, where it will
+# never exist ("expected package `FaradayDisk` to be registered"). A `[sources]` entry
+# would sidestep this but needs a newer Pkg than this project's julia="1.10" compat floor
+# guarantees.
