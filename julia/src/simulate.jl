@@ -92,6 +92,14 @@ function run_simulation(params::SimulationParams; dtn_registry::Union{Nothing,DT
     status = :ok
     check_every_steps = max(1, round(Int, params.convergence.checkEveryPeriods * problem.stepsPerCycle))
 
+    # ~20 progress lines over the whole run, regardless of how many steps that turns out
+    # to be — without this, a long GMRES-path run (no LU cache, so no per-step speedup;
+    # see solver_dispatch.jl) at a large nr prints "starting simulation" and then nothing
+    # at all until it either converges or reaches simulationTime, which can be hours away
+    # with zero visibility in between (the exact complaint this was added to fix).
+    progress_every_steps = max(1, cld(steps_estimate, 20))
+    t_loop_start = time()
+
     step_count = 0
     while state.time * problem.units.time < params.simulationTime
         outcome = advance_one_step!(state, problem, solver, buffers)
@@ -106,6 +114,13 @@ function run_simulation(params::SimulationParams; dtn_registry::Union{Nothing,DT
             status = :diverged
             @error "numerical divergence detected" step = step_count com = state.center_of_mass
             break
+        end
+
+        if step_count % progress_every_steps == 0
+            elapsed = time() - t_loop_start
+            steps_per_s = step_count / elapsed
+            eta_s = steps_per_s > 0 ? (steps_estimate - step_count) / steps_per_s : NaN
+            @info "simulation progress" step = step_count of_estimate = steps_estimate percent = round(100 * step_count / steps_estimate, digits = 1) elapsed_s = round(elapsed, digits = 1) eta_s = round(eta_s, digits = 1) forceFrequency = params.forceFrequency bathFrequency = params.bathFrequency forceAmplitude = params.forceAmplitude bathAmplitude = params.bathAmplitude
         end
 
         if params.earlyStop && step_count % check_every_steps == 0
