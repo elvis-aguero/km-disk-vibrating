@@ -9,30 +9,43 @@ that do not change the result: (1) MATLAB's `num_batches=20` chunking of the ang
 quadrature (`l_vals`) existed only to bound per-*process* memory inside `parfor` workers
 (each a separate OS process) — Julia's `Threads.@threads` runs in one shared address
 space, so the angular quadrature is evaluated in one pass instead of 20 batches
-(mathematically should be near-identical; see the STATUS note below for why the observed
-gap is somewhat larger than pure floating-point reordering suggests); (2) MATLAB's
+(confirmed mathematically identical, not just "should be", now that this is verified
+against a real MATLAB-generated reference — see STATUS below); (2) MATLAB's
 `accumarray(idx, val, [nr,1])` scatter-add is replaced by `accumulate_masked!`, a small
 helper with the same semantics.
 
-WARNING: this is the highest-risk file in the port. It was transcribed without the
-ability to run either MATLAB or Julia to check it (no network access to install Julia in
-the environment this was written in). Its correctness is checked by
-`test/integration/test_dtn_golden_small.jl` against the legacy `D5Quant20` MATLAB
-reference cache — treat that test as load-bearing, not incidental.
+Correctness is checked by `test/integration/test_dtn_golden_small.jl` against the legacy
+`D5Quant20` MATLAB reference cache — treat that test as load-bearing, not incidental.
 
-STATUS (as of the first real CI runs against this port): every formula, index range, and
-divisor here was re-verified character-by-character against `DTNVectorized.m` and no
-discrepancy from the MATLAB source was found. Comparing against the legacy cache initially
-showed a 75% relative discrepancy — traced not to a transcription bug but to the legacy
-cache's own filename ambiguity (`DTNnew345nr50D5refp10.mat` encodes "D5", not "D20" as the
-normal naming convention and its `D5Quant20` folder's implied bathDiameter=20 would
-suggest) — re-comparing against `generate_dtn(50, 5.0)` (matching the filename literally)
-dropped the gap to ~2.15%. That residual ~2% is larger than pure batched-vs-unbatched
-floating-point summation-order differences should produce (normally ~1e-10-scale, not
-~1e-2), and is NOT fully explained — see `test_dtn_golden_small.jl` for candidate causes
-(an `l_vals` angular-quadrature range edge effect is the leading suspect) and re-derive
-this file from `DTNVectorized.m` by hand if that test ever regresses further or the gap
-needs closing precisely.
+STATUS: fully verified. This port was originally written blind (no Julia install
+available), and an initial comparison against the legacy `D5Quant20` cache
+(`DTNnew345nr50D5refp10.mat`) showed a 75% relative discrepancy at `generate_dtn(50,
+20.0)` — the `D` value the cache's *folder name* (`D5Quant20`) implies (spatialResolution
+5, bathDiameter 20). A first (still-blind) investigation guessed the cache might instead
+have been generated at `D=5` (matching the `.mat` filename literally) and found that
+dropped the gap to ~2.15%, but left that residual "unexplained." Once Julia actually
+became available in this environment, direct numerical comparison found the real bug:
+`far_part!` computed its outer-product radial position without dividing `i_far` by
+`refp` (unlike the structurally identical "near" part code, which did), inflating
+`radn`/`idxs` roughly `refp`-fold and pushing nearly every far-field contribution outside
+the valid `1:nr` range where it was silently masked out — i.e. every off-diagonal DTN
+entry beyond a small near-diagonal band was coming out as exact `0.0` regardless of `D`.
+Fixing that one missing `/refp` makes `generate_dtn(50, 5.0)` match the legacy
+`D5Quant20` cache to ~2e-15 relative difference (machine precision) — not an
+approximation, and not a coincidence. `generate_dtn(50, 20.0)` still disagrees (as it
+should: this genuinely is a `D=5` matrix), consistent with `solve_motion.m`'s own
+"Machine-specific patch for D5Quant20", which loads this exact `.mat` file by its literal
+name instead of computing the filename from `bathDiameter` the way every other domain
+does — i.e. the real MATLAB pipeline already knowingly uses a `D=5`-generated matrix for
+the nominally-bathDiameter=20 domain. That is a genuine, pre-existing MATLAB-side
+data/usage inconsistency (not introduced by this port, and not something to silently
+"fix" by swapping in a properly-regenerated bathDiameter=20 matrix, which would change
+simulation behavior relative to what the real pipeline has always produced) — see
+`scripts/migrate_dtn_caches.jl` for how the registry key and the validation `D` are kept
+separate to reflect this. `D25Quant200`'s cache (`DTNnew345nr2500D25refp10.mat`) shows the
+identical filename-vs-folder mismatch pattern (D25 vs implied bathDiameter=200) but its
+`nr=2500` is too expensive to regenerate natively here to confirm either way — flagged as
+an open question in `migrate_dtn_caches.jl`, not assumed resolved by analogy.
 """
 
 const DTN_DEFAULT_REFP = 10
@@ -86,7 +99,7 @@ function accumulate_masked!(Line::Vector{Float64}, vals::AbstractArray, mask::Ab
 end
 
 """
-    far_part!(Line, rn_k, i_far, Kern_far, cos_l, sin_l, nr)
+    far_part!(Line, rn_k, i_far, Kern_far, cos_l, sin_l, nr, refp)
 
 The "far" (piecewise-cubic-interpolant) contribution to a DTN row, shared verbatim across
 rows 2, 3, and every row k>=4 in the MATLAB source (`LineUpdate2`, `LineUpdate3`,
@@ -94,10 +107,18 @@ rows 2, 3, and every row k>=4 in the MATLAB source (`LineUpdate2`, `LineUpdate3`
 `rn_k`, `i_far`, `Kern_far` differ). Adds in place to `Line` (length `nr`).
 """
 function far_part!(Line::Vector{Float64}, rn_k::Float64, i_far::Vector{Float64}, Kern_far::Vector{Float64},
-                    cos_l::Vector{Float64}, sin_l::Vector{Float64}, nr::Int)
-    # Outer products: (length(i_far)) x (length(l_vals))
-    re = rn_k .+ i_far .* cos_l'
-    im = i_far .* sin_l'
+                    cos_l::Vector{Float64}, sin_l::Vector{Float64}, nr::Int, refp::Int)
+    # Outer products: (length(i_far)) x (length(l_vals)). MATLAB: `(rn(k) + i_vals*cos_l/refp)`
+    # / `(i_vals*sin_l/refp)` — the `/refp` here is not optional bookkeeping, it converts
+    # `i_far` (an index into the refp-fold-refined radial sub-grid) back into physical
+    # radial-node units before adding to `rn_k`; omitting it inflates `re`/`im` (and hence
+    # `radn`/`idxs`) by a factor of `refp`, pushing nearly every far-field contribution
+    # outside the valid `1:nr` index range where it gets masked out as out-of-domain —
+    # which is exactly what made every far-off-diagonal DTN entry silently come out as
+    # exact 0.0 (caught by comparing against the legacy MATLAB DTN cache with real Julia
+    # execution, after this port had only ever been checked by static re-reading before).
+    re = rn_k .+ i_far .* cos_l' ./ refp
+    im = i_far .* sin_l' ./ refp
     radn = abs.(sqrt.(re .^ 2 .+ im .^ 2))
     idxs = floor.(radn)
     w1 = clamp.(radn .- idxs, 0.0, 1.0)
@@ -195,7 +216,7 @@ function generate_dtn(nr::Int, D::Real; refp::Int = DTN_DEFAULT_REFP)
         i_far = collect((2.0 * refp + 1):((rn2 + nr) * refp))
         Kern_far = _near_far_kernel(i_far)
         LineUpdate2 = zeros(nr)
-        far_part!(LineUpdate2, rn2, i_far, Kern_far, cos_l, sin_l, nr)
+        far_part!(LineUpdate2, rn2, i_far, Kern_far, cos_l, sin_l, nr, refp)
 
         DTN[2, :] .= (dtheta / (2 * pi * drp)) .* (DTN[2, :] .+ LineUpdate2)
         DTN[2, 2] += diag_correction
@@ -223,7 +244,7 @@ function generate_dtn(nr::Int, D::Real; refp::Int = DTN_DEFAULT_REFP)
         i_far = collect((2.0 * refp + 1):((rn3 + nr) * refp))
         Kern_far = _near_far_kernel(i_far)
         LineUpdate3 = zeros(nr)
-        far_part!(LineUpdate3, rn3, i_far, Kern_far, cos_l, sin_l, nr)
+        far_part!(LineUpdate3, rn3, i_far, Kern_far, cos_l, sin_l, nr, refp)
 
         DTN[3, :] .= (dtheta / (2 * pi * drp)) .* (DTN[3, :] .+ LineUpdate3)
         DTN[3, 3] += diag_correction
@@ -254,7 +275,7 @@ function generate_dtn(nr::Int, D::Real; refp::Int = DTN_DEFAULT_REFP)
 
         i_far = collect((2.0 * refp + 1):((rnk + nr) * refp))
         Kern_far = _near_far_kernel(i_far)
-        far_part!(Line, rnk, i_far, Kern_far, cos_l, sin_l, nr)
+        far_part!(Line, rnk, i_far, Kern_far, cos_l, sin_l, nr, refp)
 
         Line .*= dtheta / (2 * pi * drp)
         @views DTN[k, :] .+= Line

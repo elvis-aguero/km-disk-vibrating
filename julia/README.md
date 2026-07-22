@@ -13,40 +13,55 @@ network policy, and no system package was available) — every file was written 
 line-by-line translation of the MATLAB source and by reasoning through the math by hand,
 with nothing actually executed before the first push.
 
-It has since been run for real against GitHub Actions CI (`.github/workflows/julia-ci.yml`)
-and iterated on fix-by-fix. **As of the latest CI run, the fast test tier is effectively
-green** (104/105 tests passing) except for one known, understood, non-blocking gap
-documented below. Bugs actually found and fixed this way included: a struct-constructor
-signature collision, a docstring `$VAR` string-interpolation error, a wrong sign
-convention documented (not implemented) for `fit_oscillation`, a test-tuning issue in the
+It has since been run for real, first against GitHub Actions CI
+(`.github/workflows/julia-ci.yml`), and later with a real local Julia install once network
+policy allowed one — iterated on fix-by-fix both times. **The fast test tier is green**
+(all tests passing, including the DTN golden-cache comparison at machine precision — see
+below). Bugs actually found and fixed this way included: a struct-constructor signature
+collision, a docstring `$VAR` string-interpolation error, a wrong sign convention
+documented (not implemented) for `fit_oscillation`, a test-tuning issue in the
 convergence-check synthetic signal, an off-by-one in two tests' repo-root path
 computation, three scripts missing `using Dates`/`using Printf` (a dependency's internal
 `using` doesn't propagate to a separate script), a too-small test domain that let boundary
 reflection contaminate results, `Krylov.GmresWorkspace`'s real constructor signature
-(twice — first the positional args, then the storage-type argument), and a Julia
-"world-age" bug from calling `include()` inside a running closure. None of that is
-speculative anymore — it's what CI actually reported, fixed one push at a time.
+(twice — first the positional args, then the storage-type argument), a Julia "world-age"
+bug from calling `include()` inside a running closure, every `scripts/*.jl` file's
+file-header docstring being immediately followed by a non-declaration statement
+(`import`/`include(...)`/`if`) which Julia's parser tries and fails to attach as a
+docstring ("cannot document the following expression" — first surfaced on a real SLURM
+cluster run), `scripts/Project.toml`/`scripts/live/Project.toml` declaring a `name`/`uuid`
+that made Pkg require a nonexistent `src/<Name>.jl` entry point, and — the most
+significant — a missing `/refp` division in `dtn_generator.jl`'s `far_part!` (see directly
+below). None of that is speculative anymore — it's what real execution actually reported,
+fixed one round at a time.
 
-One gap remains open:
+**The DTN generator vs. legacy MATLAB cache comparison, previously an open item, is now
+fully resolved.** The comparison (`test/integration/test_dtn_golden_small.jl`) originally
+showed a 75% relative discrepancy against `generate_dtn(50, 20.0)` — the domain the legacy
+cache's folder name (`D5Quant20`) implies — and, in an earlier investigation done before
+Julia was actually installable here, a smaller-but-still-unexplained ~2.15% discrepancy
+against `generate_dtn(50, 5.0)` (matching the `.mat` filename literally). Once Julia became
+available for real, direct comparison found the actual bug: `far_part!` computed its
+outer-product radial position without dividing `i_far` by `refp` (unlike the structurally
+identical "near" part code, which did), inflating the computed radial index roughly
+`refp`-fold and pushing nearly every far-field quadrature contribution outside the valid
+`1:nr` range, where it was silently masked out — every DTN entry beyond a small
+near-diagonal band was silently coming out as exact `0.0`, regardless of domain. Fixing
+that one missing `/refp` makes `generate_dtn(50, 5.0)` match the legacy `D5Quant20` cache
+to **~2e-15 relative difference (machine precision)** — not an approximation. `D=20` still
+disagrees (as it should — this cache really is a `D=5` matrix), consistent with
+`solve_motion.m`'s own "Machine-specific patch for D5Quant20", which loads this exact
+`.mat` file by its literal name instead of computing the filename from `bathDiameter` the
+way every other domain does. That's a genuine, pre-existing MATLAB-side data/usage
+inconsistency the real pipeline already knowingly works around — not a bug in this port,
+and not something this port "fixes" by silently substituting a differently-computed
+matrix. See `src/dtn/dtn_generator.jl`'s module docstring and `scripts/migrate_dtn_caches.jl`
+for the full account. `D25Quant200`'s cache shows the identical filename-vs-folder
+mismatch pattern but its `nr=2500` is too expensive to regenerate natively here to confirm
+either way — flagged as an open question there, not assumed resolved by analogy.
 
-- **`src/dtn/dtn_generator.jl`'s comparison against the legacy MATLAB cache
-  (`test/integration/test_dtn_golden_small.jl`) is not fully resolved.** The test
-  initially showed a 75% relative discrepancy at the domain size its folder name implies
-  (`D5Quant20` → bathDiameter=20), but every formula/index/divisor in the generator was
-  re-verified character-by-character against `DTNVectorized.m` with no error found. The
-  actual cause turned out to be the legacy cache's *own* filename ambiguity — it's named
-  `DTNnew345nr50D5refp10.mat` ("D5", not "D20"), and comparing against
-  `generate_dtn(50, 5.0)` instead dropped the discrepancy to ~2.15%, strongly suggesting
-  the legacy cache itself was generated with the "wrong" domain size relative to its
-  folder name (a pre-existing MATLAB-side inconsistency, not something to fix in
-  `matlab/`, which is left untouched). That remaining ~2.15% is larger than pure
-  batched-vs-unbatched floating-point summation-order differences should produce (normally
-  ~1e-10, not ~1e-2) and is **not** fully explained. See the module docstring in
-  `dtn_generator.jl` and the test itself for what's been ruled out and the leading
-  suspect (an `l_vals` angular-quadrature range edge effect). This is the one item left
-  for whoever next has a working Julia install to dig into further — everything else
-  driving actual simulation behavior (the solver, convergence check, sweep orchestration,
-  I/O) is verified passing.
+One caveat remains open:
+
 - There is deliberately no frozen/golden numeric regression fixture tier beyond the DTN
   comparison above — producing a frozen "run once, assert it never changes" reference
   would have required trusting a from-scratch, never-executed implementation as its own
