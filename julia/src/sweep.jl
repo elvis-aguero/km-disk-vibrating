@@ -45,13 +45,20 @@ exists (same semantics as `sweeper.m`).
 The DTN matrix for `(spec.fixed.spatialResolution, spec.fixed.bathDiameter)` is resolved
 and loaded exactly once, before the threaded loop starts, and shared read-only across
 every case (a sweep holds the domain fixed across its whole grid) — avoiding redundant
-per-thread loads of what can be a tens-of-MB matrix. `available_memory_bytes()` (not raw
-`Sys.free_memory()` — see its docstring for why that matters under SLURM) is divided by
-`Threads.nthreads()` up front so each case's `solverType=:auto` decision accounts for
-everything else running concurrently, rather than each case assuming it alone owns the
-whole budget (a real robustness gap `getAvailableRAM()`-per-case in MATLAB does not have
-to contend with in quite the same way, since MATLAB's `parfor` workers are separate
-processes).
+per-thread loads of what can be a tens-of-MB matrix.
+
+Concurrency is capped, via a semaphore, to however many cases can each comfortably afford
+a full LU cache out of `available_memory_bytes()` — NOT to `Threads.nthreads()` directly.
+Naively dividing the budget evenly across every thread (this port's original approach)
+starves everyone into the GMRES fallback path the moment thread count exceeds what memory
+can support, and GMRES here is not a mildly-slower alternative: full, non-restarted GMRES
+on a large dense system with no caching measured multiple *minutes per step* at domain
+sizes where the LU-cached path takes a fraction of a second (see `solver_dispatch.jl`).
+Extra threads beyond the LU-affordable count simply wait their turn for a slot rather than
+running a slow GMRES case in the meantime — worse per-case latency for the queued cases,
+but far better total sweep throughput than every case crawling through GMRES at once.
+GMRES-for-everyone is used only as a genuine last resort, when the budget can't even fit
+one LU cache.
 """
 function run_sweep(spec::SweepSpec, outdir::AbstractString; dtn_registry::Union{Nothing,DTNManifest} = nothing,
                     dtn::Union{Nothing,AbstractMatrix{<:Real}} = nothing)
@@ -68,13 +75,34 @@ function run_sweep(spec::SweepSpec, outdir::AbstractString; dtn_registry::Union{
     end
 
     nthreads = max(1, Threads.nthreads())
-    ram_per_case = max(1, available_memory_bytes() ÷ nthreads)
+    total_budget = available_memory_bytes()
+    n_system = 2 * size(dtn, 1) + 2
+    lu_bytes = estimated_lu_cache_bytes(spec.fixed.temporalResolution, n_system)
+    max_lu_concurrent = floor(Int, total_budget / lu_bytes)
 
-    @info "sweep starting" n_cases = n gammas = spec.gammas freqs_hz = spec.bathFrequenciesHz threads = nthreads ram_per_case_bytes = ram_per_case outdir = outdir
+    if max_lu_concurrent >= 1
+        concurrency = min(nthreads, max_lu_concurrent)
+        ram_per_case = total_budget ÷ concurrency
+    else
+        # Not even one case can afford a full LU cache at this domain size within this
+        # budget -- the genuine last resort. Falls back to the old evenly-divided
+        # behavior, which forces :auto to pick :gmres for every case.
+        @warn "not enough memory for even one LU cache -- every case will fall back to GMRES, which is dramatically slower (see run_sweep's docstring)" total_budget_bytes = total_budget lu_cache_bytes_needed = lu_bytes threads = nthreads
+        concurrency = nthreads
+        ram_per_case = max(1, total_budget ÷ nthreads)
+    end
+    gate = Base.Semaphore(concurrency)
+
+    @info "sweep starting" n_cases = n gammas = spec.gammas freqs_hz = spec.bathFrequenciesHz threads = nthreads lu_concurrency = concurrency ram_per_case_bytes = ram_per_case outdir = outdir
 
     Threads.@threads :dynamic for i in 1:n
         gamma, freqHz = cases[i]
-        results[i] = run_sweep_case(spec, gamma, freqHz, dtn, outdir, ram_per_case, i, n)
+        Base.acquire(gate)
+        try
+            results[i] = run_sweep_case(spec, gamma, freqHz, dtn, outdir, ram_per_case, i, n)
+        finally
+            Base.release(gate)
+        end
     end
 
     write_summary_csv(joinpath(outdir, "summary.csv"), results)

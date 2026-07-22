@@ -60,4 +60,37 @@ end
             end
         end
     end
+
+    @testset "concurrency gating falls back to GMRES only when memory truly can't fit one LU cache" begin
+        # A real cluster run got OOM-killed dividing available_memory_bytes() evenly
+        # across every thread and letting :auto starve into GMRES the moment that quotient
+        # dropped below one LU cache's size -- run_sweep now caps *concurrency* instead
+        # (fewer simultaneous cases, each with enough memory for :lu) and only accepts
+        # GMRES-for-everyone as a last resort when even one full LU cache doesn't fit in
+        # the whole budget. KMDISK_RAM_BUDGET_BYTES overrides available_memory_bytes()
+        # entirely (see its docstring), letting this force each path deterministically.
+        fixed = SimulationParams(diskRadius = 0.2, diskMass = 0.0283, phaseDifference = -90.0,
+                                  bathDensity = 1.175, bathSurfaceTension = 66.5, bathViscosity = 0.18 / 1.175,
+                                  bathDiameter = 20.0, spatialResolution = 5.0, temporalResolution = 40,
+                                  solverType = :auto, startStatic = true, earlyStop = false)
+        spec = SweepSpec(gammas = [0.1], bathFrequenciesHz = [30.0], fixed = fixed)
+        dtn = generate_dtn(50, 20.0)
+        old_override = get(ENV, "KMDISK_RAM_BUDGET_BYTES", nothing)
+        try
+            mktempdir() do d
+                ENV["KMDISK_RAM_BUDGET_BYTES"] = "1"  # forces the "not enough for even one LU cache" path
+                results = run_sweep(spec, d; dtn = dtn)
+                @test length(results) == 1
+                @test only(results).status == :ok
+            end
+            mktempdir() do d
+                ENV["KMDISK_RAM_BUDGET_BYTES"] = string(10_000_000_000)  # ample -- normal :lu path
+                results = run_sweep(spec, d; dtn = dtn)
+                @test length(results) == 1
+                @test only(results).status == :ok
+            end
+        finally
+            old_override === nothing ? delete!(ENV, "KMDISK_RAM_BUDGET_BYTES") : (ENV["KMDISK_RAM_BUDGET_BYTES"] = old_override)
+        end
+    end
 end

@@ -21,17 +21,24 @@
 # Adjust for your cluster before submitting:
 #   - --partition / --account: uncomment and fill in below; every cluster's accounting
 #     setup is different and this can't be guessed.
-#   - --cpus-per-task / --mem / --time: 16 cores / 32GB / 24h is a starting guess. The
-#     nr=2500 domain's LU factors are dense n=5002 matrices — a FULL LU cache (one factor
-#     per cycle-phase, 40-60 of them) is ~10-12GB, so with 16 threads each potentially
-#     wanting their own cache, :auto will almost always fall back to the slower-but-
-#     memory-safe GMRES path at this domain size under a 32GB job (see
-#     available_memory_bytes()'s docstring in src/solver/solver_dispatch.jl). That's
-#     intentional and safe, not a bug to work around by raising --mem to the ~192GB a
-#     fully-:lu 16-way sweep would actually need — MATLAB historically took ~200-1500s per
-#     case serially, so 30 cases threaded across N cores should still land well under a
-#     day even on GMRES; tune --time from your own first run's actual wall-clock (see the
-#     "elapsed_s" field in summary.csv) rather than fighting for more memory.
+#   - --cpus-per-task / --mem / --time: 16 cores / 32GB / 24h is a starting guess, but read
+#     this before assuming more cores helps. The nr=2500 domain's LU factors are dense
+#     n=5002 matrices -- a FULL LU cache (one factor per cycle-phase, 40-60 of them) is
+#     ~10-12GB. GMRES (the fallback when a cache doesn't fit) is NOT a mildly-slower
+#     alternative here -- measured multiple *minutes per step* at this scale vs. a
+#     fraction of a second for the LU-cached path -- so run_sweep caps how many cases run
+#     *concurrently* to however many full LU caches the budget affords, rather than ever
+#     dividing memory evenly across every thread and accepting GMRES for everyone (see
+#     run_sweep's docstring in src/sweep.jl). Concretely, at --mem=32G only ONE case runs
+#     at a time here (32GB * 0.7 safety margin / ~12GB per cache = 1) regardless of
+#     --cpus-per-task -- extra threads just queue, they don't help. If you want N cases
+#     running with :lu in parallel, request roughly `N * 12GB / 0.7` of memory (e.g.
+#     --mem=140G for 4-way) with --cpus-per-task >= N; if you can't get that much memory,
+#     lower --cpus-per-task to match what --mem actually supports instead of requesting
+#     idle cores. MATLAB historically took ~200-1500s per case (that baseline used LU
+#     caching too), so even fully serial (1-way) at --mem=32G should land in the 2-12 hour
+#     range for the full 30-case sweep; tune --time from your own first run's actual
+#     wall-clock (see the "elapsed_s" field in summary.csv).
 #   - `module load julia`: this loads Julia via environment modules, the common setup on
 #     clusters like Brown's Oscar. Run `module avail julia` on your cluster and adjust the
 #     name/version, or delete this line entirely if Julia is already on PATH (e.g. via
