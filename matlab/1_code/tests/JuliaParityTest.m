@@ -25,7 +25,13 @@ classdef JuliaParityTest < matlab.unittest.TestCase
             juliaScript = fullfile(repoRoot, 'julia', 'scripts', 'parity_reference.jl');
             testCase.assertTrue(isfile(juliaScript), sprintf('not found: %s', juliaScript));
 
-            [status, cmdout] = system(sprintf('julia "%s" 2>/dev/null', juliaScript));
+            % MATLAB's system() inherits MATLAB's own LD_LIBRARY_PATH, which points at
+            % MATLAB's bundled (often older) shared libraries. A JIT-compiled runtime
+            % like Julia picking those up instead of the system libraries crashes at
+            % startup (segfault, well before reaching user code) -- a known MATLAB
+            % system()-with-external-binaries gotcha, not a bug in the Julia side.
+            % `env -u` strips just those two variables for this subprocess only.
+            [status, cmdout] = system(sprintf('env -u LD_LIBRARY_PATH -u LD_PRELOAD julia "%s" 2>/dev/null', juliaScript));
             testCase.assertEqual(status, 0, sprintf('parity_reference.jl failed (see stderr suppressed above): %s', cmdout));
 
             ref = sscanf(cmdout, '%f');
