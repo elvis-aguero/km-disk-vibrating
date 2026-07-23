@@ -31,8 +31,19 @@ classdef JuliaParityTest < matlab.unittest.TestCase
             % startup (segfault, well before reaching user code) -- a known MATLAB
             % system()-with-external-binaries gotcha, not a bug in the Julia side.
             % `env -u` strips just those two variables for this subprocess only.
-            [status, cmdout] = system(sprintf('env -u LD_LIBRARY_PATH -u LD_PRELOAD julia "%s" 2>/dev/null', juliaScript));
-            testCase.assertEqual(status, 0, sprintf('parity_reference.jl failed (see stderr suppressed above): %s', cmdout));
+            %
+            % stderr is captured to a temp file (not /dev/null) so a failure's actual
+            % Julia-side error message ends up in the test diagnostic instead of being
+            % silently discarded -- stdout alone is not enough to debug a failure here.
+            stderrFile = [tempname(), '.stderr.txt'];
+            cleanupStderr = onCleanup(@() safeDelete(stderrFile));
+            cmd = sprintf('env -u LD_LIBRARY_PATH -u LD_PRELOAD julia "%s" 2>"%s"', juliaScript, stderrFile);
+            [status, cmdout] = system(cmd);
+            stderrText = '';
+            if isfile(stderrFile)
+                stderrText = fileread(stderrFile);
+            end
+            testCase.assertEqual(status, 0, sprintf('parity_reference.jl failed (exit %d)\nstdout: %s\nstderr: %s', status, cmdout, stderrText));
 
             ref = sscanf(cmdout, '%f');
             testCase.assertEqual(numel(ref), 5, sprintf('unexpected parity_reference.jl output: "%s"', cmdout));
@@ -76,5 +87,11 @@ classdef JuliaParityTest < matlab.unittest.TestCase
             phase_diff_deg = abs(mod(rad2deg(phase - ref_phase) + 180, 360) - 180);
             testCase.verifyLessThan(phase_diff_deg, 0.5);
         end
+    end
+end
+
+function safeDelete(filePath)
+    if isfile(filePath)
+        delete(filePath);
     end
 end
