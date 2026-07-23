@@ -219,7 +219,8 @@ and color scheme (light/medium/dark green for gamma 0.05/0.20/0.50).
 """
 function _plot_overlay_panel!(fig_pos, cases::Vector{OverlayCase}, exp_data::Dict{String,Vector{Float64}},
                                value_field::Symbol, u_gammas::Vector{Float64}, xlims_::Tuple, ylims_::Tuple,
-                               xticks_, yticks_, title_::AbstractString, ylabel_::AbstractString)
+                               xticks_, yticks_, title_::AbstractString, ylabel_::AbstractString;
+                               legend_position::Symbol = :rt)
     ax = Axis(fig_pos; xlabel = "f (Hz)", ylabel = ylabel_, title = title_)
     xlims!(ax, xlims_...)
     ylims!(ax, ylims_...)
@@ -246,7 +247,7 @@ function _plot_overlay_panel!(fig_pos, cases::Vector{OverlayCase}, exp_data::Dic
                       label = "Sim Γ=$(round(g, digits = 2))")
     end
 
-    axislegend(ax; position = :rt, framevisible = true, labelsize = 11)
+    axislegend(ax; position = legend_position, framevisible = true, labelsize = 11)
     return ax
 end
 
@@ -276,7 +277,7 @@ function plot_validation_overlay(cases::Vector{OverlayCase}, exp_amp_path::Abstr
 
     fig_phase = Figure()
     _plot_overlay_panel!(fig_phase[1, 1], cases, exp_phase, :phaseDiff, u_gammas, (0, 105), (0, 30), 0:10:100, 0:5:30,
-                         "Phase Validation Overlay ($sweep_name)", "Phase Difference (deg)")
+                         "Phase Validation Overlay ($sweep_name)", "Phase Difference (deg)"; legend_position = :rb)
     phase_png = joinpath(out_dir, "val_phase_$(sweep_name).png")
     phase_pdf = joinpath(out_dir, "val_phase_$(sweep_name).pdf")
     save(phase_png, fig_phase; px_per_unit = 3)
