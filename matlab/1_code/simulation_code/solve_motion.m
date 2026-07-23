@@ -28,7 +28,11 @@ arguments
     NameValueArgs.gmresTolerance (1, 1) double = 1e-10 % GMRES convergence tolerance (used when GMRES is active)
     NameValueArgs.startStatic (1, 1) logical = true % Whether to start at static equilibrium
     NameValueArgs.earlyStop (1, 1) logical = true % Whether to enable early stopping on convergence
-    NameValueArgs.convergenceTol (1, 1) double = 0.02 % Convergence tolerance (stdev of rolling mean / |mean|)
+    NameValueArgs.minPeriods (1, 1) double = 10.0 % Never declare convergence before this many forcing periods
+    NameValueArgs.windowPeriods (1, 1) double = 5.0 % Length of each of the two compared convergence windows, in periods
+    NameValueArgs.checkEveryPeriods (1, 1) double = 1.0 % Convergence-check cadence, in periods
+    NameValueArgs.amplitudeRelTol (1, 1) double = 0.02 % Relative amplitude change tolerated between windows
+    NameValueArgs.phaseAbsTolDeg (1, 1) double = 2.0 % Absolute phase change (degrees) tolerated between windows
 end
 
 % Record the time the script is run
@@ -212,6 +216,8 @@ recordedConditions = cell(steps, 1);
 recordedConditions{current_index} = current_conditions;
 z_CoM_history = zeros(steps, 1);
 z_CoM_history(current_index) = zInitial;
+t_CoM_history = zeros(steps, 1);
+t_CoM_history(current_index) = 0;
 
 % Store problem constants for use in the simulation
 PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
@@ -255,14 +261,16 @@ savingvarNames = { ...
 variableValues = cell(size(savingvarNames));
 
 %% Main Simulation Loop
+checkEverySteps = max(1, round(checkEveryPeriods * stepsPerCycle));
 try
-    while (recordedConditions{current_index}.time * T_unit < simulationTime) 
+    while (recordedConditions{current_index}.time * T_unit < simulationTime)
 
         [recordedConditions{current_index+1}, PROBLEM_CONSTANTS] = ...
                advance_one_step(recordedConditions{current_index}, ...
                        PROBLEM_CONSTANTS);
         current_index = current_index + 1;
         z_CoM_history(current_index) = recordedConditions{current_index}.center_of_mass;
+        t_CoM_history(current_index) = recordedConditions{current_index}.time;
 
         if PROBLEM_CONSTANTS.DEBUG_FLAG == true
             width = 6; 
@@ -301,31 +309,26 @@ try
             drawnow;
         end
         
-        % --- Rolling Average Convergence Check for Early Stopping ---
-        % Evaluates the 1-period rolling average Z_roll over every step in the last period.
-        % If std(Z_roll) / |mean(Z_roll)| < convergenceTol (e.g. 0.02), baseline drift has stabilized without aliasing.
-        if earlyStop && mod(current_index - 1, 10) == 0 && (current_index - 1) >= 3 * stepsPerCycle
-            k = current_index - 1;
-            cycle_steps = stepsPerCycle;
-            
-            % Extract CoM positions directly from numeric history vector (zero cellfun overhead)
-            idx_range = (k - 2 * cycle_steps + 1) : k;
-            z_all = z_CoM_history(idx_range);
-            
-            % Compute 1-period rolling average for every step in the last period
-            z_roll = zeros(cycle_steps, 1);
-            for p = 1:cycle_steps
-                z_roll(p) = mean(z_all(p : p + cycle_steps - 1));
-            end
-            
-            mean_roll = mean(z_roll);
-            std_roll = std(z_roll);
-            ratio = std_roll / max(abs(mean_roll), 1e-6);
-            
-            if ratio < convergenceTol
+        % --- Amplitude/Phase-Stability Convergence Check for Early Stopping ---
+        % Fits oscillation amplitude and phase over two consecutive windows and only
+        % declares convergence when both are stable across them -- i.e. the state is
+        % actually periodic, not merely non-drifting. See check_convergence.m for why
+        % this replaced (not patched) the old rolling-mean-ratio check.
+        if earlyStop && mod(current_index - 1, checkEverySteps) == 0
+            convOpts = struct('enabled', true, 'minPeriods', minPeriods, ...
+                'windowPeriods', windowPeriods, 'checkEveryPeriods', checkEveryPeriods, ...
+                'amplitudeRelTol', amplitudeRelTol, 'phaseAbsTolDeg', phaseAbsTolDeg);
+            convResult = check_convergence(t_CoM_history(1:current_index), ...
+                z_CoM_history(1:current_index), effective_w_adim, convOpts);
+
+            if convResult.converged
                 if debug_flag
-                    fprintf('  [Early Stop] Converged at step %d (%.2f cycles, t = %.3f s). std(Z_roll)/|mean| = %.2e < %.2f\n', ...
-                        k, k / cycle_steps, recordedConditions{current_index}.time * T_unit, ratio, convergenceTol);
+                    fprintf(['  [Early Stop] Converged at step %d (%.2f periods, t = %.3f s). ' ...
+                        'amp_rel_change=%.2e < %.2f, phase_change_deg=%.2f < %.2f\n'], ...
+                        current_index - 1, convResult.periods_elapsed, ...
+                        recordedConditions{current_index}.time * T_unit, ...
+                        convResult.amplitude_rel_change, amplitudeRelTol, ...
+                        convResult.phase_change_deg, phaseAbsTolDeg);
                 end
                 recordedConditions = recordedConditions(1:current_index);
                 break;

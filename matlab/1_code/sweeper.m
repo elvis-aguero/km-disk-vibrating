@@ -35,7 +35,6 @@ fixed.debug_flag         = false;
 fixed.solverType         = "auto";
 fixed.startStatic        = true;
 fixed.earlyStop          = true;
-fixed.convergenceTol     = 0.02;
 %% -----------------------------------------------------------------------
 
 % Locate simulation_code on the path
@@ -69,10 +68,11 @@ parfor ii = 1:nCases
     gamma_i = GG(ii);
     freq_i  = FF(ii);
     omega_i = 2 * pi * freq_i;
-    
-    % F / (m*g) = gamma  =>  F = gamma * m * g
-    F_i = gamma_i * fixed.diskMass * g_cgs; 
-    A_forcing_i = (gamma_i * g_cgs) / omega_i^2;
+
+    % Bath-driven: Gamma = A*omega^2/g => A = Gamma*g/omega^2. This experimental
+    % study genuinely drives the bath, not the disk (forceAmplitude stays 0, and
+    % forceFrequency stays fixed -- it only sets the characteristic time unit here).
+    A_i = (gamma_i * g_cgs) / omega_i^2;
 
     % CSV file for this run
     csvFile = fullfile(outDir, ...
@@ -89,9 +89,9 @@ parfor ii = 1:nCases
         [t_s, CoM_cm, eta_history_cm] = solve_motion( ...
             'diskRadius',         fixed.diskRadius, ...
             'diskMass',           fixed.diskMass, ...
-            'forceAmplitude',     F_i, ...
-            'forceFrequency',     freq_i, ...
-            'bathAmplitude',      0.0, ...
+            'forceAmplitude',     fixed.forceAmplitude, ...
+            'forceFrequency',     fixed.forceFrequency, ...
+            'bathAmplitude',      A_i, ...
             'bathFrequency',      freq_i, ...
             'phaseDifference',    fixed.phaseDifference, ...
             'bathDensity',        fixed.bathDensity, ...
@@ -104,8 +104,7 @@ parfor ii = 1:nCases
             'debug_flag',         fixed.debug_flag, ...
             'solverType',         fixed.solverType, ...
             'startStatic',        fixed.startStatic, ...
-            'earlyStop',          fixed.earlyStop, ...
-            'convergenceTol',     fixed.convergenceTol);
+            'earlyStop',          fixed.earlyStop);
 
         % Post-processing: Calculate max elevation in outer boundary region
         % (Outer 1 disk diameter = 2 disk radii)
@@ -124,12 +123,12 @@ parfor ii = 1:nCases
         CoM_rms = sqrt(mean(CoM_cm.^2));
         fprintf('PROGRESS [%d/%d COMPLETED]: gamma=%.3f, f=%g Hz in %.1f s (|CoM|_max=%.3e cm, |CoM|_rms=%.3e cm)\n', ...
             ii, nCases, gamma_i, freq_i, elapsed, CoM_max, CoM_rms);
-        summaryRows{ii} = {gamma_i, freq_i, A_forcing_i, CoM_max, CoM_rms, elapsed, 'ok'};
+        summaryRows{ii} = {gamma_i, freq_i, A_i, CoM_max, CoM_rms, elapsed, 'ok'};
 
     catch ME
         elapsed = toc(t0);
         fprintf('  ERROR after %.1f s: %s\n', elapsed, ME.message);
-        summaryRows{ii} = {gamma_i, freq_i, A_forcing_i, NaN, NaN, elapsed, 'error'};
+        summaryRows{ii} = {gamma_i, freq_i, A_i, NaN, NaN, elapsed, 'error'};
     end
 end
 
