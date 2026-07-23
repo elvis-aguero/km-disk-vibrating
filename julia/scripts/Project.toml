@@ -1,6 +1,5 @@
 [deps]
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
-FaradayDisk = "9b1b7c1a-4b6f-4a3e-8f0e-1c5e9d2a7f6b"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
