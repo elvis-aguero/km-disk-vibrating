@@ -55,3 +55,6 @@ julia/data/results/
 # Julia port: DTN cache migrated/generated from the legacy MATLAB .mat files, and its
 # manifest — regenerate locally via julia/scripts/migrate_dtn_caches.jl, don't commit
 julia/data/dtn_cache/
+
+*.out
+*.err
