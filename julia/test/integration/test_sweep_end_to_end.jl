@@ -10,6 +10,7 @@
 if !@isdefined(OverlayCase)
     include(joinpath(@__DIR__, "..", "..", "scripts", "run_validation_overlay.jl"))
 end
+using TOML  # TOML.parsefile below; not re-exported by `using FaradayDisk` even though FaradayDisk depends on it
 
 @testset "sweep end-to-end" begin
     mktempdir() do outdir
@@ -44,6 +45,17 @@ end
         @testset "resume/skip-if-exists" begin
             results2 = run_sweep(spec, outdir; dtn = dtn)
             @test all(r -> r.status == :skipped, results2)
+        end
+
+        @testset "sweep_metadata.toml records the real forcing convention" begin
+            # Regression guard for the exact bug this session found and fixed:
+            # compute_sim_overlay used to infer is_bath_driven from summary.csv's
+            # bathAmplitude_cm column, which holds the same gamma*g/omega^2 quantity
+            # regardless of convention and so could never actually distinguish them.
+            # run_sweep_case is bath-driven unconditionally, so this must always read true.
+            meta_path = joinpath(outdir, "sweep_metadata.toml")
+            @test isfile(meta_path)
+            @test TOML.parsefile(meta_path)["is_bath_driven"] == true
         end
 
         @testset "validation overlay, where usable, produces finite roughly-O(1) amplitude ratios" begin
