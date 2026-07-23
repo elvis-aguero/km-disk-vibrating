@@ -256,41 +256,4 @@ command line, the SLURM cluster driver, and the full test suite (`julia/test/`).
 See `julia/README.md`'s "Module-to-MATLAB cross-reference" for the file-level (not just
 API-level) mapping.
 
-## A note on forcing conventions
 
-The simulator genuinely supports forcing the disk, the bath, or both simultaneously — that's a
-real, tested capability in both implementations (`matlab/1_code/tests/PhysicsGroundedBathDrivenTest.m`
-test 15 / `julia/test/integration/test_physics_grounded.jl` test 15 both check combined forcing
-stays finite and bounded). **This specific experimental study's real convention is bath-driven**
-(`forceAmplitude=0`, `bathAmplitude=Γg/ω²`) — a MATLAB commit once silently flipped `sweeper.m` to
-disk-forced, which produced plausible-looking but physically wrong sweep results (wrong
-convexity in the amplitude-vs-frequency curve) until it was root-caused via git archaeology and
-reverted. Don't assume which convention a script uses from its output looking reasonable — check
-`sweep_metadata.toml`'s `is_bath_driven` flag (Julia) or read the actual `solve_motion` call
-(MATLAB).
-
-## Cross-implementation parity
-
-`matlab/1_code/tests/JuliaParityTest.m` is a live check, not a precomputed one: on every CI run it
-shells out to a fresh `julia julia/scripts/parity_reference.jl` invocation and compares its output
-against the identical case run through `solve_motion.m` in the same process, at the cheapest
-domain provably shared between the two implementations (`D5Quant20`, `nr=50`, generated at its
-correct `bathDiameter=20` — see `julia/scripts/regenerate_d5quant20_matlab_cache.jl` for the
-history of that domain's now-fixed data bug). Parity here means: *same physical parameters, same
-DTN operator → matching center-of-mass trajectories, up to floating-point noise from different
-BLAS/LAPACK backends* — nothing more, nothing less. `.github/workflows/matlab-ci.yml` sets up both
-Julia and MATLAB in the same job specifically to make this possible.
-
-## Why the convergence check looks the way it does
-
-The original MATLAB early-stop check used a rolling-mean amplitude ratio that, because the
-static-equilibrium initial condition removes most of the transient, dropped below its threshold
-almost immediately regardless of whether the oscillation had actually built up — every case in a
-real 30-case sweep stopped at exactly the earliest allowed point (3 forcing periods), degrading
-the amplitude match to experimental data by ~10x and the phase match by ~50x. Both implementations
-now instead fit oscillation amplitude and phase (least-squares against `cos`/`sin`/const) over two
-consecutive multi-period windows and only declare convergence once both are stable across them.
-See `julia/src/convergence.jl`'s docstring and `julia/README.md`'s "Why the early-stop check was
-rewritten" for the full incident writeup, and `matlab/1_code/tests/CheckConvergenceTest.m` /
-`julia/test/unit/test_convergence_check.jl` for the synthetic-signal tests that pin the fix in
-both languages.
