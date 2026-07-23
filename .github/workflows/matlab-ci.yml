@@ -4,10 +4,12 @@ on:
   push:
     paths:
       - 'matlab/**'
+      - 'julia/**'
       - '.github/workflows/matlab-ci.yml'
   pull_request:
     paths:
       - 'matlab/**'
+      - 'julia/**'
       - '.github/workflows/matlab-ci.yml'
 
 jobs:
@@ -15,6 +17,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # JuliaParityTest.m (matlab/1_code/tests/) shells out to julia/scripts/parity_reference.jl
+      # and compares its output live against this same run's solve_motion.m -- both sides
+      # computed fresh on every CI run, never a precomputed/cached golden value, so the
+      # check can't go stale relative to whatever either implementation currently does.
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.10'
+      - uses: julia-actions/cache@v2
+        with:
+          cache-registries: "true"
+      - uses: julia-actions/julia-buildpkg@v1
+        with:
+          project: julia
+
       - uses: matlab-actions/setup-matlab@v3
       - uses: matlab-actions/run-tests@v3
         with:
