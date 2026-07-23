@@ -72,14 +72,17 @@ reflection (`eta_boundary_cm` crossing 10% of the reference amplitude), requires
 2 full periods of usable data, fits the last `min(3, n_periods_available)` periods via the
 shared `fit_oscillation`, and normalizes amplitude by `A_ref = gamma*g_cgs/omega^2`.
 
-Forcing-mode detection prefers `sweep_dir/sweep_metadata.toml`'s `is_bath_driven` flag
-(written by `run_sweep`, which knows the real physics parameters it used) over inferring
-it from `summary.csv`'s `bathAmplitude_cm` column: that column holds a
-forcing-amplitude-*equivalent* value for every case (see `write_summary_csv`), never
-literally zero, so an all-zero check on it can never actually detect a disk-forced sweep —
-confirmed against real sweep data to always misfire "bath-driven" regardless of which
-convention was actually used. The column-based heuristic (matching `overlay_validation.py`)
-is kept only as a fallback for sweep output predating `sweep_metadata.toml`.
+This experimental study is bath-driven (the bath itself physically oscillates; the disk
+carries no direct forcing) — confirmed against the real experimental setup, not merely
+inferred from data. Forcing-mode detection prefers `sweep_dir/sweep_metadata.toml`'s
+`is_bath_driven` flag (written by `run_sweep`, which knows the real physics parameters it
+used) over inferring it from `summary.csv`'s `bathAmplitude_cm` column: that column holds
+the same `gamma*g/omega^2` quantity regardless of convention (see `write_summary_csv`),
+never literally zero either way, so an all-zero check on it can never actually distinguish
+bath-driven from disk-forced — confirmed against real sweep data to always misfire
+"bath-driven" regardless of which convention was actually used. The column-based
+heuristic (matching `overlay_validation.py`) is kept only as a fallback for sweep output
+predating `sweep_metadata.toml`.
 """
 function compute_sim_overlay(sweep_dir::AbstractString; g_cgs::Float64 = 981.0, phase_rad_bath::Float64 = -pi / 2)
     metadata_path = joinpath(sweep_dir, "sweep_metadata.toml")

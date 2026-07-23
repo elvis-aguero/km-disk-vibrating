@@ -67,10 +67,10 @@ end
     write_summary_csv(path, results)
 
 Writes the sweep summary CSV, columns `gamma,bathFrequency_Hz,bathAmplitude_cm,
-CoM_max_cm,CoM_rms_cm,elapsed_s,status` — matching `sweeper.m` exactly, including the
-`bathAmplitude_cm` column name (a holdover: the sweep is actually forcing-driven, and this
-column holds the forcing amplitude expressed as an equivalent bath amplitude; kept as-is
-for schema compatibility with existing tooling rather than renamed).
+CoM_max_cm,CoM_rms_cm,elapsed_s,status` — matching `sweeper.m` exactly. This sweep is
+bath-driven (the actual physical setup of this experimental study): `bathAmplitude_cm` is
+the real physical bath oscillation amplitude `gamma*g/omega^2` at each case's frequency,
+not a derived stand-in for anything else.
 """
 function write_summary_csv(path::AbstractString, results::AbstractVector{SweepCaseResult})
     mkpath(dirname(path))
@@ -78,27 +78,28 @@ function write_summary_csv(path::AbstractString, results::AbstractVector{SweepCa
         println(io, "gamma,bathFrequency_Hz,bathAmplitude_cm,CoM_max_cm,CoM_rms_cm,elapsed_s,status")
         for r in results
             @printf(io, "%.4f,%g,%.6e,%.4e,%.4e,%.1f,%s\n",
-                    r.gamma, r.freqHz, r.forcingAmplitude, r.CoM_max_cm, r.CoM_rms_cm, r.elapsed_s, String(r.status))
+                    r.gamma, r.freqHz, r.bathAmplitude, r.CoM_max_cm, r.CoM_rms_cm, r.elapsed_s, String(r.status))
         end
     end
     return path
 end
 
 """
-    write_sweep_metadata(path)
+    write_sweep_metadata(path; is_bath_driven)
 
-Records the real forcing convention `run_sweep`/`run_sweep_case` actually use
-(disk-forced: nonzero `forceAmplitude`, `bathAmplitude` fixed at `0.0` for every case —
-see `run_sweep_case` in `sweep.jl`) so `compute_sim_overlay` can key its lab-frame
-correction off the true physics parameters instead of inferring it from `summary.csv`'s
-`bathAmplitude_cm` column. That column is unreliable for this purpose: it holds a
-forcing-amplitude-*equivalent* value (see `write_summary_csv`'s docstring) that is never
-literally zero, so an all-zero check on it can never actually detect a disk-forced sweep.
+Records the real forcing convention `run_sweep`/`run_sweep_case` actually used for this
+sweep, so `compute_sim_overlay` can key its lab-frame correction off the true physics
+parameters instead of inferring it from `summary.csv`'s `bathAmplitude_cm` column. That
+column is unreliable for this purpose: whether the sweep is bath-driven (physical bath
+oscillation) or disk-forced (direct disk forcing), the column holds the same
+`gamma*g/omega^2` quantity (see `write_summary_csv`'s docstring) — bath amplitude in the
+former, a merely-derived display value in the latter — so it is never literally zero
+either way, and an all-zero check on it can never actually tell the two apart.
 """
-function write_sweep_metadata(path::AbstractString)
+function write_sweep_metadata(path::AbstractString; is_bath_driven::Bool)
     mkpath(dirname(path))
     open(path, "w") do io
-        TOML.print(io, Dict{String,Any}("is_bath_driven" => false))
+        TOML.print(io, Dict{String,Any}("is_bath_driven" => is_bath_driven))
     end
     return path
 end
