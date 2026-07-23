@@ -141,7 +141,6 @@ steps = ceil(simulationTime / (dt * T_unit)); % Minimum number of time steps
 % Each factorization stores L, U, P as full dense matrices: 3*(2*nr+2)^2*8 bytes.
 luSizeBytes = stepsPerCycle * 3 * (2*nr+2)^2 * 8; %Estimated bytes needed in memory
 availRAM    = getAvailableRAM(); %Max RAM available to the computer
-hasPCT      = license('test', 'Distrib_Computing_Toolbox');
 
 if solverType == "auto"
     if availRAM >= luSizeBytes
@@ -237,12 +236,9 @@ PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
 
 fprintf("Starting simulation on %s\n", pwd);
 
-% --- Async LU pre-computation ---
-% Fire parfeval futures for all stepsPerCycle LU factorizations before the
-% main loop starts.  Each advance_one_step call fetches only the future it
-% needs (blocks just for that one if not yet ready).
-% Without PCT, falls back to lazy-sync LU: LU computed on first miss inside
-% advance_one_step, cached for all subsequent cycles.
+% --- LU caching ---
+% Lazy-sync: each cycle's factorization is computed on first miss inside
+% advance_one_step, then cached for every subsequent cycle.
 if resolvedSolver == "lu"
     fprintf('LU caching active (lazy-sync: in-memory factorization on demand).\n');
 else

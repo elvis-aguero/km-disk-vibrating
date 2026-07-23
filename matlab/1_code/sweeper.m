@@ -65,7 +65,7 @@ fprintf('Total cases: %d\n\n', nCases);
 % Summary table accumulators
 summaryRows = cell(nCases, 1);
 
-parfor ii = 1:nCases
+for ii = 1:nCases
     gamma_i = GG(ii);
     freq_i  = FF(ii);
     omega_i = 2 * pi * freq_i;

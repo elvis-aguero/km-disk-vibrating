@@ -1,0 +1,22 @@
+name: MATLAB CI
+
+on:
+  push:
+    paths:
+      - 'matlab/**'
+      - '.github/workflows/matlab-ci.yml'
+  pull_request:
+    paths:
+      - 'matlab/**'
+      - '.github/workflows/matlab-ci.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: matlab-actions/setup-matlab@v3
+      - uses: matlab-actions/run-tests@v3
+        with:
+          source-folder: matlab/1_code/simulation_code
+          select-by-folder: matlab/1_code/tests
