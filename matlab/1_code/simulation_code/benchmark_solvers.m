@@ -81,11 +81,7 @@ fprintf('  gamma=%.4f, Re=%.2f, We=%.4f, Fr=%.6f\n', gamma, Re, We, Fr);
 nr = ceil(spatialResolution * bathDiameter / 2);
 currfold = fileparts(mfilename('fullpath'));
 fold = fullfile(currfold, '..', sprintf('D%dQuant%d', spatialResolution, bathDiameter));
-if spatialResolution == 5 && bathDiameter == 20
-    load(fullfile(fold, 'DTNnew345nr50D5refp10.mat'), 'DTNnew345');
-else
-    load(fullfile(fold, sprintf('DTNnew345nr%dD%drefp10.mat', nr, bathDiameter)), 'DTNnew345');
-end
+load(fullfile(fold, sprintf('DTNnew345nr%dD%drefp10.mat', nr, bathDiameter)), 'DTNnew345');
 DTN = DTNnew345; clear DTNnew345;
 
 [dr, Delta, pressureIntegral] = domainMaker(bathDiameter, spatialResolution);

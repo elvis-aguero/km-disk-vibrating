@@ -30,22 +30,27 @@ became available in this environment, direct numerical comparison found the real
 `radn`/`idxs` roughly `refp`-fold and pushing nearly every far-field contribution outside
 the valid `1:nr` range where it was silently masked out — i.e. every off-diagonal DTN
 entry beyond a small near-diagonal band was coming out as exact `0.0` regardless of `D`.
-Fixing that one missing `/refp` makes `generate_dtn(50, 5.0)` match the legacy
+Fixing that one missing `/refp` makes `generate_dtn(50, 5.0)` match the (then-)legacy
 `D5Quant20` cache to ~2e-15 relative difference (machine precision) — not an
-approximation, and not a coincidence. `generate_dtn(50, 20.0)` still disagrees (as it
-should: this genuinely is a `D=5` matrix), consistent with `solve_motion.m`'s own
-"Machine-specific patch for D5Quant20", which loads this exact `.mat` file by its literal
-name instead of computing the filename from `bathDiameter` the way every other domain
-does — i.e. the real MATLAB pipeline already knowingly uses a `D=5`-generated matrix for
-the nominally-bathDiameter=20 domain. That is a genuine, pre-existing MATLAB-side
-data/usage inconsistency (not introduced by this port, and not something to silently
-"fix" by swapping in a properly-regenerated bathDiameter=20 matrix, which would change
-simulation behavior relative to what the real pipeline has always produced) — see
-`scripts/migrate_dtn_caches.jl` for how the registry key and the validation `D` are kept
-separate to reflect this. `D25Quant200`'s cache (`DTNnew345nr2500D25refp10.mat`) shows the
-identical filename-vs-folder mismatch pattern (D25 vs implied bathDiameter=200) but its
-`nr=2500` is too expensive to regenerate natively here to confirm either way — flagged as
-an open question in `migrate_dtn_caches.jl`, not assumed resolved by analogy.
+approximation, and not a coincidence. `generate_dtn(50, 20.0)` disagreed at the time (this
+genuinely was a `D=5` matrix), consistent with `solve_motion.m`'s then-existing
+"Machine-specific patch for D5Quant20", which loaded that `.mat` file by its literal name
+instead of computing the filename from `bathDiameter` the way every other domain does —
+i.e. the real MATLAB pipeline was knowingly using a `D=5`-generated matrix for the
+nominally-bathDiameter=20 domain. That was a genuine, pre-existing MATLAB-side data/usage
+inconsistency, not introduced by this port.
+
+UPDATE: a later usage audit confirmed `D5Quant20` is never used by any production or
+experimental sweep in either MATLAB or Julia (both `sweeper.m` and `run_sweep.jl` use
+bathDiameter=100/spatialResolution=50) — it exists solely as a cheap test/parity fixture,
+so the mismatch was safe to fix outright rather than merely document. It has been:
+`scripts/regenerate_d5quant20_matlab_cache.jl` regenerated the cache natively at the
+correct `D=20` (`DTNnew345nr50D20refp10.mat`), `solve_motion.m`'s special case was removed,
+and `test_dtn_golden_small.jl` now asserts the cache matches `generate_dtn(50, 20.0)`
+instead. `D25Quant200`'s cache (`DTNnew345nr2500D25refp10.mat`) shows the identical
+filename-vs-folder mismatch pattern (D25 vs implied bathDiameter=200) but its `nr=2500` is
+too expensive to regenerate natively here to confirm or fix the same way — flagged as an
+open question in `migrate_dtn_caches.jl`, not assumed resolved by analogy.
 """
 
 const DTN_DEFAULT_REFP = 10

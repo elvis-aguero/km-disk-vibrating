@@ -4,12 +4,12 @@ parity check, run fresh on every invocation (never a cached/precomputed value, s
 never go stale relative to whatever this branch's Julia code actually does right now).
 
 Runs the same bath-driven case JuliaParityTest.m runs through solve_motion.m, at the
-cheapest domain provably shared between the two implementations (D5Quant20, nr=50 --
-cross-validated byte-for-byte between Julia's native DTN generator and MATLAB's original
-.mat cache earlier this session), and prints exactly one line of space-separated numbers
-to stdout: t_end CoM_first amplitude phase offset. Nothing else goes to stdout (the
-default logger is silenced) so a caller like MATLAB's `system(...)` gets a clean,
-trivially parseable line.
+cheapest domain provably shared between the two implementations (D5Quant20, nr=50, generated
+at its correct bathDiameter=20 -- see scripts/regenerate_d5quant20_matlab_cache.jl and
+migrate_dtn_caches.jl for the history of this domain's now-fixed D=5-vs-D=20 mislabeling
+bug), and prints exactly one line of space-separated numbers to stdout: t_end CoM_first
+amplitude phase offset. Nothing else goes to stdout (the default logger is silenced) so a
+caller like MATLAB's `system(...)` gets a clean, trivially parseable line.
 
 Block comment, not a docstring: see scripts/_bootstrap.jl's header for why a bare
 top-level string directly followed by a non-declaration statement here would fail to
@@ -35,16 +35,9 @@ p = SimulationParams(diskRadius = 0.2, diskMass = 0.0283, forceAmplitude = 0.0, 
 
 # Generated natively (not via resolve_dtn/default_registry()) because julia/data/dtn_cache/
 # is gitignored (regenerate-locally-only, see .gitignore) and so isn't present on a fresh CI
-# checkout. nr=50 for this domain matches build_domain's nr = ceil(D*quant/2).
-#
-# Generated at D=5, NOT p.bathDiameter (20) -- migrate_dtn_caches.jl documents that this
-# domain's legacy MATLAB cache (D5Quant20/DTNnew345nr50D5refp10.mat) was actually generated
-# with the literal argument D=5 (its filename is a mechanically exact record of that), and
-# solve_motion.m has a "Machine-specific patch for D5Quant20" that always loads this same
-# D=5-generated matrix whenever spatialResolution==5 && bathDiameter==20, never regenerating
-# it at the nominal bathDiameter. Using D=20 here disagrees from what MATLAB actually loads
-# by ~75% (confirmed empirically) -- D=5 is what makes this a genuine parity check.
-dtn = generate_dtn(50, p.spatialResolution)
+# checkout. nr=50 for this domain matches build_domain's nr = ceil(D*quant/2). Generated at
+# p.bathDiameter (20), matching what solve_motion.m now actually loads since the cache fix.
+dtn = generate_dtn(50, p.bathDiameter)
 result = run_simulation(p; dtn = dtn)
 
 T = 1 / freqHz

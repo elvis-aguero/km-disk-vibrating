@@ -7,11 +7,12 @@ classdef JuliaParityTest < matlab.unittest.TestCase
     % implementation's physics changed without this test being re-derived.
     %
     % Uses the cheapest domain provably shared between the two implementations --
-    % D5Quant20 (nr=50) -- whose DTN operator was cross-validated byte-for-byte between
-    % Julia's native generator and this MATLAB cache earlier this session (~2e-15
-    % relative difference), so any disagreement here points at the physics/stepping code,
-    % not the DTN operator. Requires `julia` on PATH (see .github/workflows/matlab-ci.yml,
-    % which sets up both runtimes in the same job) and julia/ instantiated.
+    % D5Quant20 (nr=50), generated at its correct bathDiameter=20 (see
+    % scripts/regenerate_d5quant20_matlab_cache.jl and migrate_dtn_caches.jl for the history
+    % of this domain's now-fixed D=5-vs-D=20 mislabeling bug) -- so any disagreement here
+    % points at the physics/stepping code, not a DTN-operator mismatch. Requires `julia` on
+    % PATH (see .github/workflows/matlab-ci.yml, which sets up both runtimes in the same
+    % job) and julia/ instantiated.
     %
     % Tolerance is looser than floating-point-identical because the two implementations
     % use different BLAS/LAPACK libraries under the hood (MATLAB's vs OpenBLAS), so

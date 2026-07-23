@@ -15,29 +15,31 @@ generated with — `DTNVectorized.m`'s last line, `save(['DTNnew345nr',num2str(n
 num2str(D),...])`, saves the literal `D` argument it was called with, so a filename is a
 mechanically exact record of that, not a guess. For `D50Quant100`
 (`DTNnew345nr2500D100refp10.mat`) that literal value (100) matches the folder's implied
-bathDiameter, so the cache should be exactly what the domain needs. For `D5Quant20`
-(`DTNnew345nr50D5refp10.mat`, literal D=5) and `D25Quant200`
-(`DTNnew345nr2500D25refp10.mat`, literal D=25), it does NOT match the folder's implied
-bathDiameter (20 and 200 respectively) — confirmed for `D5Quant20` by regenerating natively
-at D=5 and matching the legacy cache to ~2e-15 relative difference (machine precision;
-`D=20` disagrees by 75%). `solve_motion.m` itself has a "Machine-specific patch for
-D5Quant20" that loads `DTNnew345nr50D5refp10.mat` by its literal (mismatched-looking) name
-instead of the normal `sprintf(...bathDiameter...)` formula used for every other domain —
-i.e. the real pipeline already knowingly uses this D=5-generated matrix for the
-nominally-bathDiameter=20 domain. That's a genuine pre-existing MATLAB-side data/usage
-inconsistency (not something introduced by this port, and not something this migration
-"fixes" by silently swapping in a properly-regenerated bathDiameter=20 matrix, which would
-change simulation behavior for this domain relative to what the real MATLAB pipeline has
-always produced) — `validation_D` below records the *actual* D each cache should be
-compared against, separate from the registry key's bathDiameter.
+bathDiameter, so the cache should be exactly what the domain needs.
 
-`D25Quant200` is NOT independently verified the same way `D5Quant20` was — its `nr=2500`
-is too expensive to regenerate natively in a reasonable time (the per-row quadrature cost
-scales with the far-field range, which itself scales with `nr`), so whether it has the
-exact same kind of mismatch as `D5Quant20` (which its own filename's "D25" vs the folder's
-implied bathDiameter=200 suggests it plausibly does) is currently unknown — flagged, not
-assumed either way. `D50Quant100` is self-consistent by filename but likewise has never
-actually been cross-validated against the native generator (same cost problem).
+`D5Quant20` (originally `DTNnew345nr50D5refp10.mat`, literal D=5) did NOT match its folder's
+implied bathDiameter=20 — confirmed by regenerating natively at D=5 and matching the legacy
+cache to ~2e-15 relative difference (machine precision), while D=20 disagreed by 75%.
+`solve_motion.m` had a "Machine-specific patch for D5Quant20" that loaded that mismatched
+file by its literal name regardless, meaning the DTN operator and the bulk-domain operators
+(Laplacian, pressure integral — both built from the nominal bathDiameter=20) were computed
+on physically different domain sizes (domain radius = bathDiameter/2, so D=5 vs D=20 is a
+4x difference, not a rounding-level one) for the same simulation. A real usage audit
+confirmed D5Quant20 is never used by any production/experimental sweep in either MATLAB or
+Julia (both use bathDiameter=100/spatialResolution=50) — it exists solely as a cheap
+test/parity fixture — so this was fixed directly: `scripts/regenerate_d5quant20_matlab_cache.jl`
+regenerated the cache natively at the correct D=20 (`DTNnew345nr50D20refp10.mat`, matching
+the standard naming convention) and `solve_motion.m`'s special case was removed. The
+`validation_D` field below is now just `bathDiameter` for this entry, same as every other
+self-consistent cache.
+
+`D25Quant200` (`DTNnew345nr2500D25refp10.mat`, literal D=25) does NOT match its folder's
+implied bathDiameter=200 either, and is NOT independently verified the way `D5Quant20` was
+— its `nr=2500` is too expensive to regenerate natively in a reasonable time (the per-row
+quadrature cost scales with the far-field range, which itself scales with `nr`), so whether
+it has the same kind of mismatch is currently unknown — flagged, not assumed either way.
+`D50Quant100` is self-consistent by filename but likewise has never actually been
+cross-validated against the native generator (same cost problem).
 
 If the *validation* comparison for a small (`nr<=200`) domain disagrees beyond a tight
 (1e-8) tolerance, that is now treated as a genuine, unexplained bug to surface loudly —
@@ -68,7 +70,7 @@ end
 const LEGACY_SOURCES = [
     LegacySource(50, 100, 2500, joinpath(REPO_ROOT, "matlab", "1_code", "D50Quant100", "DTNnew345nr2500D100refp10.mat"), "D50_Quant100_nr2500.jld2", 100),
     LegacySource(25, 200, 2500, joinpath(REPO_ROOT, "matlab", "1_code", "D25Quant200", "DTNnew345nr2500D25refp10.mat"), "D25_Quant200_nr2500.jld2", 25),
-    LegacySource(5, 20, 50, joinpath(REPO_ROOT, "matlab", "1_code", "D5Quant20", "DTNnew345nr50D5refp10.mat"), "D5_Quant20_nr50.jld2", 5),
+    LegacySource(5, 20, 50, joinpath(REPO_ROOT, "matlab", "1_code", "D5Quant20", "DTNnew345nr50D20refp10.mat"), "D5_Quant20_nr50.jld2", 20),
 ]
 
 function main()
