@@ -35,9 +35,16 @@ p = SimulationParams(diskRadius = 0.2, diskMass = 0.0283, forceAmplitude = 0.0, 
 
 # Generated natively (not via resolve_dtn/default_registry()) because julia/data/dtn_cache/
 # is gitignored (regenerate-locally-only, see .gitignore) and so isn't present on a fresh CI
-# checkout -- same approach test/integration/test_physics_grounded.jl already uses for its
-# own DTN fixture. nr=50 for this domain matches build_domain's nr = ceil(D*quant/2).
-dtn = generate_dtn(50, p.bathDiameter)
+# checkout. nr=50 for this domain matches build_domain's nr = ceil(D*quant/2).
+#
+# Generated at D=5, NOT p.bathDiameter (20) -- migrate_dtn_caches.jl documents that this
+# domain's legacy MATLAB cache (D5Quant20/DTNnew345nr50D5refp10.mat) was actually generated
+# with the literal argument D=5 (its filename is a mechanically exact record of that), and
+# solve_motion.m has a "Machine-specific patch for D5Quant20" that always loads this same
+# D=5-generated matrix whenever spatialResolution==5 && bathDiameter==20, never regenerating
+# it at the nominal bathDiameter. Using D=20 here disagrees from what MATLAB actually loads
+# by ~75% (confirmed empirically) -- D=5 is what makes this a genuine parity check.
+dtn = generate_dtn(50, p.spatialResolution)
 result = run_simulation(p; dtn = dtn)
 
 T = 1 / freqHz
