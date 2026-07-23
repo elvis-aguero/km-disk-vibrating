@@ -33,8 +33,11 @@ p = SimulationParams(diskRadius = 0.2, diskMass = 0.0283, forceAmplitude = 0.0, 
                       bathDiameter = 20.0, spatialResolution = 5.0, temporalResolution = 48,
                       simulationTime = nPeriods / freqHz, startStatic = true, earlyStop = false, solverType = :lu)
 
-entry = resolve_dtn(default_registry(), p.spatialResolution, p.bathDiameter)
-dtn = load_dtn(entry)
+# Generated natively (not via resolve_dtn/default_registry()) because julia/data/dtn_cache/
+# is gitignored (regenerate-locally-only, see .gitignore) and so isn't present on a fresh CI
+# checkout -- same approach test/integration/test_physics_grounded.jl already uses for its
+# own DTN fixture. nr=50 for this domain matches build_domain's nr = ceil(D*quant/2).
+dtn = generate_dtn(50, p.bathDiameter)
 result = run_simulation(p; dtn = dtn)
 
 T = 1 / freqHz
