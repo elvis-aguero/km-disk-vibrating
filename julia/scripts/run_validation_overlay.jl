@@ -275,7 +275,7 @@ function plot_validation_overlay(cases::Vector{OverlayCase}, exp_amp_path::Abstr
     save(amp_pdf, fig_amp)
 
     fig_phase = Figure()
-    _plot_overlay_panel!(fig_phase[1, 1], cases, exp_phase, :phaseDiff, u_gammas, (0, 105), (0, 90), 0:10:100, 0:15:90,
+    _plot_overlay_panel!(fig_phase[1, 1], cases, exp_phase, :phaseDiff, u_gammas, (0, 105), (0, 30), 0:10:100, 0:5:30,
                          "Phase Validation Overlay ($sweep_name)", "Phase Difference (deg)")
     phase_png = joinpath(out_dir, "val_phase_$(sweep_name).png")
     phase_pdf = joinpath(out_dir, "val_phase_$(sweep_name).pdf")
