@@ -60,9 +60,8 @@ label(x::Real, y::Real, s; kw...) = label(Point2f(x, y), s; kw...)
 # fluid
 poly!(ax, @lift(vcat($surf, [Point2f(xmax, $zb - depth), Point2f(-xmax, $zb - depth)])), color = (CYAN, 0.13))
 lines!(ax, surf, color = CYAN, linewidth = 2)
-for s in (-1, 1)
-    lines!(ax, @lift(Point2f[(s * xmax, $zb - depth), (s * xmax, $zb + 0.3)]), color = DIM, linestyle = :dash)
-end
+# container: walls and floor
+lines!(ax, @lift(Point2f[(-xmax, $zb + 0.3), (-xmax, $zb - depth), (xmax, $zb - depth), (xmax, $zb + 0.3)]), color = DIM, linewidth = 1.5)
 label(@lift(Point2f(1.9, VEX * (η[3nr ÷ 5, $k] + z_bath[$k]) + 0.17)), L"\eta"; color = CYAN)
 label(@lift(Point2f(-xmax + 0.15, $zb - 0.7)), L"\rho \quad \sigma \quad \nu"; color = DIM, size = 19)
 
@@ -92,7 +91,7 @@ label(@lift(Point2f(0.12, $zb - depth - 0.31)), L"A\,\cos(\omega t + \varphi)")
 
 outpath = joinpath(@__DIR__, "..", "..", "docs", "setup.gif")
 mkpath(dirname(outpath))
-record(fig, outpath, 1:2:length(t); framerate = 20) do i
+record(fig, outpath, eachindex(t); framerate = 20) do i   # every step: 3 s per period
     k[] = i
 end
 println("wrote ", abspath(outpath))
