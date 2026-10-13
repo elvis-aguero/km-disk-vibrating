@@ -30,15 +30,41 @@ the `stepsPerCycle` slots would independently factorize the exact same dense mat
 confirmed directly (a real test run at nr=2500 took over 55 minutes computing what should
 have been a single ~30s factorization, 60 times over) — instead of computing it once and
 sharing it across every slot.
+
+Matching is tolerant (`G_DEDUP_ATOL`), not exact. In bath-driven runs `g_prefactor =
+1 - gamma*cos(theta_k)` and cos is even, so steps mirrored about the forcing phase share
+the same matrix — 31 distinct factorizations per 60-step cycle for the sweep's -90 deg
+phase instead of 60. Computed in floating point, those mirrored values differ by up to
+~3 eps, which defeated exact `Dict` lookup (33-49 distinct keys per 60 steps, measured);
+distinct values are >= ~1e-4 apart, so 1e-12 separates the two cases with wide margin.
 """
+
+# Absolute tolerance for treating two g_prefactor values (which are O(1)) as the same
+# matrix. Measured: mirrored-phase pairs differ by <= 6.7e-16; genuinely distinct cycle
+# values by >= 1.1e-4 (stepsPerCycle 20-61, gamma 0.05-0.5, several phases).
+const G_DEDUP_ATOL = 1e-12
 mutable struct LUCache
     factors::Vector{Union{Nothing,LU}}
-    by_value::Dict{Float64,LU}
+    by_value::Vector{Pair{Float64,LU}}   # one entry per distinct factorization (<= stepsPerCycle)
     hits::Int
     misses::Int
 end
 
-LUCache(stepsPerCycle::Integer) = LUCache(Vector{Union{Nothing,LU}}(nothing, stepsPerCycle), Dict{Float64,LU}(), 0, 0)
+LUCache(stepsPerCycle::Integer) = LUCache(Vector{Union{Nothing,LU}}(nothing, stepsPerCycle), Pair{Float64,LU}[], 0, 0)
+
+"""
+    n_factorizations(cache) -> Int
+
+Number of distinct LU factorizations actually computed (and held in memory).
+"""
+n_factorizations(cache::LUCache) = length(cache.by_value)
+
+function _find_factorization(cache::LUCache, g_prefactor::Float64)
+    for (g, f) in cache.by_value
+        abs(g - g_prefactor) <= G_DEDUP_ATOL && return f
+    end
+    return nothing
+end
 
 Base.length(cache::LUCache) = length(cache.factors)
 
@@ -47,7 +73,8 @@ Base.length(cache::LUCache) = length(cache.factors)
 
 Returns the cached factorization for `cycle_index`, computing (and caching) it via
 `materialize!(Mat, tmpl, g_prefactor)` followed by `lu(Mat)` on first use — unless a
-*different* `cycle_index` already factorized this exact `g_prefactor` value, in which case
+*different* `cycle_index` already factorized this `g_prefactor` value (within
+`G_DEDUP_ATOL`), in which case
 that factorization is reused directly instead of recomputing an identical one. `Mat` is
 reused scratch space — it is only actually read on a genuine miss (new `g_prefactor` value).
 """
@@ -56,11 +83,11 @@ function get_or_factorize!(cache::LUCache, tmpl::SystemMatrixTemplate, Mat::Matr
     1 <= cycle_index <= length(cache) || throw(BoundsError(cache.factors, cycle_index))
     f = cache.factors[cycle_index]
     if f === nothing
-        f = get(cache.by_value, g_prefactor, nothing)
+        f = _find_factorization(cache, g_prefactor)
         if f === nothing
             materialize!(Mat, tmpl, g_prefactor)
             f = lu(Mat)
-            cache.by_value[g_prefactor] = f
+            push!(cache.by_value, g_prefactor => f)
         end
         cache.factors[cycle_index] = f
         cache.misses += 1

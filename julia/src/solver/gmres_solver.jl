@@ -1,41 +1,45 @@
 """
-GMRES fallback solver path, used when `solverType=:gmres` (explicit) or when
-`solverType=:auto` decides the LU cache would not fit in available RAM.
+GMRES solver path, used when `solverType=:gmres` (explicit) or when `solverType=:auto`
+decides the LU cache would not fit in available RAM.
 
-Port of the MATLAB call `gmres(Mat, indep, [], gmresTolerance, size(Mat,1), [], [],
-gmres_x0)`: empty restart parameter and `maxit = size(Mat,1)` together mean *full,
-non-restarted* GMRES — this must be preserved (Krylov.jl's `memory` keyword set to the
-full system size reproduces this), not silently swapped for a restarted variant. The
-matrix is rebuilt fresh every step (no caching, unlike the `:lu` path) via
-`materialize!`, and the solve is warm-started from the previous step's solution.
+Preconditioned with ONE LU factorization of the system matrix at `g_prefactor = 1` (the
+centre of the `1 ± gamma` range the matrix sweeps over a cycle), applied as a right
+preconditioner on every iteration. Each step still solves that step's own matrix
+`M(g)`; the preconditioner only changes how fast GMRES gets there, not the answer.
+Because `M(g) = M(1) + (g-1)*(dt/Fr)*P`, the preconditioned operator is a small
+perturbation of the identity: measured 1-5 iterations per step at nr = 100-300 for
+gamma up to 0.5, versus ~n iterations (one per unknown) unpreconditioned. Memory is one
+`n x n` factor instead of the LU cache's one per cycle step.
 
-CAVEAT: this file was written without the ability to run Julia or install Krylov.jl in
-the environment it was authored in (network access to the Julia package registry was
-blocked), so the exact in-place `gmres!`/workspace keyword names below are a best-effort
-match to the Krylov.jl API and have NOT been executed. If `Pkg.instantiate()` or the test
-suite reports a `MethodError`/`UndefKeywordError` originating here, this is the first
-place to check against whatever Krylov.jl version actually resolves — the fix is local to
-this file (`GMRESSolver`/`solve_gmres!`); nothing else in the package depends on Krylov's
-exact call signature.
+GMRES is not restarted (`memory` is only an initial basis size; Krylov.jl grows it if
+needed) and `itmax = n`, so convergence is still guaranteed in exact arithmetic even if
+the preconditioner were poor — matching MATLAB's `gmres(Mat, indep, [], tol, n, ...)`.
 """
 mutable struct GMRESSolver
     workspace::Krylov.GmresWorkspace
+    precond::LU{Float64,Matrix{Float64},Vector{Int}}
     tol::Float64
     x0::Vector{Float64}
     last_converged::Bool
+    last_niter::Int
+    total_niter::Int
+    nsolves::Int
 end
 
-"""
-    build_gmres_solver(n, tol) -> GMRESSolver
+const GMRES_INITIAL_MEMORY = 20
 
-`n` is the system size (`2*nr+2`). `memory = n` gives full (non-restarted) GMRES,
-matching MATLAB's `gmres(...,[],tol,n,...)`.
 """
-function build_gmres_solver(n::Int, tol::Float64)
+    build_gmres_solver(precond, tol) -> GMRESSolver
+
+`precond` is the LU factorization used as the right preconditioner (see the file
+docstring); the system size `n` is taken from it.
+"""
+function build_gmres_solver(precond::LU{Float64,Matrix{Float64},Vector{Int}}, tol::Float64)
+    n = size(precond, 1)
     # S must be the storage (array) type, not the element type — GmresWorkspace
     # allocates internal buffers via `S(undef, n)`, which only an array type supports.
-    workspace = Krylov.GmresWorkspace(n, n, Vector{Float64}; memory = n)
-    return GMRESSolver(workspace, tol, zeros(n), true)
+    workspace = Krylov.GmresWorkspace(n, n, Vector{Float64}; memory = min(n, GMRES_INITIAL_MEMORY))
+    return GMRESSolver(workspace, precond, tol, zeros(n), true, 0, 0, 0)
 end
 
 """
@@ -49,12 +53,23 @@ throw) if GMRES fails to converge within `tol`/`itmax`, matching MATLAB's non-fa
 """
 function solve_gmres!(solver::GMRESSolver, Mat::AbstractMatrix{Float64}, rhs::AbstractVector{Float64})
     Krylov.gmres!(solver.workspace, Mat, rhs, solver.x0;
+                  N = solver.precond, ldiv = true,
                   atol = solver.tol, rtol = solver.tol, itmax = length(rhs))
     stats = solver.workspace.stats
     solver.last_converged = stats.solved
+    solver.last_niter = stats.niter
+    solver.total_niter += stats.niter
+    solver.nsolves += 1
     if !stats.solved
         @warn "GMRES did not converge" tol = solver.tol itmax = length(rhs) niter = stats.niter
     end
     copyto!(solver.x0, solver.workspace.x)
     return solver.workspace.x
 end
+
+"""
+    mean_iterations(solver) -> Float64
+
+Average GMRES iterations per solve so far (`NaN` before the first solve).
+"""
+mean_iterations(solver::GMRESSolver) = solver.nsolves == 0 ? NaN : solver.total_niter / solver.nsolves

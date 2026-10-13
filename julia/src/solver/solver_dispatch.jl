@@ -153,7 +153,9 @@ function build_step_solver(problem::Problem, requested_type::Symbol, gmres_tol::
     if resolved === :lu
         return LUStepSolver(tmpl, LUCache(problem.stepsPerCycle), scratch), resolved
     elseif resolved === :gmres
-        return GMRESStepSolver(tmpl, build_gmres_solver(n, gmres_tol), scratch), resolved
+        materialize!(scratch, tmpl, 1.0)
+        precond = lu(scratch)
+        return GMRESStepSolver(tmpl, build_gmres_solver(precond, gmres_tol), scratch), resolved
     else
         error("resolve_solver_type returned unexpected symbol :$resolved (requested :$requested_type)")
     end

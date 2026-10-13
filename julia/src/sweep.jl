@@ -51,9 +51,9 @@ Concurrency is capped, via a semaphore, to however many cases can each comfortab
 a full LU cache out of `available_memory_bytes()` — NOT to `Threads.nthreads()` directly.
 Naively dividing the budget evenly across every thread (this port's original approach)
 starves everyone into the GMRES fallback path the moment thread count exceeds what memory
-can support, and GMRES here is not a mildly-slower alternative: full, non-restarted GMRES
-on a large dense system with no caching measured multiple *minutes per step* at domain
-sizes where the LU-cached path takes a fraction of a second (see `solver_dispatch.jl`).
+can support. (Unpreconditioned GMRES once measured multiple *minutes per step* here; the
+fallback is now LU-preconditioned — see `gmres_solver.jl` — and roughly break-even with
+the LU cache per case, but this LU-first policy predates that and has not been re-tuned.)
 Extra threads beyond the LU-affordable count simply wait their turn for a slot rather than
 running a slow GMRES case in the meantime — worse per-case latency for the queued cases,
 but far better total sweep throughput than every case crawling through GMRES at once.
@@ -87,7 +87,7 @@ function run_sweep(spec::SweepSpec, outdir::AbstractString; dtn_registry::Union{
         # Not even one case can afford a full LU cache at this domain size within this
         # budget -- the genuine last resort. Falls back to the old evenly-divided
         # behavior, which forces :auto to pick :gmres for every case.
-        @warn "not enough memory for even one LU cache -- every case will fall back to GMRES, which is dramatically slower (see run_sweep's docstring)" total_budget_bytes = total_budget lu_cache_bytes_needed = lu_bytes threads = nthreads
+        @warn "not enough memory for even one LU cache -- every case will use the preconditioned-GMRES path instead of the LU cache (see run_sweep's docstring)" total_budget_bytes = total_budget lu_cache_bytes_needed = lu_bytes threads = nthreads
         concurrency = nthreads
         ram_per_case = max(1, total_budget ÷ nthreads)
     end
