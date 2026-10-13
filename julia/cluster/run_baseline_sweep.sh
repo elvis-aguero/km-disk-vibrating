@@ -23,9 +23,10 @@
 #     setup is different and this can't be guessed.
 #   - --cpus-per-task / --mem / --time: 4 cores and 64G above match the committed
 #     reference run (per its logs). Cases run concurrently only as far as memory
-#     allows: run_sweep budgets ~12 GB per case for the nr=2500 LU cache and uses 70% of
-#     --mem, so concurrent cases = floor(0.7 * --mem / 12 GB) -- 64G -> 4, 32G -> 2.
-#     Request --cpus-per-task equal to that number; extra cores just sit idle. Cases that
+#     allows: run_sweep budgets ~6.2 GB per case for the nr=2500 LU cache (31 distinct
+#     factorizations at 60 steps/period) and uses 70% of --mem, so concurrent cases =
+#     min(--cpus-per-task, floor(0.7 * --mem / 6.2 GB)) -- 64G -> up to 7, 32G -> 3. Cores
+#     beyond that are split among the running cases' BLAS calls. Cases that
 #     don't fit wait for a slot (see run_sweep's docstring in src/sweep.jl). The reference
 #     run took 116-203 s per case (output/README.md); set --time from your own first run
 #     (the "elapsed_s" column of summary.csv).

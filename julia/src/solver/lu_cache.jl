@@ -53,6 +53,28 @@ end
 LUCache(stepsPerCycle::Integer) = LUCache(Vector{Union{Nothing,LU}}(nothing, stepsPerCycle), Pair{Float64,LU}[], 0, 0)
 
 """
+    lu_factor_count(stepsPerCycle, phase_rad, bath_driven) -> Int
+
+How many distinct factorizations an `LUCache` will hold for one cycle — what the memory
+budget should be sized on. Disk-forced runs (`bath_driven = false`) have `g_prefactor ≡ 1`,
+so one. Bath-driven runs have `g_k = 1 - gamma*cos(2π(k+1)/stepsPerCycle + phase)`; steps
+mirrored about the forcing phase share a value (e.g. 31 of 60 at -90°). Independent of gamma
+and frequency for any gamma that is not vanishingly small.
+"""
+function lu_factor_count(stepsPerCycle::Integer, phase_rad::Real, bath_driven::Bool)
+    bath_driven || return 1
+    distinct = Float64[]
+    for k in 0:(stepsPerCycle - 1)
+        c = cos(2pi * (k + 1) / stepsPerCycle + phase_rad)
+        any(d -> abs(d - c) <= G_DEDUP_ATOL, distinct) || push!(distinct, c)
+    end
+    return length(distinct)
+end
+
+lu_factor_count(problem::Problem) =
+    lu_factor_count(problem.stepsPerCycle, problem.phase_difference, problem.bath_forcing_amplitude != 0)
+
+"""
     n_factorizations(cache) -> Int
 
 Number of distinct LU factorizations actually computed (and held in memory).

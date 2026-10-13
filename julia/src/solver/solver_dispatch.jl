@@ -58,17 +58,17 @@ force_term(problem::Problem, phase::StepPhase, dt::Float64) =
 # --- solverType resolution ---
 
 """
-    estimated_lu_cache_bytes(stepsPerCycle, n) -> Int
+    estimated_lu_cache_bytes(n_factors, n) -> Int
 
-Estimated peak memory for a full LU cache of `stepsPerCycle` factorizations of an `n x n`
+Estimated peak memory for an LU cache of `n_factors` factorizations (see `lu_factor_count`) of an `n x n`
 matrix. Julia's `LinearAlgebra.lu` stores one `n x n` factors matrix plus an `O(n)` pivot
 vector, roughly a 3x reduction versus MATLAB's separate dense `[L,U,P]` triples (MATLAB:
 `stepsPerCycle * 3 * n^2 * 8` bytes) — so `:auto` will favor `:lu` at larger `nr`/
 `stepsPerCycle` in this port than it would in MATLAB for the same machine. That is
 intentional, not a discrepancy to "fix" back to MATLAB's more conservative threshold.
 """
-function estimated_lu_cache_bytes(stepsPerCycle::Integer, n::Integer)
-    return stepsPerCycle * (n^2 * sizeof(Float64) + n * sizeof(Int))
+function estimated_lu_cache_bytes(n_factors::Integer, n::Integer)
+    return n_factors * (n^2 * sizeof(Float64) + n * sizeof(Int))
 end
 
 # Applied to whatever available_memory_bytes() auto-detects (never to an explicit
@@ -106,15 +106,15 @@ function available_memory_bytes()
 end
 
 """
-    resolve_solver_type(requested, stepsPerCycle, n, ram_budget_bytes) -> Symbol
+    resolve_solver_type(requested, n_factors, n, ram_budget_bytes) -> Symbol
 
 `requested` is `:auto`, `:lu`, or `:gmres`. An explicit `:lu`/`:gmres` passes through
 unchanged (an explicit override by the caller); `:auto` picks `:lu` if the estimated cache
 fits in `ram_budget_bytes`, else `:gmres`.
 """
-function resolve_solver_type(requested::Symbol, stepsPerCycle::Integer, n::Integer, ram_budget_bytes::Integer)
+function resolve_solver_type(requested::Symbol, n_factors::Integer, n::Integer, ram_budget_bytes::Integer)
     requested === :auto || return requested
-    return estimated_lu_cache_bytes(stepsPerCycle, n) <= ram_budget_bytes ? :lu : :gmres
+    return estimated_lu_cache_bytes(n_factors, n) <= ram_budget_bytes ? :lu : :gmres
 end
 
 # --- step solvers ---
@@ -146,7 +146,7 @@ function build_step_solver(problem::Problem, requested_type::Symbol, gmres_tol::
                             ram_budget_bytes::Union{Nothing,Integer} = nothing)
     n = 2 * problem.nr + 2
     budget = ram_budget_bytes === nothing ? available_memory_bytes() : ram_budget_bytes
-    resolved = resolve_solver_type(requested_type, problem.stepsPerCycle, n, budget)
+    resolved = resolve_solver_type(requested_type, lu_factor_count(problem), n, budget)
     tmpl = build_template(problem)
     scratch = Matrix{Float64}(undef, n, n)
 
@@ -176,7 +176,7 @@ end
 
 function solve_step!(solver::GMRESStepSolver, phase::StepPhase, g_pf::Float64,
                       rhs::AbstractVector{Float64}, sol::AbstractVector{Float64})
-    materialize!(solver.scratch, solver.template, g_pf)
+    repatch!(solver.scratch, solver.template, g_pf)   # scratch was fully materialized at build
     x = solve_gmres!(solver.gmres, solver.scratch, rhs)
     copyto!(sol, x)
     return sol

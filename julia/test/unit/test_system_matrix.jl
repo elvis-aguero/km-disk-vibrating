@@ -45,4 +45,16 @@
         @test rhs[2 * nr + 1] ≈ 3.0 - problem.dt / problem.Fr * 0.5 - 0.1
         @test rhs[2 * nr + 2] ≈ 7.0
     end
+
+    @testset "repatch! is bit-identical to materialize!" begin
+        tmpl = build_template(problem)
+        M_full = similar(tmpl.Mat0)
+        M_patched = similar(tmpl.Mat0)
+        materialize!(M_patched, tmpl, 1.0)
+        for g in (0.5, 1.37, 1.0, 0.91, 1.5)
+            materialize!(M_full, tmpl, g)
+            repatch!(M_patched, tmpl, g)
+            @test M_patched == M_full
+        end
+    end
 end

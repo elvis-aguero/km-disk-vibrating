@@ -92,7 +92,7 @@ is ≤ 8.55° (1.5× the known-good baseline). The committed reference run achie
 
 On a workstation instead of a cluster, run
 `julia -t auto --project=julia/scripts julia/scripts/run_sweep.jl` (the scheduler budgets about
-12 GB of RAM per concurrently running case at this resolution and queues the rest).
+6 GB of RAM per concurrently running case at this resolution and queues the rest).
 
 ## Where things are
 

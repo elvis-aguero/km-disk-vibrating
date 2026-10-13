@@ -60,6 +60,12 @@
         # symmetry on the step grid, every one of the 20 steps is distinct.
         solver_37 = run_steps(with_overrides(bath; phaseDifference = 37.0), :lu, 20)
         @test n_factorizations(solver_37.cache) == 20
+        # The memory budget's prediction matches what the cache actually holds.
+        @test lu_factor_count(20, deg2rad(-90.0), true) == 11
+        @test lu_factor_count(20, deg2rad(37.0), true) == 20
+        @test lu_factor_count(60, deg2rad(-90.0), true) == 31
+        disk = run_steps(with_overrides(fixed; solverType = :lu), :lu, 20)   # disk-forced: g ≡ 1
+        @test n_factorizations(disk.cache) == 1 == lu_factor_count(20, 0.0, false)
     end
 
     @testset "LU-preconditioned GMRES converges in a handful of iterations" begin
