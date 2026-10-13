@@ -117,9 +117,30 @@ end
 """
     load_dtn(entry) -> Matrix{Float64}
 
-Loads the DTN matrix referenced by a registry entry from its JLD2 file.
+Loads the DTN matrix referenced by a registry entry from its JLD2 file, and rejects it if
+it is visibly incomplete (`check_dtn`).
 """
-load_dtn(entry::DTNCacheEntry) = JLD2.load(entry.path, "DTN")
+load_dtn(entry::DTNCacheEntry) = check_dtn(JLD2.load(entry.path, "DTN"); source = entry.path)
+
+"""
+    check_dtn(DTN; source="") -> DTN
+
+Throws if the matrix is not finite or has an all-zero row. Every row of a valid DTN
+operator has a nonzero diagonal (`diag_correction` in `dtn_generator.jl`), so an all-zero
+row means the cache was only partly generated — as the legacy `D25Quant200` cache is
+(rows 564:2500 are zero).
+"""
+function check_dtn(DTN::AbstractMatrix; source::AbstractString = "")
+    all(isfinite, DTN) || error("DTN matrix $source contains non-finite values")
+    for k in axes(DTN, 1)
+        if all(iszero, view(DTN, k, :))
+            nz = count(j -> all(iszero, view(DTN, j, :)), axes(DTN, 1))
+            error("DTN matrix $source is incomplete: row $k (and $nz rows in total) is all zeros. " *
+                  "Regenerate it (scripts/generate_dtn.jl) rather than using it.")
+        end
+    end
+    return DTN
+end
 
 """
     register!(manifest, entry)

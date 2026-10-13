@@ -139,57 +139,101 @@ end
     generate_dtn(nr, D; refp=10) -> Matrix{Float64}
 
 Computes the `nr x nr` dense Dirichlet-to-Neumann operator for a domain of diameter `D`
-(in disk radii), matching `DTNVectorized.m`'s output (see module-level warning above
-about verification status). Rows `4:nr` are computed in parallel via
-`Threads.@threads :dynamic` — deliberately dynamic scheduling, not static, because the
-per-row cost grows with `k` (the far-field quadrature range widens with row index), so a
-naive equal-sized static split would load-balance poorly across threads.
+(in disk radii), matching `DTNVectorized.m`'s output. Each row is independent
+(`dtn_row`); rows `4:nr` are computed in parallel via `Threads.@threads :dynamic` —
+dynamic, not static, because the per-row cost grows with the row index.
 """
 function generate_dtn(nr::Int, D::Real; refp::Int = DTN_DEFAULT_REFP)
     nr >= 4 || error("generate_dtn requires nr >= 4, got nr=$nr")
+    q = _DTNQuadrature(nr, D, refp)
+    DTN = zeros(nr, nr)
+    for k in 1:3
+        _dtn_row!(view(DTN, k, :), q, k)
+    end
+
+    progress = Threads.Atomic{Int}(0)
+    progress_every = max(1, cld(nr, 20))
+    n_rows_total = nr - 3
+    Threads.@threads :dynamic for k in 4:nr
+        Line = zeros(nr)
+        _dtn_row!(Line, q, k)
+        @views DTN[k, :] .= Line
+
+        n = Threads.atomic_add!(progress, 1) + 1
+        if n % progress_every == 0 || n == n_rows_total
+            @info "DTN generation progress" rows_done = n rows_total = n_rows_total nr = nr
+        end
+    end
+
+    return DTN
+end
+
+"""
+    dtn_row(nr, D, k; refp=10) -> Vector{Float64}
+
+Row `k` of `generate_dtn(nr, D)`, computed on its own. Rows are independent, so this costs
+about `1/nr` of the full matrix — cheap enough to spot-check single rows of a large cached
+operator (e.g. the nr=2500 production cache) against the generator.
+"""
+function dtn_row(nr::Int, D::Real, k::Int; refp::Int = DTN_DEFAULT_REFP)
+    nr >= 4 || error("dtn_row requires nr >= 4, got nr=$nr")
+    1 <= k <= nr || throw(ArgumentError("row index k=$k outside 1:$nr"))
+    return _dtn_row!(zeros(nr), _DTNQuadrature(nr, D, refp), k)
+end
+
+# Grid spacing and angular quadrature nodes shared by every row.
+struct _DTNQuadrature
+    nr::Int
+    refp::Int
+    dr::Float64
+    drp::Float64
+    dtheta::Float64
+    cos_l::Vector{Float64}
+    sin_l::Vector{Float64}
+    i_near::Vector{Float64}
+    Kern_near::Vector{Float64}
+    diag_correction::Float64
+end
+
+function _DTNQuadrature(nr::Int, D::Real, refp::Int)
     dr = D / (2 * nr)
     drp = dr / refp
-
     numer = ceil(Int, pi * D / drp)
     isodd(numer) && (numer += 1)
     dtheta = 2 * pi / numer
+    l_vals = collect((dtheta / 2):dtheta:(pi - dtheta / 4))
+    i_near = collect(1.0:(2 * refp))
+    return _DTNQuadrature(nr, refp, dr, drp, dtheta, cos.(l_vals), sin.(l_vals), i_near,
+                          _near_far_kernel(i_near), 2 / (4 * dr + drp))
+end
 
-    DTN = zeros(nr, nr)
-
+# Fills `Line` (zero on entry) with row `k`. Row 1 (r = 0) is a closed-form near-origin
+# singular integral; rows 2 and 3 use their own near-field stencils; rows k >= 4 share one.
+function _dtn_row!(Line::AbstractVector{Float64}, q::_DTNQuadrature, k::Int)
+    (; nr, refp, dr, drp, dtheta, cos_l, sin_l, i_near, Kern_near, diag_correction) = q
     rn(k) = Float64(k - 1)  # rn = 0:nr+1 in MATLAB (1-indexed array); rn(k) == k-1.
 
-    # ---------- Row 1 (r = 0): near-origin singular integral, closed form ----------
-    for i in 2:nr
-        DTN[1, i] -= _term0(Float64(i))
-    end
-    for i in 2:(nr - 1)
-        DTN[1, i + 1] -= _term1(Float64(i))
-    end
-    for i in 2:(nr - 2)
-        DTN[1, i + 2] -= _term2(Float64(i))
-    end
-    for i in 2:(nr - 3)
-        DTN[1, i + 3] -= _term3(Float64(i))
-    end
-    DTN[1, 1] += 0.5
-    DTN[1, :] ./= dr
-    DTN[1, 1] += 209 / (54 * dr)
-    DTN[1, 2] += -29 / (6 * dr)
-    DTN[1, 3] += 7 / (6 * dr)
-    DTN[1, 4] += -11 / (54 * dr)
+    if k == 1
+        for i in 2:nr
+            Line[i] -= _term0(Float64(i))
+        end
+        for i in 2:(nr - 1)
+            Line[i + 1] -= _term1(Float64(i))
+        end
+        for i in 2:(nr - 2)
+            Line[i + 2] -= _term2(Float64(i))
+        end
+        for i in 2:(nr - 3)
+            Line[i + 3] -= _term3(Float64(i))
+        end
+        Line[1] += 0.5
+        Line ./= dr
+        Line[1] += 209 / (54 * dr)
+        Line[2] += -29 / (6 * dr)
+        Line[3] += 7 / (6 * dr)
+        Line[4] += -11 / (54 * dr)
 
-    # ---------- Shared angular quadrature nodes ----------
-    l_vals = collect((dtheta / 2):dtheta:(pi - dtheta / 4))
-    cos_l = cos.(l_vals)
-    sin_l = sin.(l_vals)
-
-    i_near = collect(1.0:(2 * refp))
-    Kern_near = _near_far_kernel(i_near)
-
-    diag_correction = 2 / (4 * dr + drp)
-
-    # ---------- Row 2 ----------
-    let k = 2
+    elseif k == 2
         rn2 = rn(k)
         re = rn2 .+ i_near .* cos_l' ./ refp
         im = i_near .* sin_l' ./ refp
@@ -197,14 +241,14 @@ function generate_dtn(nr::Int, D::Real; refp::Int = DTN_DEFAULT_REFP)
         x1 = i_near .* cos_l' ./ refp
         posr = radn .- rn2
 
-        DTN[2, 2] -= sum(@.((-6 - 3 * posr + 9 * posr^2 + 3 * posr^3 - 3 * posr^4) * posr + 6 * x1) / 72 .* Kern_near)
-        DTN[2, 1] -= sum(@.((-88 + 48 * posr + 62 * posr^2 - 12 * posr^3 - 10 * posr^4) * posr + 88 * x1) / 72 .* Kern_near)
-        DTN[2, 2] -= sum(@.((72 - 90 * posr - 90 * posr^2 + 18 * posr^3 + 18 * posr^4) * posr - 72 * x1) / 72 .* Kern_near)
+        Line[2] -= sum(@.((-6 - 3 * posr + 9 * posr^2 + 3 * posr^3 - 3 * posr^4) * posr + 6 * x1) / 72 .* Kern_near)
+        Line[1] -= sum(@.((-88 + 48 * posr + 62 * posr^2 - 12 * posr^3 - 10 * posr^4) * posr + 88 * x1) / 72 .* Kern_near)
+        Line[2] -= sum(@.((72 - 90 * posr - 90 * posr^2 + 18 * posr^3 + 18 * posr^4) * posr - 72 * x1) / 72 .* Kern_near)
         if k < nr - 0.5
-            DTN[2, 3] -= sum(@.((24 + 48 * posr + 18 * posr^2 - 12 * posr^3 - 6 * posr^4) * posr - 24 * x1) / 72 .* Kern_near)
+            Line[3] -= sum(@.((24 + 48 * posr + 18 * posr^2 - 12 * posr^3 - 6 * posr^4) * posr - 24 * x1) / 72 .* Kern_near)
         end
         if k < nr - 1.5
-            DTN[2, 4] -= sum(@.((-2 - 3 * posr + posr^2 + 3 * posr^3 + posr^4) * posr + 2 * x1) / 72 .* Kern_near)
+            Line[4] -= sum(@.((-2 - 3 * posr + posr^2 + 3 * posr^3 + posr^4) * posr + 2 * x1) / 72 .* Kern_near)
         end
 
         i_far = collect((2.0 * refp + 1):((rn2 + nr) * refp))
@@ -212,12 +256,9 @@ function generate_dtn(nr::Int, D::Real; refp::Int = DTN_DEFAULT_REFP)
         LineUpdate2 = zeros(nr)
         far_part!(LineUpdate2, rn2, i_far, Kern_far, cos_l, sin_l, nr, refp)
 
-        DTN[2, :] .= (dtheta / (2 * pi * drp)) .* (DTN[2, :] .+ LineUpdate2)
-        DTN[2, 2] += diag_correction
-    end
-
-    # ---------- Row 3 ----------
-    let k = 3
+        Line .= (dtheta / (2 * pi * drp)) .* (Line .+ LineUpdate2)
+        Line[2] += diag_correction
+    elseif k == 3
         rn3 = rn(k)
         re = rn3 .+ i_near .* cos_l' ./ refp
         im = i_near .* sin_l' ./ refp
@@ -225,14 +266,14 @@ function generate_dtn(nr::Int, D::Real; refp::Int = DTN_DEFAULT_REFP)
         x1 = i_near .* cos_l' ./ refp
         posr = radn .- rn3
 
-        DTN[3, 1] -= sum(@.((124 - 12 * posr - 149 * posr^2 + 12 * posr^3 + 25 * posr^4) * posr - 124 * x1) / 288 .* Kern_near)
-        DTN[3, 2] -= sum(@.((-384 + 192 * posr + 288 * posr^2 - 48 * posr^3 - 48 * posr^4) * posr + 384 * x1) / 288 .* Kern_near)
-        DTN[3, 3] += sum(@.((-4 + 10 * posr + 5 * posr^2 - 2 * posr^3 - posr^4) * posr + 4 * x1) / 8 .* Kern_near)
+        Line[1] -= sum(@.((124 - 12 * posr - 149 * posr^2 + 12 * posr^3 + 25 * posr^4) * posr - 124 * x1) / 288 .* Kern_near)
+        Line[2] -= sum(@.((-384 + 192 * posr + 288 * posr^2 - 48 * posr^3 - 48 * posr^4) * posr + 384 * x1) / 288 .* Kern_near)
+        Line[3] += sum(@.((-4 + 10 * posr + 5 * posr^2 - 2 * posr^3 - posr^4) * posr + 4 * x1) / 8 .* Kern_near)
         if k < nr - 0.5
-            DTN[3, 4] -= sum(@.((128 + 192 * posr + 32 * posr^2 - 48 * posr^3 - 16 * posr^4) * posr - 128 * x1) / 288 .* Kern_near)
+            Line[4] -= sum(@.((128 + 192 * posr + 32 * posr^2 - 48 * posr^3 - 16 * posr^4) * posr - 128 * x1) / 288 .* Kern_near)
         end
         if k < nr - 1.5
-            DTN[3, 5] -= sum(@.((-12 - 12 * posr + 9 * posr^2 + 12 * posr^3 + 3 * posr^4) * posr + 12 * x1) / 288 .* Kern_near)
+            Line[5] -= sum(@.((-12 - 12 * posr + 9 * posr^2 + 12 * posr^3 + 3 * posr^4) * posr + 12 * x1) / 288 .* Kern_near)
         end
 
         i_far = collect((2.0 * refp + 1):((rn3 + nr) * refp))
@@ -240,15 +281,9 @@ function generate_dtn(nr::Int, D::Real; refp::Int = DTN_DEFAULT_REFP)
         LineUpdate3 = zeros(nr)
         far_part!(LineUpdate3, rn3, i_far, Kern_far, cos_l, sin_l, nr, refp)
 
-        DTN[3, :] .= (dtheta / (2 * pi * drp)) .* (DTN[3, :] .+ LineUpdate3)
-        DTN[3, 3] += diag_correction
-    end
-
-    # ---------- Rows 4:nr (parallel) ----------
-    progress = Threads.Atomic{Int}(0)
-    progress_every = max(1, cld(nr, 20))
-    n_rows_total = nr - 3
-    Threads.@threads :dynamic for k in 4:nr
+        Line .= (dtheta / (2 * pi * drp)) .* (Line .+ LineUpdate3)
+        Line[3] += diag_correction
+    else
         rnk = rn(k)
         re = rnk .+ i_near .* cos_l' ./ refp
         im = i_near .* sin_l' ./ refp
@@ -256,7 +291,6 @@ function generate_dtn(nr::Int, D::Real; refp::Int = DTN_DEFAULT_REFP)
         x1 = i_near .* cos_l' ./ refp
         posr = radn .- rnk
 
-        Line = zeros(nr)
         Line[k - 2] -= sum(@.((2 - posr - 2 * posr^2 + posr^3) * posr - 2 * x1) / 24 .* Kern_near)
         Line[k - 1] -= sum(@.(4 * (-4 + 4 * posr + posr^2 - posr^3) * posr + 16 * x1) / 24 .* Kern_near)
         Line[k] -= sum(@.((posr^2 - 5) * posr^2 / 4) .* Kern_near)
@@ -272,14 +306,7 @@ function generate_dtn(nr::Int, D::Real; refp::Int = DTN_DEFAULT_REFP)
         far_part!(Line, rnk, i_far, Kern_far, cos_l, sin_l, nr, refp)
 
         Line .*= dtheta / (2 * pi * drp)
-        @views DTN[k, :] .+= Line
-        DTN[k, k] += diag_correction
-
-        n = Threads.atomic_add!(progress, 1) + 1
-        if n % progress_every == 0 || n == n_rows_total
-            @info "DTN generation progress" rows_done = n rows_total = n_rows_total nr = nr
-        end
+        Line[k] += diag_correction
     end
-
-    return DTN
+    return Line
 end
