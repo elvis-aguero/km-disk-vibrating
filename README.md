@@ -1,5 +1,14 @@
 # km-disk-vibrating
 
+[![Julia CI](https://github.com/elvis-aguero/km-disk-vibrating/actions/workflows/julia-ci.yml/badge.svg?branch=master)](https://github.com/elvis-aguero/km-disk-vibrating/actions/workflows/julia-ci.yml)
+[![MATLAB CI](https://github.com/elvis-aguero/km-disk-vibrating/actions/workflows/matlab-ci.yml/badge.svg?branch=master)](https://github.com/elvis-aguero/km-disk-vibrating/actions/workflows/matlab-ci.yml)
+
+![Problem setup](docs/setup.gif)
+
+*A disk (radius R, mass m) floats on a fluid (ρ, σ, ν) shaken as A cos(ωt + φ); the disk can
+also be forced directly with F cos Ωt. The solver computes the surface η and the disk's motion.
+Rendered from a real run (vertical scale ×20) by `julia/scripts/make_setup_gif.jl`.*
+
 Simulates a small disk floating on a fluid bath that is shaken up and down, and predicts
 how much the disk bobs (amplitude) and how far it lags the bath (phase) at each shaking
 frequency and strength. The predictions are compared against lab measurements in
