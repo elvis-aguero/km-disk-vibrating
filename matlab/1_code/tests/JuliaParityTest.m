@@ -114,7 +114,11 @@ classdef JuliaParityTest < matlab.unittest.TestCase
             args = base;
             for k = 1:2:numel(overrides)
                 idx = find(strcmp(args(1:2:end), overrides{k}), 1);
-                args{2 * idx} = overrides{k + 1};
+                if isempty(idx)
+                    args(end + 1:end + 2) = overrides(k:k + 1);
+                else
+                    args{2 * idx} = overrides{k + 1};
+                end
             end
         end
     end
