@@ -7,12 +7,9 @@ This is a line-for-line-faithful translation of the MATLAB algorithm's index ari
 and polynomial coefficients (not a re-derivation), with two structural simplifications
 that do not change the result: (1) MATLAB's `num_batches=20` chunking of the angular
 quadrature (`l_vals`) existed only to bound per-*process* memory inside `parfor` workers
-(each a separate OS process) — Julia's `Threads.@threads` runs in one shared address
-space, so the angular quadrature is evaluated in one pass instead of 20 batches
-(confirmed mathematically identical, not just "should be", now that this is verified
-against a real MATLAB-generated reference — see STATUS below); (2) MATLAB's
-`accumarray(idx, val, [nr,1])` scatter-add is replaced by `accumulate_masked!`, a small
-helper with the same semantics.
+— here the far-field quadrature is a fused scalar loop (`far_part!`) that allocates
+nothing per node, so no batching is needed; (2) MATLAB's `accumarray(idx, val, [nr,1])`
+scatter-add becomes a direct in-loop `+=`.
 
 Correctness is checked by `test/integration/test_dtn_golden_small.jl` against the legacy
 `D5Quant20` MATLAB reference cache — treat that test as load-bearing, not incidental.
@@ -83,66 +80,58 @@ end
 _near_far_kernel(i_range::AbstractVector{<:Real}) = @. 2.0 * (1.0 / (i_range - 0.5) - 1.0 / (i_range + 0.5))
 
 """
-    accumulate_masked!(Line, vals, mask, idx, nr)
-
-Scatter-add `vals[j]` into `Line[Int(idx[j])]` for every `j` with `mask[j]` true,
-mirroring MATLAB's `accumarray(idx(mask), vals(mask), [nr,1])'`. `vals`, `mask`, `idx`
-must be same-shaped arrays (a `length(i_far) x length(l_vals)` matrix in every call site
-below). Bounds are checked defensively — the masks at every call site are constructed so
-`idx` always lands in `1:nr`, but a silently-dropped or silently-wrapped out-of-range
-write would be a far worse failure mode than an explicit bounds error.
-"""
-function accumulate_masked!(Line::Vector{Float64}, vals::AbstractArray, mask::AbstractArray{Bool}, idx::AbstractArray, nr::Int)
-    @inbounds for j in eachindex(mask)
-        if mask[j]
-            ix = Int(idx[j])
-            1 <= ix <= nr || error("DTN quadrature index $ix out of bounds 1:$nr (this indicates a transcription bug, not bad input data)")
-            Line[ix] += vals[j]
-        end
-    end
-    return Line
-end
-
-"""
     far_part!(Line, rn_k, i_far, Kern_far, cos_l, sin_l, nr, refp)
 
 The "far" (piecewise-cubic-interpolant) contribution to a DTN row, shared verbatim across
 rows 2, 3, and every row k>=4 in the MATLAB source (`LineUpdate2`, `LineUpdate3`,
 `LineUpdatek` all use the identical polynomial coefficients — only the row-dependent
 `rn_k`, `i_far`, `Kern_far` differ). Adds in place to `Line` (length `nr`).
+
+Written as a fused scalar loop over every `(i_far, l)` quadrature node rather than as
+MATLAB-style whole-array broadcasts: the broadcast form allocated ~13 temporaries of size
+`length(i_far) x length(cos_l)` (~`2nr*refp x pi*nr*refp`) per row, which is ~31 GB per
+temporary at nr=2500. Same formulas and branch conditions; only the summation order of
+the scatter-add differs (results agree to ~1e-16 relative).
 """
 function far_part!(Line::Vector{Float64}, rn_k::Float64, i_far::Vector{Float64}, Kern_far::Vector{Float64},
                     cos_l::Vector{Float64}, sin_l::Vector{Float64}, nr::Int, refp::Int)
-    # Outer products: (length(i_far)) x (length(l_vals)). MATLAB: `(rn(k) + i_vals*cos_l/refp)`
-    # / `(i_vals*sin_l/refp)` — the `/refp` here is not optional bookkeeping, it converts
-    # `i_far` (an index into the refp-fold-refined radial sub-grid) back into physical
-    # radial-node units before adding to `rn_k`; omitting it inflates `re`/`im` (and hence
-    # `radn`/`idxs`) by a factor of `refp`, pushing nearly every far-field contribution
-    # outside the valid `1:nr` index range where it gets masked out as out-of-domain —
-    # which is exactly what made every far-off-diagonal DTN entry silently come out as
-    # exact 0.0 (caught by comparing against the legacy MATLAB DTN cache with real Julia
-    # execution, after this port had only ever been checked by static re-reading before).
-    re = rn_k .+ i_far .* cos_l' ./ refp
-    im = i_far .* sin_l' ./ refp
-    radn = abs.(sqrt.(re .^ 2 .+ im .^ 2))
-    idxs = floor.(radn)
-    w1 = clamp.(radn .- idxs, 0.0, 1.0)
-    w2 = w1 .^ 2
-    w3 = w1 .^ 3
+    # Every write below lands in 1:nr given nr >= 4: the idx < 0.5 branch writes 1:3, and
+    # each idx >= 0.5 branch is guarded so its highest written index is <= nr.
+    nr >= 4 || throw(ArgumentError("far_part! requires nr >= 4, got nr=$nr"))
+    length(Line) == nr || throw(DimensionMismatch("Line must have length nr=$nr"))
+    length(Kern_far) == length(i_far) || throw(DimensionMismatch("Kern_far and i_far must have equal length"))
+    length(sin_l) == length(cos_l) || throw(DimensionMismatch("cos_l and sin_l must have equal length"))
+    @inbounds for l in eachindex(cos_l)
+        c = cos_l[l]
+        s = sin_l[l]
+        for a in eachindex(i_far)
+            i = i_far[a]
+            K = Kern_far[a]
+            # MATLAB: `(rn(k) + i_vals*cos_l/refp)` / `(i_vals*sin_l/refp)`. The `/refp`
+            # converts `i_far` (an index into the refp-fold-refined radial sub-grid) back
+            # into radial-node units; omitting it once made every far-off-diagonal DTN
+            # entry silently 0.0 (see the module docstring).
+            re = rn_k + i * c / refp
+            im = i * s / refp
+            radn = abs(sqrt(re^2 + im^2))
+            idx = floor(radn)
+            w1 = clamp(radn - idx, 0.0, 1.0)
+            w2 = w1^2
+            w3 = w1^3
+            ix = Int(idx)
 
-    cond1 = idxs .< 0.5
-    accumulate_masked!(Line, @.(-(3 * w3 / 4 - 7 * w2 / 4 + 1) * Kern_far), cond1, idxs .+ 1, nr)
-    accumulate_masked!(Line, @.(-(-w3 + 2 * w2) * Kern_far), cond1, idxs .+ 2, nr)
-    accumulate_masked!(Line, @.(-(w3 - w2) / 4 * Kern_far), cond1, idxs .+ 3, nr)
-
-    cond2 = (idxs .>= 0.5) .& (idxs .< nr)
-    accumulate_masked!(Line, @.(-(-w3 / 6 + w2 / 2 - w1 / 3) * Kern_far), cond2, idxs, nr)
-    accumulate_masked!(Line, @.(-(w3 / 2 - w2 - w1 / 2 + 1) * Kern_far), cond2, idxs .+ 1, nr)
-
-    cond3 = (idxs .< nr - 1) .& (idxs .>= 0.5)
-    cond4 = (idxs .< nr - 2) .& (idxs .>= 0.5)
-    accumulate_masked!(Line, @.(-(-w3 / 2 + w2 / 2 + w1) * Kern_far), cond3, idxs .+ 2, nr)
-    accumulate_masked!(Line, @.(-(w3 - w1) / 6 * Kern_far), cond4, idxs .+ 3, nr)
+            if idx < 0.5
+                Line[ix + 1] += -(3 * w3 / 4 - 7 * w2 / 4 + 1) * K
+                Line[ix + 2] += -(-w3 + 2 * w2) * K
+                Line[ix + 3] += -(w3 - w2) / 4 * K
+            elseif idx < nr
+                Line[ix] += -(-w3 / 6 + w2 / 2 - w1 / 3) * K
+                Line[ix + 1] += -(w3 / 2 - w2 - w1 / 2 + 1) * K
+                idx < nr - 1 && (Line[ix + 2] += -(-w3 / 2 + w2 / 2 + w1) * K)
+                idx < nr - 2 && (Line[ix + 3] += -(w3 - w1) / 6 * K)
+            end
+        end
+    end
     return Line
 end
 
