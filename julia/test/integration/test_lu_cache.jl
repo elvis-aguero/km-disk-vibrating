@@ -31,4 +31,49 @@
         @test length(r_lu.CoM_cm) == length(r_gmres.CoM_cm)
         @test isapprox(r_lu.CoM_cm, r_gmres.CoM_cm; rtol = 1e-6, atol = 1e-9)
     end
+
+    # Bath-driven fixture: g_prefactor sweeps 1 ± gamma over each cycle, so (unlike the
+    # disk-forced `fixed` above, where g ≡ 1) these exercise both the LU-cache dedup and
+    # the GMRES preconditioner on genuinely different per-step matrices.
+    bath = with_overrides(fixed; forceAmplitude = 0.0, bathAmplitude = 0.5 * 981 / (2pi * 30)^2,
+                          bathFrequency = 30.0, phaseDifference = -90.0, simulationTime = 3 / 30)
+
+    function run_steps(p, solver_type, nsteps)
+        problem = build_problem(p, dtn)
+        solver, _ = build_step_solver(problem, solver_type, 1e-12; ram_budget_bytes = typemax(Int))
+        state = init_state(problem, p)
+        buffers = StepBuffers(2 * problem.nr + 2)
+        for _ in 1:nsteps
+            advance_one_step!(state, problem, solver, buffers)
+        end
+        return solver
+    end
+
+    @testset "LU cache shares one factorization between phase-mirrored steps" begin
+        # g = 1 - gamma*cos(theta_k): at -90 deg phase, steps mirrored about the forcing
+        # phase give the same matrix, so a 20-step cycle needs 20/2 + 1 = 11 distinct
+        # factorizations. Exact-float matching found more (mirrored values differ by a
+        # few eps); this pins the tolerant match.
+        solver = run_steps(bath, :lu, 20)
+        @test n_factorizations(solver.cache) == 11
+        # ...and never merges genuinely different matrices: at a phase with no mirror
+        # symmetry on the step grid, every one of the 20 steps is distinct.
+        solver_37 = run_steps(with_overrides(bath; phaseDifference = 37.0), :lu, 20)
+        @test n_factorizations(solver_37.cache) == 20
+    end
+
+    @testset "LU-preconditioned GMRES converges in a handful of iterations" begin
+        # A performance invariant, not a correctness one: without the preconditioner GMRES
+        # still converges (same answer) but needs ~n iterations per step.
+        solver = run_steps(bath, :gmres, 40)
+        @test 0 < mean_iterations(solver.gmres) <= 10
+    end
+
+    @testset "LU-cached and GMRES solvers agree on a bath-driven problem" begin
+        r_lu = run_simulation(with_overrides(bath; solverType = :lu); dtn = dtn)
+        r_gmres = run_simulation(with_overrides(bath; solverType = :gmres, gmresTolerance = 1e-12); dtn = dtn)
+        @test r_lu.status == :ok && r_gmres.status == :ok
+        @test length(r_lu.CoM_cm) == length(r_gmres.CoM_cm)
+        @test isapprox(r_lu.CoM_cm, r_gmres.CoM_cm; rtol = 1e-8)
+    end
 end
