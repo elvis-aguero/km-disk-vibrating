@@ -152,13 +152,18 @@ the buggy sweep's (~1.09, ~285°).
   synthetic-signal tests for the corrected convergence check that directly encode the fix
   for the incident this port was commissioned after (see "Why the early-stop check was
   rewritten" below).
-- `test/integration/` — the DTN-generator golden comparison (nr=50), an LU-cache
-  hit-rate invariant, LU-vs-GMRES agreement, a small end-to-end sweep (schema + overlay
-  sanity), and 9 physically-grounded checks (frequency-locking via a direct DFT,
-  CoM-vs-wave amplitude sanity, static-equilibrium fixed-point, damping direction,
-  linear-response amplitude scaling, no-blow-up, the divergence guard, and a
-  boundary-reflection meta-check on the fixtures themselves) — all run on a small,
-  fast domain.
+- `test/integration/`:
+  - **DTN operator:** the generator vs. the MATLAB cache (nr=50); spot rows of the
+    production nr=2500 cache vs. the generator; rejection of incomplete caches.
+  - **Solvers:** LU-cache reuse and dedup, LU vs. GMRES agreement, the GMRES iteration
+    bound.
+  - **Physics limits:** Archimedes depth as σ → 0; the quasi-static limit under slow
+    shaking (ratio → 1, lag → 0, f² deviation); convergence under dt and grid refinement.
+  - **Physically grounded checks** (frequency locking, damping, linear response, no
+    blow-up, boundary reflections, …).
+  - **Pipeline:** the lab-frame helper, a small end-to-end sweep, the overlay plots, and a
+    re-score of the committed reference run against the experiment.
+  - All of these run on small, fast domains, except the two production-cache rows (~1 min).
 - `test/slow/` — the nr=2500 DTN comparisons and the full 30-case MATLAB-baseline
   validation sweep. Gated behind `KMDISK_RUN_SLOW_TESTS=1`; never run in default CI.
 
