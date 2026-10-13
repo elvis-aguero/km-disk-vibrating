@@ -127,8 +127,8 @@ load_dtn(entry::DTNCacheEntry) = check_dtn(JLD2.load(entry.path, "DTN"); source 
 
 Throws if the matrix is not finite or has an all-zero row. Every row of a valid DTN
 operator has a nonzero diagonal (`diag_correction` in `dtn_generator.jl`), so an all-zero
-row means the cache was only partly generated — as the legacy `D25Quant200` cache is
-(rows 564:2500 are zero).
+row means the cache was only partly generated (as a former `D25Quant200` cache was:
+rows 564:2500 were zero).
 """
 function check_dtn(DTN::AbstractMatrix; source::AbstractString = "")
     all(isfinite, DTN) || error("DTN matrix $source contains non-finite values")

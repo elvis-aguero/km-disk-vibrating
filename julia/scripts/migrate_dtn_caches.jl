@@ -33,10 +33,8 @@ the standard naming convention) and `solve_motion.m`'s special case was removed.
 `validation_D` field below is now just `bathDiameter` for this entry, same as every other
 self-consistent cache.
 
-`D25Quant200` (`DTNnew345nr2500D25refp10.mat`): the `D25` in the filename is the
-spatialResolution, not the diameter — row 1 matches the generator at bathDiameter=200 to
-6e-15. But the cache is **incomplete**: rows 564:2500 are all zero (generation apparently
-stopped part-way), so `check_dtn` rejects it and it is not registered. Regenerate it with
+A former `D25Quant200` cache (spatialResolution 25, bathDiameter 200) was removed on
+2026-10-13: rows 564:2500 were all zero (generation stopped part-way). Regenerate it with
 `scripts/generate_dtn.jl 25 200` if that domain is ever needed.
 `D50Quant100` (the production domain) is spot-checked row-by-row against the native
 generator below (rows 1, 2 and nr/2 match to ~1e-13; checked 2026-10-13).
@@ -69,7 +67,6 @@ end
 
 const LEGACY_SOURCES = [
     LegacySource(50, 100, 2500, joinpath(REPO_ROOT, "matlab", "1_code", "D50Quant100", "DTNnew345nr2500D100refp10.mat"), "D50_Quant100_nr2500.jld2", 100),
-    LegacySource(25, 200, 2500, joinpath(REPO_ROOT, "matlab", "1_code", "D25Quant200", "DTNnew345nr2500D25refp10.mat"), "D25_Quant200_nr2500.jld2", 25),
     LegacySource(5, 20, 50, joinpath(REPO_ROOT, "matlab", "1_code", "D5Quant20", "DTNnew345nr50D20refp10.mat"), "D5_Quant20_nr50.jld2", 20),
 ]
 

@@ -29,10 +29,4 @@ using MAT
             @test maximum(abs, ref - M[k, :]) / maximum(abs, ref) < 1e-10
         end
     end
-
-    @testset "legacy D25Quant200 cache is incomplete and is rejected" begin
-        # Rows 564:2500 are all zero in the committed file. If someone regenerates it, this
-        # test should be updated to spot-check it like D50Quant100 instead.
-        @test_throws ErrorException check_dtn(legacy("D25Quant200", "DTNnew345nr2500D25refp10.mat"))
-    end
 end

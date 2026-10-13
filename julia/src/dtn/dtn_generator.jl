@@ -44,10 +44,8 @@ so the mismatch was safe to fix outright rather than merely document. It has bee
 `scripts/regenerate_d5quant20_matlab_cache.jl` regenerated the cache natively at the
 correct `D=20` (`DTNnew345nr50D20refp10.mat`), `solve_motion.m`'s special case was removed,
 and `test_dtn_golden_small.jl` now asserts the cache matches `generate_dtn(50, 20.0)`
-instead. `D25Quant200`'s cache (`DTNnew345nr2500D25refp10.mat`) shows the identical
-filename-vs-folder mismatch pattern (D25 vs implied bathDiameter=200) but its `nr=2500` is
-too expensive to regenerate natively here to confirm or fix the same way — flagged as an
-open question in `migrate_dtn_caches.jl`, not assumed resolved by analogy.
+instead. (A `D25Quant200` cache with the same filename pattern turned out to be generated at
+the right diameter but incomplete, and was removed; see `migrate_dtn_caches.jl`.)
 """
 
 const DTN_DEFAULT_REFP = 10

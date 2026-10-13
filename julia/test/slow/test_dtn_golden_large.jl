@@ -9,8 +9,6 @@ using MAT
     domains = [
         (spatialResolution = 50.0, bathDiameter = 100.0, nr = 2500,
          mat_path = joinpath(repo_root, "matlab", "1_code", "D50Quant100", "DTNnew345nr2500D100refp10.mat")),
-        (spatialResolution = 25.0, bathDiameter = 200.0, nr = 2500,
-         mat_path = joinpath(repo_root, "matlab", "1_code", "D25Quant200", "DTNnew345nr2500D25refp10.mat")),
     ]
 
     for d in domains
