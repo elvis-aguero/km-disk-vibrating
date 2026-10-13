@@ -30,6 +30,7 @@ Base.@kwdef struct SimulationParams
     simulationTime::Float64 = 10 / 90          # s
     solverType::Symbol = :auto                 # :auto | :lu | :gmres
     gmresTolerance::Float64 = 1e-10
+    timeScheme::Symbol = :euler                # :euler (first order, as MATLAB) | :bdf2 (second order)
     startStatic::Bool = true
     earlyStop::Bool = true
     convergence::ConvergenceOptions = ConvergenceOptions()
@@ -115,6 +116,8 @@ function build_problem(params::SimulationParams, dtn::AbstractMatrix{<:Real})
     stepsPerCycle = params.temporalResolution
     dt = (2 * pi / effective_w_adim) / stepsPerCycle
 
+    params.timeScheme in (:euler, :bdf2) ||
+        throw(ArgumentError("timeScheme must be :euler or :bdf2, got :$(params.timeScheme)"))
     dom = build_domain(params.bathDiameter, params.spatialResolution)
     cPoints = Int(params.spatialResolution) + 1
     size(dtn, 1) == dom.nr || throw(DimensionMismatch(

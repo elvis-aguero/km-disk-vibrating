@@ -22,7 +22,9 @@ using Logging  # global_logger() below; not re-exported by `using FaradayDisk`
     default_sweep_spec() -> SweepSpec
 
 The same fixed parameters and Cartesian grid as `matlab/1_code/sweeper.m`'s `fixed`
-struct and `sweep.gamma` / `sweep.bathFrequency` axes.
+struct and `sweep.gamma` / `sweep.bathFrequency` axes. The time scheme defaults to implicit
+Euler (as MATLAB); set the environment variable `KMDISK_TIME_SCHEME=bdf2` to run the sweep
+with second-order BDF2 instead (e.g. `KMDISK_TIME_SCHEME=bdf2 sbatch julia/cluster/run_baseline_sweep.sh`).
 """
 function default_sweep_spec()
     fixed = SimulationParams(
@@ -33,6 +35,7 @@ function default_sweep_spec()
         bathDiameter = 100.0, spatialResolution = 50.0, temporalResolution = 60,
         simulationTime = 30 / 90,
         solverType = :auto, startStatic = true, earlyStop = true,
+        timeScheme = Symbol(get(ENV, "KMDISK_TIME_SCHEME", "euler")),
     )
     return SweepSpec(gammas = [0.05, 0.2, 0.5], bathFrequenciesHz = collect(10.0:10.0:100.0), fixed = fixed)
 end

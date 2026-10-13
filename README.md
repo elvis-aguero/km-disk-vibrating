@@ -168,6 +168,16 @@ Dirichlet-to-Neumann (DTN) matrix of size `nr × nr`, which depends only on the 
 
 Cost grows as `nr³`: seconds for `nr = 50`, hours for the production `nr = 2500`.
 
+### Time stepping
+
+Each step is implicit. `timeScheme = :euler` (default, identical to MATLAB) is first order:
+at 60 steps/period the amplitude is several percent off its converged value.
+`timeScheme = :bdf2` is second order at the same cost (amplitude within ~0.1% at 60
+steps/period). BDF2 also stops damping waves artificially, which exposes two things Euler
+hid: waves reaching the domain edge sooner, and a growing half-frequency (Faraday) mode at
+large Γ. Validate a BDF2 sweep against the experiment before relying on it:
+`KMDISK_TIME_SCHEME=bdf2 sbatch julia/cluster/run_baseline_sweep.sh`.
+
 ### The convergence check
 
 With `earlyStop = true`, a run stops once the disk's oscillation is periodic: amplitude and
@@ -304,6 +314,7 @@ end
 | `simulationTime` | `10/90` | s |
 | `solverType` | `:auto` | `:auto`\|`:lu`\|`:gmres` |
 | `gmresTolerance` | `1e-10` | — |
+| `timeScheme` | `:euler` | `:euler` (first order, as MATLAB) \| `:bdf2` (second order, see below) |
 | `startStatic` | `true` | — |
 | `earlyStop` | `true` | — |
 | `convergence` | `ConvergenceOptions()` | — |
