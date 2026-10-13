@@ -51,6 +51,9 @@ julia/logs/
 julia/data/results/
 
 # Julia port: cluster job output (julia/cluster/run_baseline_sweep.sh), one folder per run
+# (the two runs already committed are kept as reference evidence; see output/README.md)
+output/*
+!output/README.md
 
 # Julia port: DTN cache migrated/generated from the legacy MATLAB .mat files, and its
 # manifest — regenerate locally via julia/scripts/migrate_dtn_caches.jl, don't commit

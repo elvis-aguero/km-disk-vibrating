@@ -1,43 +1,118 @@
 # km-disk-vibrating
 
-Simulates a disk floating on a vertically vibrating fluid bath (a Faraday-wave / walking-droplet
-style setup): the bath surface is solved via a Dirichlet-to-Neumann (DTN) boundary operator, the
-disk's center-of-mass motion is coupled to it, and the whole system is stepped forward in time
-under sinusoidal forcing.
+Simulates a small disk floating on a fluid bath that is shaken up and down, and predicts
+how much the disk bobs (amplitude) and how far it lags the bath (phase) at each shaking
+frequency and strength. The predictions are compared against lab measurements in
+`matlab/0_data/external/experimental_measurements/`.
 
-Two implementations live side by side:
+There are two implementations of the same model: **Julia** (`julia/`, recommended,
+tested, faster) and the original **MATLAB** (`matlab/`, kept as the reference).
 
-- **`matlab/`** — the original MATLAB implementation. Left as-is; still the reference for what
-  the experimental study's actual sweeps produced.
-- **`julia/`** — an independent, from-scratch Julia port (not a transpiler output), with a
-  cleaner module layout, a corrected convergence check, structured logging, and a real test
-  suite. See `julia/README.md` for full setup/usage/testing instructions.
+## Start here
 
-Both expose the same physical model through name-value-style APIs. This document is the API
-reference for each, plus how they map onto each other.
+| I want to… | Go to |
+|---|---|
+| Try one simulation on my laptop (minutes) | [1. Install](#1-install-julia) → [2. One simulation](#2-one-simulation) |
+| Reproduce the full sweep vs. experiment (hours, cluster) | [3. Full sweep](#3-full-sweep-vs-experiment-cluster) |
+| Look at results that already exist | `output/README.md` (committed reference run + plots) |
+| Use MATLAB instead | [MATLAB API](#matlab-api) |
 
-## Repository layout
+### 1. Install (Julia)
 
+Install Julia ≥ 1.10 (https://julialang.org/downloads/), then, from the repository root:
+
+```sh
+cd julia
+julia --project=. -e 'using Pkg; Pkg.instantiate()'
 ```
-matlab/1_code/simulation_code/   solve_motion.m and its helpers (the core solver)
-matlab/1_code/sweeper.m          (gamma, frequency) parameter sweep driver
-matlab/1_code/tests/             MATLAB unit/integration/parity tests (matlab.unittest)
-matlab/0_data/                   experimental data, sweep output (gitignored where large)
-julia/src/                       FaradayDisk.jl package source
-julia/scripts/                   CLI entry points (sweep runner, DTN generation, validation overlay, ...)
-julia/test/                      unit/integration/slow test tiers
-.github/workflows/                julia-ci.yml (Julia) and matlab-ci.yml (MATLAB + a live cross-language parity check)
+
+### 2. One simulation
+
+Save this as `try.jl` and run `julia --project=julia try.jl` from the repository root
+(the first run also compiles Julia code, so allow a few minutes):
+
+```julia
+using FaradayDisk
+
+Γ, f = 0.2, 30.0                      # bath acceleration (in g) and frequency (Hz)
+params = SimulationParams(
+    bathFrequency = f,
+    bathAmplitude = Γ * 981 / (2π * f)^2,          # cm  (Γ = A·ω²/g)
+    simulationTime = 30 / f,                       # s, upper bound; stops early once periodic
+    bathDiameter = 20.0, spatialResolution = 5.0)  # small domain: runs in seconds
+
+dtn = generate_dtn(50, params.bathDiameter)       # bath operator for this domain (nr = 50)
+result = run_simulation(params; dtn = dtn)
+
+z = lab_frame_CoM(result)                          # disk height as a camera in the lab sees it
+last3 = result.t_s .>= result.t_s[end] - 3 / f          # fit the settled last 3 periods
+fit = fit_oscillation(result.t_s[last3], z[last3], 2π * f)
+println("disk/bath amplitude ratio = ", round(fit.amplitude / params.bathAmplitude, digits = 3))
 ```
+
+This prints `disk/bath amplitude ratio = 1.119`. Every other parameter (disk size and mass, fluid
+properties, resolution) has a default; see the [parameter table](#julia-api).
+
+**Two things to know when reading results:**
+- `result.CoM_cm` is the disk height **relative to the moving bath**. For comparison with
+  lab/camera data use `lab_frame_CoM(result)`, which adds the bath's own motion back.
+- The small domain above (`bathDiameter = 20`, `spatialResolution = 5`) is for trying
+  things out. The validated results use `bathDiameter = 100`, `spatialResolution = 50`
+  (`nr = 2500`), whose bath operator takes hours to build. The repo ships it as
+  `matlab/1_code/D50Quant100/*.mat`, which step 3 loads for you.
+
+### 3. Full sweep vs. experiment (cluster)
+
+Runs the 30 cases (Γ ∈ {0.05, 0.2, 0.5} × f = 10…100 Hz) at the validated resolution and
+compares them with the measurements:
+
+```sh
+sbatch julia/cluster/run_baseline_sweep.sh     # read its header first: partition/account/memory
+```
+
+Results land in `output/<job_id>_<timestamp>/`:
+- `sweep/val_amp_sweep.png`, `sweep/val_phase_sweep.png`: simulation vs. experiment.
+  One colour per Γ, frequency on the x-axis.
+- `sweep/summary.csv`: one row per case.
+- `sweep/cases/*.csv`: full time series per case.
+- `logs/`: what happened, including any warnings.
+
+The job prints `pass_primary = true` when the amplitude RMSE is ≤ 0.15 and the phase RMSE
+is ≤ 8.55° (1.5× the known-good baseline). The committed reference run achieved 0.085 and
+6.0°, with each case taking 116–203 s and 4 cases running at a time.
+
+On a workstation instead of a cluster, run
+`julia -t auto --project=julia/scripts julia/scripts/run_sweep.jl` (the scheduler budgets about
+12 GB of RAM per concurrently running case at this resolution and queues the rest).
+
+## Where things are
+
+| Path | What it is |
+|---|---|
+| `julia/src/` | the simulator (package `FaradayDisk`). Entry points: `simulate.jl` (`run_simulation`), `sweep.jl` (`run_sweep`) |
+| `julia/scripts/` | command-line tools: sweep, DTN generation, validation overlay, cluster baseline check |
+| `julia/cluster/` | SLURM job script for the full sweep |
+| `julia/test/` | tests (`unit/`, `integration/` run in CI; `slow/` opt-in, hours) |
+| `matlab/1_code/simulation_code/` | original MATLAB solver (`solve_motion.m` + helpers) |
+| `matlab/1_code/sweeper.m` | MATLAB sweep driver |
+| `matlab/1_code/tests/` | MATLAB tests, including a live MATLAB↔Julia parity check |
+| `matlab/1_code/D*Quant*/` | precomputed bath (DTN) operators, one folder per domain |
+| `matlab/0_data/external/experimental_measurements/` | the lab measurements (amplitude, phase) |
+| `matlab/0_data/sweep_results/` | historical MATLAB sweep output |
+| `matlab/legacy_impact_study/` | unrelated material from a separate impact study, kept for reference |
+| `output/` | cluster run output (see its README) |
+| `docs/audit/` | code audit and benchmark scripts |
+| `.github/workflows/` | CI: `julia-ci.yml`, `matlab-ci.yml` (MATLAB tests + live parity vs. Julia) |
 
 ## The physical model, in one place
 
 Both implementations solve the same nondimensionalized problem:
 
 - A disk of radius `diskRadius`, mass `diskMass`, floats on a circular bath of diameter
-  `bathDiameter` (in disk radii), discretized with `spatialResolution` radial mesh points per
+  `bathDiameter` (in disk radii), discretized with `spatialResolution` radial grid intervals per
   disk radius (`nr = ceil(spatialResolution * bathDiameter / 2)` total radial nodes).
 - The bath surface response is governed by a dense DTN operator matrix, precomputed once per
-  domain (see "DTN operator" below) — this is the expensive part; solving it is a fast fixed-size
+  domain (see [The DTN operator](#the-dtn-operator) below) — this is the expensive part; solving it is a fast fixed-size
   linear system every time step.
 - **Two independent forcing channels exist, and either or both can be active:**
   - **Disk forcing**: a sinusoidal force of amplitude `forceAmplitude` (dyne) and frequency
@@ -48,14 +123,50 @@ Both implementations solve the same nondimensionalized problem:
   - **This experimental study's real convention is bath-driven**: `forceAmplitude = 0`, and
     `forceFrequency` is left at its default — it still sets the characteristic time unit
     (`T_unit = 1/forceFrequency`) even when it isn't a real force. `sweeper.m` / `run_sweep.jl`
-    both use this convention. See "A note on forcing conventions" below — getting this backwards
+    both use this convention. See [Forcing conventions](#forcing-conventions) below — getting this backwards
     silently produces a plausible-looking but physically wrong result, and it happened once.
 - `startStatic` solves for hydrostatic equilibrium once at t=0 as the initial condition (instead
   of starting from rest), matching how the real apparatus is set up.
 - `earlyStop` (+ its `minPeriods`/`windowPeriods`/`checkEveryPeriods`/`amplitudeRelTol`/
   `phaseAbsTolDeg` knobs) stops the simulation once the center-of-mass oscillation's fitted
   amplitude and phase are stable across two consecutive multi-period windows, rather than running
-  the full `simulationTime` — see "Why the convergence check looks the way it does" below.
+  the full `simulationTime` — see [The convergence check](#the-convergence-check) below.
+
+### Forcing conventions
+
+The solver works in the frame of the bath, which moves as
+`z_bath(t) = bathAmplitude·cos(2π·bathFrequency·t + phaseDifference)`. In that frame the
+bath's motion appears as an oscillating effective gravity `g·(1 − Γ·cos(…))`, with
+`Γ = bathAmplitude·(2π·bathFrequency)²/g`. Consequences:
+- The experiment is **bath-driven**: set `bathAmplitude`/`bathFrequency` and leave
+  `forceAmplitude = 0`. Setting a disk force at the same Γ instead gives a plausible-looking
+  but physically different answer; this happened once. `sweep_metadata.toml` records
+  `is_bath_driven` for every sweep.
+- Reported disk heights (`CoM_cm`) are relative to the bath; `lab_frame_CoM(result)` (Julia)
+  adds `z_bath` back for comparison with the lab.
+- `forceFrequency` only sets the internal time unit when `forceAmplitude = 0`; leave it at
+  its default.
+
+### The DTN operator
+
+The bath surface outside the disk is coupled to the fluid below through a dense
+Dirichlet-to-Neumann (DTN) matrix of size `nr × nr`, which depends only on the domain
+(`bathDiameter`, `spatialResolution`). It is computed once per domain and cached:
+- MATLAB: `matlab/1_code/D<…>Quant<…>/*.mat`.
+- Julia: `julia/data/dtn_cache/`, filled from those `.mat` files by
+  `julia/scripts/migrate_dtn_caches.jl`, or built natively with
+  `julia/scripts/generate_dtn.jl` / `generate_dtn(nr, bathDiameter)`.
+
+Cost grows as `nr³`: seconds for `nr = 50`, hours for the production `nr = 2500`.
+
+### The convergence check
+
+With `earlyStop = true`, a run stops once the disk's oscillation is periodic: amplitude and
+phase are fitted over the last two `windowPeriods`-long windows, and the run stops when they
+agree to within `amplitudeRelTol` / `phaseAbsTolDeg`, never before `minPeriods`. An older
+check (stop when a rolling mean stops drifting) fired almost immediately because of the
+static-equilibrium offset, and degraded agreement with the experiment by about 10×
+(amplitude) and 50× (phase). The full story is in `julia/src/convergence.jl`.
 
 ## MATLAB API
 
@@ -82,10 +193,10 @@ cgs.
 | `bathViscosity` | `0.978e-2` | Stokes | fluid kinematic viscosity |
 | `g` | `981` | cm/s² | gravitational acceleration |
 | `bathDiameter` | `100` | disk radii | bath domain diameter |
-| `spatialResolution` | `50` | — | radial mesh points per disk radius (sets `nr`) |
+| `spatialResolution` | `50` | — | radial grid intervals per disk radius (`dr = 1/spatialResolution` disk radii; sets `nr`) |
 | `temporalResolution` | `30` | — | time steps per dimensionless time unit |
 | `simulationTime` | `10/90` | s | total time to simulate (upper bound if `earlyStop` fires first) |
-| `debug_flag` | `true` | — | verbose logging + diary file |
+| `debug_flag` | `false` | — | verbose logging, diary file and a live plot every step (slow) |
 | `solverType` | `"auto"` | — | `"auto"` (LU-cached if RAM allows, else GMRES), `"lu"`, or `"gmres"` |
 | `gmresTolerance` | `1e-10` | — | GMRES convergence tolerance (when GMRES is active) |
 | `startStatic` | `true` | — | start from hydrostatic equilibrium instead of rest |
@@ -179,7 +290,7 @@ end
 | `bathViscosity` | `0.978e-2` | Stokes |
 | `g` | `981.0` | cm/s² |
 | `bathDiameter` | `100.0` | disk radii |
-| `spatialResolution` | `50.0` | — |
+| `spatialResolution` | `50.0` | intervals per disk radius |
 | `temporalResolution` | `30` | steps per dimensionless time unit |
 | `simulationTime` | `10/90` | s |
 | `solverType` | `:auto` | `:auto`\|`:lu`\|`:gmres` |
@@ -187,6 +298,9 @@ end
 | `startStatic` | `true` | — |
 | `earlyStop` | `true` | — |
 | `convergence` | `ConvergenceOptions()` | — |
+
+`lab_frame_CoM(result)` returns the disk height in the lab frame (`CoM_cm` plus the bath's
+own displacement) — use it, not `CoM_cm`, when comparing with lab measurements.
 
 `with_overrides(params; kwargs...)` returns a copy of `params` with just the given fields
 replaced — the idiomatic way to derive one case from a shared template (used throughout
@@ -234,7 +348,8 @@ Runs the Cartesian product of `gammas × bathFrequenciesHz` (bath-driven, same c
 `sweeper.m`) across threads (`Threads.@threads`), writing the same CSV schema `sweeper.m` does
 under `outdir/cases/` plus `outdir/summary.csv`, `outdir/sweep_metadata.toml`
 (`is_bath_driven=true`, resolved solver, RAM budgeting), and structured `.log`/`.jsonl` logs.
-`default_sweep_spec()` (`julia/scripts/run_sweep.jl`) reproduces `sweeper.m`'s exact fixed
+Each case's `simulationTime` is set to 30 bath periods (`30/f`), overriding the one in
+`fixed`. `default_sweep_spec()` (`julia/scripts/run_sweep.jl`) reproduces `sweeper.m`'s exact fixed
 parameters and grid. `SweepCaseResult` fields: `gamma`, `freqHz`, `bathAmplitude`, `CoM_max_cm`,
 `CoM_rms_cm`, `elapsed_s`, `status` (`:ok`\|`:error`\|`:skipped`).
 

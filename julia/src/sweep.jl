@@ -5,6 +5,15 @@ mirroring MATLAB's `summaryRows{ii} = {...}` pattern, so there is no shared-muta
 race to reason about.
 """
 
+"""
+    SweepSpec(; gammas, bathFrequenciesHz, fixed)
+
+A Cartesian (Γ × frequency) sweep. Every case is `fixed` with `bathAmplitude =
+Γ*g/(2π f)^2` and `bathFrequency = f` substituted (bath-driven), **and `simulationTime`
+replaced by `30/f` (30 bath periods)** so every case gets the same number of periods
+regardless of frequency — the `simulationTime` in `fixed` is ignored. With the default
+`earlyStop = true` most cases stop sooner (the reference run converged in 11-15 periods).
+"""
 Base.@kwdef struct SweepSpec
     gammas::Vector{Float64}
     bathFrequenciesHz::Vector{Float64}

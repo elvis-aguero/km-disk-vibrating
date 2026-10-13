@@ -41,11 +41,8 @@ Reads a `manifest.toml` of the form:
 
 `path` is resolved relative to the manifest file's own directory.
 
-CAVEAT: `load_manifest`/`save_manifest` use `TOML.parsefile`/`TOML.print`, written from
-memory without the ability to confirm `TOML.print` specifically is available/stable in
-the resolved Julia 1.10 TOML stdlib (see the repo-level notes on how this port was
-authored). Not exercised by the default (fast) test tier, which passes DTN matrices
-directly and never touches the manifest file.
+Exercised by the cluster workflow (`migrate_dtn_caches.jl` writes the manifest, the sweep
+reads it); not by the fast CI test tier, which passes DTN matrices directly.
 """
 function load_manifest(path::AbstractString)
     manifest = DTNManifest()
