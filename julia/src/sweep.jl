@@ -86,7 +86,9 @@ function run_sweep(spec::SweepSpec, outdir::AbstractString; dtn_registry::Union{
     nthreads = max(1, Threads.nthreads())
     total_budget = available_memory_bytes()
     n_system = 2 * size(dtn, 1) + 2
-    lu_bytes = estimated_lu_cache_bytes(spec.fixed.temporalResolution, n_system)
+    bath_driven = any(!iszero, spec.gammas)
+    n_factors = lu_factor_count(spec.fixed.temporalResolution, deg2rad(spec.fixed.phaseDifference), bath_driven)
+    lu_bytes = estimated_lu_cache_bytes(n_factors, n_system)
     max_lu_concurrent = floor(Int, total_budget / lu_bytes)
 
     if max_lu_concurrent >= 1
@@ -102,16 +104,25 @@ function run_sweep(spec::SweepSpec, outdir::AbstractString; dtn_registry::Union{
     end
     gate = Base.Semaphore(concurrency)
 
-    @info "sweep starting" n_cases = n gammas = spec.gammas freqs_hz = spec.bathFrequenciesHz threads = nthreads lu_concurrency = concurrency ram_per_case_bytes = ram_per_case outdir = outdir
+    @info "sweep starting" n_cases = n gammas = spec.gammas freqs_hz = spec.bathFrequenciesHz threads = nthreads lu_concurrency = concurrency blas_threads_per_case = max(1, nthreads ÷ concurrency) lu_factorizations_per_case = n_factors ram_per_case_bytes = ram_per_case outdir = outdir
 
-    Threads.@threads :dynamic for i in 1:n
-        gamma, freqHz = cases[i]
-        Base.acquire(gate)
-        try
-            results[i] = run_sweep_case(spec, gamma, freqHz, dtn, outdir, ram_per_case, i, n)
-        finally
-            Base.release(gate)
+    # Each concurrent case's LU factorizations call multithreaded BLAS. Left at its default
+    # (sized to the whole machine, not this job's allocation), `concurrency` cases each
+    # spawning that many BLAS threads oversubscribe the cores; split them instead.
+    blas_threads_before = BLAS.get_num_threads()
+    BLAS.set_num_threads(max(1, nthreads ÷ concurrency))
+    try
+        Threads.@threads :dynamic for i in 1:n
+            gamma, freqHz = cases[i]
+            Base.acquire(gate)
+            try
+                results[i] = run_sweep_case(spec, gamma, freqHz, dtn, outdir, ram_per_case, i, n)
+            finally
+                Base.release(gate)
+            end
         end
+    finally
+        BLAS.set_num_threads(blas_threads_before)
     end
 
     write_summary_csv(joinpath(outdir, "summary.csv"), results)

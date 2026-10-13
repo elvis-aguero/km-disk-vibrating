@@ -33,13 +33,11 @@ the standard naming convention) and `solve_motion.m`'s special case was removed.
 `validation_D` field below is now just `bathDiameter` for this entry, same as every other
 self-consistent cache.
 
-`D25Quant200` (`DTNnew345nr2500D25refp10.mat`, literal D=25) does NOT match its folder's
-implied bathDiameter=200 either, and is NOT independently verified the way `D5Quant20` was
-— its `nr=2500` is too expensive to regenerate natively in a reasonable time (the per-row
-quadrature cost scales with the far-field range, which itself scales with `nr`), so whether
-it has the same kind of mismatch is currently unknown — flagged, not assumed either way.
-`D50Quant100` is self-consistent by filename but likewise has never actually been
-cross-validated against the native generator (same cost problem).
+A former `D25Quant200` cache (spatialResolution 25, bathDiameter 200) was removed on
+2026-10-13: rows 564:2500 were all zero (generation stopped part-way). Regenerate it with
+`scripts/generate_dtn.jl 25 200` if that domain is ever needed.
+`D50Quant100` (the production domain) is spot-checked row-by-row against the native
+generator below (rows 1, 2 and nr/2 match to ~1e-13; checked 2026-10-13).
 
 If the *validation* comparison for a small (`nr<=200`) domain disagrees beyond a tight
 (1e-8) tolerance, that is now treated as a genuine, unexplained bug to surface loudly —
@@ -69,7 +67,6 @@ end
 
 const LEGACY_SOURCES = [
     LegacySource(50, 100, 2500, joinpath(REPO_ROOT, "matlab", "1_code", "D50Quant100", "DTNnew345nr2500D100refp10.mat"), "D50_Quant100_nr2500.jld2", 100),
-    LegacySource(25, 200, 2500, joinpath(REPO_ROOT, "matlab", "1_code", "D25Quant200", "DTNnew345nr2500D25refp10.mat"), "D25_Quant200_nr2500.jld2", 25),
     LegacySource(5, 20, 50, joinpath(REPO_ROOT, "matlab", "1_code", "D5Quant20", "DTNnew345nr50D20refp10.mat"), "D5_Quant20_nr50.jld2", 20),
 ]
 
@@ -90,6 +87,12 @@ function main()
         out_path = joinpath(CACHE_DIR, src.jld2_name)
         source_note = src.mat_path
         DTN_to_store = Matrix{Float64}(DTN)
+        try
+            check_dtn(DTN_to_store; source = src.mat_path)
+        catch err
+            @error "legacy DTN cache rejected, not registered" path = src.mat_path reason = sprint(showerror, err)
+            continue
+        end
 
         if src.nr <= 200
             @info "cross-validating against native Julia generator" nr = src.nr validation_D = src.validation_D
@@ -103,7 +106,16 @@ function main()
                 error("DTN cache validation failed for $(src.mat_path) (rel_diff=$rel_diff at D=$(src.validation_D)) — investigate before trusting this cache")
             end
         else
-            @warn "large domain (nr>200) — DTN cache NOT independently verified against the native generator (too expensive to regenerate here); registering the legacy matrix as-is" spatialResolution = src.spatialResolution bathDiameter = src.bathDiameter nr = src.nr
+            # Full regeneration costs hours at this size, but rows are independent: compare
+            # a few (about 30-40 s each at nr=2500).
+            rows = (1, 2, src.nr ÷ 2)
+            @info "spot-checking rows against the native generator" rows = rows nr = src.nr validation_D = src.validation_D
+            for k in rows
+                ref = dtn_row(src.nr, src.validation_D, k)
+                rel_diff = maximum(abs, ref .- DTN_to_store[k, :]) / max(maximum(abs, ref), eps())
+                rel_diff < 1e-8 || error("DTN cache row $k disagrees with the native generator (rel_diff=$rel_diff) for $(src.mat_path)")
+            end
+            @info "spot-checked rows match the native generator" rows = rows
         end
 
         JLD2.jldsave(out_path; DTN = DTN_to_store)

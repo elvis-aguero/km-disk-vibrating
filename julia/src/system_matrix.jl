@@ -174,6 +174,23 @@ function materialize!(Mat::Matrix{Float64}, tmpl::SystemMatrixTemplate, g_prefac
 end
 
 """
+    repatch!(Mat, tmpl, g_prefactor)
+
+Bit-for-bit the same result as `materialize!(Mat, tmpl, g_prefactor)`, provided `Mat`
+already holds a `materialize!` of this template (at any `g_prefactor`): only the `nr`
+entries that depend on `g_prefactor` are rewritten, instead of copying all `n^2`. Used by
+the GMRES path, which needs a fresh matrix every step.
+"""
+function repatch!(Mat::Matrix{Float64}, tmpl::SystemMatrixTemplate, g_prefactor::Float64)
+    @inbounds for k in eachindex(tmpl.patch_rows)
+        r = tmpl.patch_rows[k]
+        c = tmpl.patch_cols[k]
+        Mat[r, c] = tmpl.Mat0[r, c] + tmpl.patch_coeff * g_prefactor
+    end
+    return Mat
+end
+
+"""
     assemble_rhs!(rhs, bath_surface, bath_potential, center_of_mass_velocity, center_of_mass,
                   dt, Fr, g_prefactor, force_term)
 

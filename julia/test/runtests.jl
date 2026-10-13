@@ -25,11 +25,14 @@ const RUN_SLOW = get(ENV, "KMDISK_RUN_SLOW_TESTS", "0") == "1"
 
     @testset "integration" begin
         include("integration/test_dtn_golden_small.jl")
+        include("integration/test_dtn_caches.jl")
         include("integration/test_lu_cache.jl")
         include("integration/test_physics_grounded.jl")
+        include("integration/test_physics_limits.jl")
         include("integration/test_lab_frame.jl")
         include("integration/test_sweep_end_to_end.jl")
         include("integration/test_plotting.jl")
+        include("integration/test_validation_regression.jl")
     end
 
     if RUN_SLOW
