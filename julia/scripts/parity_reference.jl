@@ -27,7 +27,8 @@ base = SimulationParams(diskRadius = 0.2, diskMass = 0.0283, forceAmplitude = 0.
                         bathAmplitude = 0.2 * 981.0 / omega^2, bathFrequency = freqHz, phaseDifference = -90.0,
                         bathDensity = 1.175, bathSurfaceTension = 66.5, bathViscosity = 0.18 / 1.175,
                         bathDiameter = 20.0, spatialResolution = 5.0, temporalResolution = 48,
-                        simulationTime = 8 / freqHz, startStatic = true, earlyStop = false, solverType = :lu)
+                        simulationTime = 8 / freqHz, startStatic = true, earlyStop = false, solverType = :lu,
+                        timeScheme = :euler)   # solve_motion.m is implicit Euler
 
 # Must match JuliaParityTest.m's cases exactly.
 cases = [

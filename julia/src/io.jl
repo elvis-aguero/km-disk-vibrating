@@ -96,10 +96,12 @@ oscillation) or disk-forced (direct disk forcing), the column holds the same
 former, a merely-derived display value in the latter — so it is never literally zero
 either way, and an all-zero check on it can never actually tell the two apart.
 """
-function write_sweep_metadata(path::AbstractString; is_bath_driven::Bool)
+function write_sweep_metadata(path::AbstractString; is_bath_driven::Bool, time_scheme::AbstractString = "euler",
+                              temporal_resolution::Integer = 0)
     mkpath(dirname(path))
     open(path, "w") do io
-        TOML.print(io, Dict{String,Any}("is_bath_driven" => is_bath_driven))
+        TOML.print(io, Dict{String,Any}("is_bath_driven" => is_bath_driven, "time_scheme" => time_scheme,
+                                        "temporal_resolution" => temporal_resolution))
     end
     return path
 end

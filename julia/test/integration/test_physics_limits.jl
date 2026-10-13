@@ -11,11 +11,11 @@ small domains. =#
     end
 
     @testset "no surface tension: the disk floats at the Archimedes depth" begin
-        # σ → 0 leaves buoyancy alone to carry the weight: depth h = m / (ρ π R²). The solver's
-        # pressure quadrature integrates a uniform pressure over the disk to
-        # π R² (1 + 1/(2q) + 1/(12q²)) rather than π R² (a first-order error in dr = 1/q,
-        # inherited from MATLAB's domainMaker.m), so the computed depth is h divided by that
-        # factor — checked to 1e-6 here, and the error must vanish as q grows.
+        # σ → 0 leaves buoyancy alone to carry the weight: depth h = m / (ρ π R²). The solver
+        # takes the contact pressure at the midpoint of the last two grid points (a deliberate
+        # ghost-point assumption, see domain.jl), so a uniform pressure integrates to
+        # π R² (1 + 1/(2q) + 1/(12q²)) and the computed depth is h divided by that factor —
+        # checked to 1e-6 here; the difference must vanish as q grows.
         errs = Float64[]
         for q in (5, 10, 20)
             p = SimulationParams(; fluid..., bathSurfaceTension = 1e-8, bathDiameter = 20.0, spatialResolution = q)
@@ -63,23 +63,34 @@ small domains. =#
 
     @testset "refinement: results converge as the grid and time step shrink" begin
         f, Γ = 30.0, 0.2
-        run(q, spc) = labfit(run_simulation(
+        run(q, spc, scheme) = labfit(run_simulation(
             SimulationParams(; fluid..., bathFrequency = f, bathAmplitude = Γ * 981 / (2π * f)^2,
                              temporalResolution = spc, simulationTime = 25 / f, earlyStop = false,
-                             bathDiameter = 20.0, spatialResolution = q);
+                             bathDiameter = 20.0, spatialResolution = q, timeScheme = scheme);
             dtn = generate_dtn(10q, 20.0)), f)
+        spcs = (60, 120, 240, 480)
 
-        # Time step: the dominant error (first-order implicit Euler). Successive changes
-        # must shrink at every halving.
-        t = [run(5, spc) for spc in (60, 120, 240, 480)]
-        d_amp = abs.(diff([x.ratio for x in t]))
-        d_lag = abs.(diff([x.lag for x in t]))
-        @test issorted(d_amp; rev = true) && d_amp[end] < d_amp[1] / 2
-        @test issorted(d_lag; rev = true) && d_lag[end] < d_lag[1] / 2
+        # Implicit Euler: first order — successive changes shrink, about 2x per halving of dt.
+        e = [run(5, spc, :euler) for spc in spcs]
+        de_amp = abs.(diff([x.ratio for x in e]))
+        de_lag = abs.(diff([x.lag for x in e]))
+        @test issorted(de_amp; rev = true) && issorted(de_lag; rev = true)
+
+        # BDF2: second order — phase changes shrink ≥3x per halving (4x asymptotically), and
+        # the amplitude is converged to <0.1% already at 60 steps/period.
+        b = [run(5, spc, :bdf2) for spc in spcs]
+        db_lag = abs.(diff([x.lag for x in b]))
+        @test all(db_lag[1:end-1] ./ db_lag[2:end] .> 3)
+        @test abs(b[1].ratio - b[end].ratio) < 1e-3 * b[end].ratio
+
+        # Both converge to the same answer: Richardson-extrapolating Euler's first-order error
+        # (2·E(dt/2) − E(dt)) lands on the BDF2 result.
+        @test isapprox(2 * e[end].ratio - e[end-1].ratio, b[end].ratio; rtol = 5e-3)
+        @test isapprox(2 * e[end].lag - e[end-1].lag, b[end].lag; atol = 0.1)
 
         # Grid: at a fixed time step, amplitude is already resolved to <1% at q = 5, and
         # the phase changes shrink with refinement.
-        s = [run(q, 60) for q in (5, 10, 20)]
+        s = [run(q, 60, :bdf2) for q in (5, 10, 20)]
         @test maximum(x.ratio for x in s) - minimum(x.ratio for x in s) < 0.01
         @test abs(s[3].lag - s[2].lag) < abs(s[2].lag - s[1].lag)
     end

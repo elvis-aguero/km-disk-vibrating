@@ -22,16 +22,19 @@ step (which is what MATLAB's GMRES path does on every single step).
 """
 
 """
-    assemble_system_matrix!(Mat, problem, g_prefactor)
+    assemble_system_matrix!(Mat, problem, g_prefactor; dt = problem.dt)
 
 Fills `Mat` (must be `(2nr+2) x (2nr+2)`) with the system matrix for the given
-`g_prefactor`, from scratch. This is the reference implementation — `materialize!` is a
+`g_prefactor`, from scratch. `dt` is the implicit step coefficient: `problem.dt` for
+implicit Euler, `2problem.dt/3` for BDF2 (see `implicit_dt`).
+
+This is the reference implementation — `materialize!` is a
 faster equivalent, verified against this function in the test suite.
 """
-function assemble_system_matrix!(Mat::AbstractMatrix{Float64}, problem::Problem, g_prefactor::Float64)
+function assemble_system_matrix!(Mat::AbstractMatrix{Float64}, problem::Problem, g_prefactor::Float64;
+                                 dt::Float64 = problem.dt)
     nr = problem.nr
     cPoints = problem.cPoints
-    dt = problem.dt
     Re = problem.Re
     Fr = problem.Fr
     We = problem.We
@@ -115,10 +118,10 @@ function assemble_system_matrix!(Mat::AbstractMatrix{Float64}, problem::Problem,
     return Mat
 end
 
-function assemble_system_matrix(problem::Problem, g_prefactor::Float64)
+function assemble_system_matrix(problem::Problem, g_prefactor::Float64; dt::Float64 = problem.dt)
     n = 2 * problem.nr + 2
     Mat = Matrix{Float64}(undef, n, n)
-    return assemble_system_matrix!(Mat, problem, g_prefactor)
+    return assemble_system_matrix!(Mat, problem, g_prefactor; dt)
 end
 
 struct SystemMatrixTemplate
@@ -129,16 +132,16 @@ struct SystemMatrixTemplate
 end
 
 """
-    build_template(problem) -> SystemMatrixTemplate
+    build_template(problem; dt = problem.dt) -> SystemMatrixTemplate
 
 Builds the `g_prefactor=0` base matrix once, plus the list of `(row,col)` entries that
 scale linearly with `g_prefactor` (all with the same coefficient `dt/Fr`, so a single
 scalar suffices rather than a per-entry coefficient vector).
 """
-function build_template(problem::Problem)
+function build_template(problem::Problem; dt::Float64 = problem.dt)
     nr = problem.nr
     cPoints = problem.cPoints
-    Mat0 = assemble_system_matrix(problem, 0.0)
+    Mat0 = assemble_system_matrix(problem, 0.0; dt)
 
     patch_rows = Int[]
     patch_cols = Int[]
@@ -153,7 +156,7 @@ function build_template(problem::Problem)
         push!(patch_cols, j)
     end
 
-    return SystemMatrixTemplate(Mat0, patch_rows, patch_cols, problem.dt / problem.Fr)
+    return SystemMatrixTemplate(Mat0, patch_rows, patch_cols, dt / problem.Fr)
 end
 
 """

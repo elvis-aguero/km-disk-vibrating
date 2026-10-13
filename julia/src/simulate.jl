@@ -71,9 +71,9 @@ function run_simulation(params::SimulationParams; dtn_registry::Union{Nothing,DT
     end
 
     solver, resolved_type = build_step_solver(problem, params.solverType, params.gmresTolerance;
-                                                ram_budget_bytes = ram_budget_bytes)
+                                                ram_budget_bytes = ram_budget_bytes, scheme = params.timeScheme)
     n = 2 * problem.nr + 2
-    @info "solver path selected" requested = params.solverType resolved = resolved_type n = n stepsPerCycle = problem.stepsPerCycle
+    @info "solver path selected" requested = params.solverType resolved = resolved_type timeScheme = params.timeScheme n = n stepsPerCycle = problem.stepsPerCycle
     buffers = StepBuffers(n)
 
     steps_estimate = max(1, ceil(Int, params.simulationTime / (problem.dt * problem.units.time)))

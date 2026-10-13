@@ -121,41 +121,57 @@ end
 
 abstract type AbstractStepSolver end
 
+"""
+    implicit_dt(problem, scheme) -> Float64
+
+The coefficient multiplying the implicit operator in each step's linear system. Implicit
+Euler, `(y⁺ - y)/dt = f(y⁺)`, uses `dt`. BDF2, `(3y⁺ - 4y + y⁻)/(2dt) = f(y⁺)`, is the same
+system with `2dt/3` and right-hand side `(4y - y⁻)/3`.
+"""
+function implicit_dt(problem::Problem, scheme::Symbol)
+    scheme === :euler && return problem.dt
+    scheme === :bdf2 && return 2 * problem.dt / 3
+    throw(ArgumentError("unknown timeScheme :$scheme (expected :euler or :bdf2)"))
+end
+
 struct LUStepSolver <: AbstractStepSolver
     template::SystemMatrixTemplate
     cache::LUCache
     scratch::Matrix{Float64}
+    scheme::Symbol
 end
 
 struct GMRESStepSolver <: AbstractStepSolver
     template::SystemMatrixTemplate
     gmres::GMRESSolver
     scratch::Matrix{Float64}
+    scheme::Symbol
 end
 
 """
-    build_step_solver(problem, requested_type, gmres_tol; ram_budget_bytes=nothing) -> (solver, resolved_type)
+    build_step_solver(problem, requested_type, gmres_tol; ram_budget_bytes=nothing, scheme=:euler) -> (solver, resolved_type)
 
 Builds the system-matrix template once and constructs whichever concrete step solver
 `resolve_solver_type` chooses. `ram_budget_bytes` defaults to `available_memory_bytes()`;
 a sweep orchestrator running many cases concurrently should instead pass a per-case share
 of that budget (see `sweep.jl`), so that concurrently-running cases don't each
-independently assume they have the whole budget to themselves.
+independently assume they have the whole budget to themselves. `scheme` (`:euler` or
+`:bdf2`) sets the implicit coefficient the matrices are built with (`implicit_dt`).
 """
 function build_step_solver(problem::Problem, requested_type::Symbol, gmres_tol::Float64;
-                            ram_budget_bytes::Union{Nothing,Integer} = nothing)
+                            ram_budget_bytes::Union{Nothing,Integer} = nothing, scheme::Symbol = :euler)
     n = 2 * problem.nr + 2
     budget = ram_budget_bytes === nothing ? available_memory_bytes() : ram_budget_bytes
     resolved = resolve_solver_type(requested_type, lu_factor_count(problem), n, budget)
-    tmpl = build_template(problem)
+    tmpl = build_template(problem; dt = implicit_dt(problem, scheme))
     scratch = Matrix{Float64}(undef, n, n)
 
     if resolved === :lu
-        return LUStepSolver(tmpl, LUCache(problem.stepsPerCycle), scratch), resolved
+        return LUStepSolver(tmpl, LUCache(problem.stepsPerCycle), scratch, scheme), resolved
     elseif resolved === :gmres
         materialize!(scratch, tmpl, 1.0)
         precond = lu(scratch)
-        return GMRESStepSolver(tmpl, build_gmres_solver(precond, gmres_tol), scratch), resolved
+        return GMRESStepSolver(tmpl, build_gmres_solver(precond, gmres_tol), scratch, scheme), resolved
     else
         error("resolve_solver_type returned unexpected symbol :$resolved (requested :$requested_type)")
     end

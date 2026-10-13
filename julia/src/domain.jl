@@ -47,6 +47,11 @@ function build_domain(bathDiameter::Real, spatialResolution::Real)
     Laplacian = Tridiagonal(dl, d, du)
 
     # --- Pressure-integral matrix ---
+    # Interior weights are the trapezoid rule for ∫ 2πr p dr. The end weights are not:
+    # the contact pressure is taken to act at the midpoint between the last two grid
+    # points (a ghost-point assumption inherited from the original kinematic-match solver,
+    # where the contact area can change). For a uniform pressure this integrates to
+    # π R² (1 + 1/(2q) + 1/(12q²)) rather than π R²; see test_physics_limits.jl.
     nlmax = Int(quant) + 1
     n_int = 2 * nlmax
     IntMat = zeros(n_int, n_int)

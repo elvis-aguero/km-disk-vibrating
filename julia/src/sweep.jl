@@ -104,7 +104,7 @@ function run_sweep(spec::SweepSpec, outdir::AbstractString; dtn_registry::Union{
     end
     gate = Base.Semaphore(concurrency)
 
-    @info "sweep starting" n_cases = n gammas = spec.gammas freqs_hz = spec.bathFrequenciesHz threads = nthreads lu_concurrency = concurrency blas_threads_per_case = max(1, nthreads ÷ concurrency) lu_factorizations_per_case = n_factors ram_per_case_bytes = ram_per_case outdir = outdir
+    @info "sweep starting" n_cases = n time_scheme = spec.fixed.timeScheme gammas = spec.gammas freqs_hz = spec.bathFrequenciesHz threads = nthreads lu_concurrency = concurrency blas_threads_per_case = max(1, nthreads ÷ concurrency) lu_factorizations_per_case = n_factors ram_per_case_bytes = ram_per_case outdir = outdir
 
     # Each concurrent case's LU factorizations call multithreaded BLAS. Left at its default
     # (sized to the whole machine, not this job's allocation), `concurrency` cases each
@@ -126,7 +126,8 @@ function run_sweep(spec::SweepSpec, outdir::AbstractString; dtn_registry::Union{
     end
 
     write_summary_csv(joinpath(outdir, "summary.csv"), results)
-    write_sweep_metadata(joinpath(outdir, "sweep_metadata.toml"); is_bath_driven = true)
+    write_sweep_metadata(joinpath(outdir, "sweep_metadata.toml"); is_bath_driven = true,
+                         time_scheme = String(spec.fixed.timeScheme), temporal_resolution = spec.fixed.temporalResolution)
 
     n_ok = count(r -> r.status == :ok, results)
     n_err = count(r -> r.status == :error, results)
