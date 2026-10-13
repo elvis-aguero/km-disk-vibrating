@@ -32,7 +32,7 @@ include("logging_setup.jl")
 export SimulationParams, Problem, Units, build_problem, with_overrides,
        ConvergenceOptions, ConvergenceResult, fit_oscillation, check_convergence,
        SimulationState, StepBuffers, init_state, advance_one_step!,
-       SimulationResult, run_simulation,
+       SimulationResult, run_simulation, lab_frame_CoM,
        SweepSpec, SweepCaseResult, run_sweep, run_sweep_case, case_id, case_csv_path,
        DTNManifest, DTNCacheEntry, default_registry, resolve_dtn, load_dtn, register!,
        load_manifest, save_manifest, default_manifest_path,

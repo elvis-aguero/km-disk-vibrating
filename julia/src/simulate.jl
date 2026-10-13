@@ -157,3 +157,19 @@ function run_simulation(params::SimulationParams; dtn_registry::Union{Nothing,DT
     return SimulationResult(params, resolved_type, status, t_s, CoM_cm, eta_history_cm,
                              convergence_result, elapsed_s, hit_rate_value)
 end
+
+"""
+    lab_frame_CoM(result::SimulationResult) -> Vector{Float64}
+
+Disk center-of-mass height in the **lab frame** (cm) — what a camera fixed to the room
+would measure. `result.CoM_cm` is instead measured relative to the oscillating bath; the
+two differ by the bath's own displacement `bathAmplitude * cos(2π*bathFrequency*t +
+phaseDifference)`, the same displacement whose second derivative gives the solver's
+oscillating effective gravity (`g_prefactor` in `solver_dispatch.jl`). Identical to
+`CoM_cm` when `bathAmplitude == 0`. Same correction as the validation overlay
+(`scripts/run_validation_overlay.jl`).
+"""
+function lab_frame_CoM(result::SimulationResult)
+    p = result.params
+    return result.CoM_cm .+ p.bathAmplitude .* cos.(2pi * p.bathFrequency .* result.t_s .+ deg2rad(p.phaseDifference))
+end

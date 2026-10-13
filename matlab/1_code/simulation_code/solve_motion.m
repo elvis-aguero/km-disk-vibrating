@@ -23,7 +23,7 @@ arguments
     NameValueArgs.spatialResolution (1, 1) double = 50 % Number of numerical radial intervals in one disk radius
     NameValueArgs.temporalResolution (1, 1) double = 30; % Number of temporal steps in one adimensional unit
     NameValueArgs.simulationTime (1, 1) double = 10/90; % Time to be simulated in seconds
-    NameValueArgs.debug_flag (1, 1) logical = true; % To show some debugging info
+    NameValueArgs.debug_flag (1, 1) logical = false; % true: diary log + live plot every step (slow)
     NameValueArgs.solverType (1, 1) string = "auto" % "auto": LU-cached if RAM allows, else GMRES. Override with "lu" or "gmres".
     NameValueArgs.gmresTolerance (1, 1) double = 1e-10 % GMRES convergence tolerance (used when GMRES is active)
     NameValueArgs.startStatic (1, 1) logical = true % Whether to start at static equilibrium

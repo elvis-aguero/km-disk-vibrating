@@ -97,7 +97,7 @@ via `Threads.@threads`, and touching a GLMakie window from more than one thread 
 
 **Tests:**
 ```sh
-julia --project=julia julia/test/runtests.jl               # fast tier (seconds)
+julia --project=julia julia/test/runtests.jl               # fast tier (~1.5 min)
 KMDISK_RUN_SLOW_TESTS=1 julia --project=julia julia/test/runtests.jl   # + slow tier (hours)
 ```
 
