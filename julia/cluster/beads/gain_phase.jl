@@ -1,33 +1,18 @@
-#= Post-processing for the bead campaign: one row per (bead, gamma, frequency) case with
-gain and phase lag in the LAB frame and the SHAKER (bath) frame, plus quality flags.
+#= Gain and phase lag per (bead, gamma, frequency), lab and shaker frame, plus quality flags.
+(Same conventions as scripts/run_validation_overlay.jl.)
 
-Conventions (identical to `scripts/run_validation_overlay.jl`, so the numbers are comparable
-with the validated baseline pipeline):
-  - The bath displacement is  A_ref * cos(omega*t + phi_b),  A_ref = Gamma*g/omega^2,
-    phi_b = deg2rad(phaseDifference) = -90 deg.
-  - Shaker frame = the trace the solver saves (`CoM_cm`, bead height relative to the bath).
-  - Lab frame    = shaker trace + bath displacement.
-  - Fit window   = the last min(3, available) periods, via `fit_oscillation`.
-  - gain         = fitted amplitude / A_ref.
-  - phase lag    = mod(phi_b - fitted phase, 360) in degrees: how far the bead lags the
-    bath displacement (the same reference in both frames).
-  - The trace is cut at the first time `eta_boundary_cm` exceeds 10% of A_ref (waves
-    reached the outer wall: `wave_cut`).
+  bath displacement  b(t) = A_ref cos(ωt + φ_b),  A_ref = Γ g / ω²,  φ_b = deg2rad(phaseDifference) = -90°
+  shaker frame       z_s(t) = saved trace `CoM_cm` (bead height relative to the bath)
+  lab frame          z_l(t) = z_s(t) + b(t)
+  fit                z ≈ a cos(ωt) + b sin(ωt) + c, least squares over the last min(3, available) periods (`fit_oscillation`)
+  gain               fitted amplitude / A_ref
+  phase lag          mod(φ_b - fitted phase, 360°): lag behind the bath displacement; same reference in both frames
+  wave cut           trace cut at the first time |eta_boundary_cm| > 0.10 A_ref
 
-Quality labels (column `quality`):
-  good          : simulation ok, converged by `check_convergence`, no wave cut
-  unconverged   : ran the full time without meeting the convergence criterion
-  wave_cut      : waves reached the wall; fit uses the trace before that
-  wave_cut_short: wave cut left fewer than 2 periods; no fit
-  too_short     : fewer than 2 periods in the trace; no fit
-  error         : the simulation threw or diverged; no fit
-  nonfinite     : NaN/Inf in the trace; no fit
-  missing       : no case CSV was written
-  postproc_error: this post-processor failed on the case
-
-`echo_pred` is an a-priori estimate of the wall echo (deep-water capillary-gravity waves,
-viscous spatial decay): exp(-2 R_domain / L_e). `echo_ok` is true when it is below 1%.
-It does not depend on the simulated trace. =#
+quality: good | unconverged (full time, criterion unmet) | wave_cut | wave_cut_short (<2 periods left) | too_short (<2 periods)
+         | error (threw or diverged) | nonfinite | missing (no CSV) | postproc_error
+         | subharmonic (|f/2| > 0.10 |f| over the last <= 8 periods; gain and phase not reliable; overrides good/unconverged/wave_cut)
+echo_pred: a-priori wall-echo estimate (see `echo_prediction`); echo_ok = echo_pred < 0.01. =#
 
 using Printf
 
@@ -35,7 +20,7 @@ const GP_COLUMNS = ["bead", "basis", "scheme", "domain", "gamma", "freq_Hz", "A_
                     "sim_status", "quality", "periods_total", "periods_used", "wave_cut", "echo_pred",
                     "echo_ok", "converged", "amp_rel_change", "phase_change_deg",
                     "gain_lab", "phase_lag_lab_deg", "gain_shaker", "phase_lag_shaker_deg",
-                    "max_rel_motion_over_a", "gamma_gt_1"]
+                    "max_rel_motion_over_a", "subharmonic_ratio", "gamma_gt_1"]
 
 _fmt(x::AbstractString) = String(x)
 _fmt(x::Bool) = x ? "true" : "false"
@@ -67,12 +52,11 @@ function blank_row(; bead, basis, scheme, domain, gamma, freq, params::Simulatio
 end
 
 """
-    echo_prediction(freq, params) -> Float64
+echo_prediction(freq, params) -> Float64
 
-Amplitude factor of a wave that travels from the disk to the outer wall and back:
-`exp(-2 R_domain / L_e)`. `L_e = c_g / (2 nu k^2)` is the viscous amplitude e-folding
-length of a deep-water capillary-gravity wave at the bath frequency; `R_domain =
-bathDiameter/2 * diskRadius`. Geometric spreading is ignored (it only lowers the echo).
+A-priori (not measured) wall-echo amplitude factor exp(-2 R_domain / L_e); R_domain = bathDiameter/2 * diskRadius,
+L_e = c_g / (2 ν k²): viscous decay length of a deep-water capillary-gravity wave at the drive frequency.
+Geometric spreading ignored.
 """
 function echo_prediction(freq::Real, params::SimulationParams)
     ω = 2π * freq
@@ -118,6 +102,17 @@ function read_summary_status(path::AbstractString)
     return out
 end
 
+"""
+subharmonic_ratio(t, z, ω) -> Float64
+
+Least squares z ≈ a cos(ωt/2) + b sin(ωt/2) + c cos(ωt) + d sin(ωt) + e; returns |f/2 amplitude| / |f amplitude|.
+"""
+function subharmonic_ratio(t::AbstractVector{<:Real}, z::AbstractVector{<:Real}, ω::Real)
+    M = [cos.(ω .* t ./ 2) sin.(ω .* t ./ 2) cos.(ω .* t) sin.(ω .* t) ones(length(t))]
+    X = M \ collect(z)
+    return hypot(X[1], X[2]) / max(hypot(X[3], X[4]), eps())
+end
+
 function gain_phase_row(params::SimulationParams, gamma::Real, freq::Real, csv_path::AbstractString,
                          sim_status::AbstractString; bead, basis, scheme, domain)
     row = blank_row(; bead, basis, scheme, domain, gamma, freq, params, sim_status, quality = "missing")
@@ -160,7 +155,12 @@ function gain_phase_row(params::SimulationParams, gamma::Real, freq::Real, csv_p
     fit_lab = fit_oscillation(te, z_lab, ω)
     fit_shk = fit_oscillation(te, ze, ω)
 
-    conv = check_convergence(tt, zz, ω, params.convergence)
+# The CSV stores time to 7 digits, so t[end]/T can read 9.999995 and fail the 10-period check; 1e-3 periods of slack (0.06 step).
+    o = params.convergence
+    conv_opts = ConvergenceOptions(enabled = o.enabled, minPeriods = o.minPeriods - 1e-3,
+                                   windowPeriods = o.windowPeriods - 1e-3, checkEveryPeriods = o.checkEveryPeriods,
+                                   amplitudeRelTol = o.amplitudeRelTol, phaseAbsTolDeg = o.phaseAbsTolDeg)
+    conv = check_convergence(tt, zz, ω, conv_opts)
     row["converged"] = conv.converged
     row["amp_rel_change"] = conv.amplitude_rel_change
     row["phase_change_deg"] = conv.phase_change_deg
@@ -172,6 +172,14 @@ function gain_phase_row(params::SimulationParams, gamma::Real, freq::Real, csv_p
     row["max_rel_motion_over_a"] = (maximum(ze) - minimum(ze)) / 2 / params.diskRadius
 
     row["quality"] = row["wave_cut"] ? "wave_cut" : (conv.converged ? "good" : "unconverged")
+
+    n_sub = min(8, n_avail)
+    if n_sub >= 4        # at least two cycles of f/2 are needed to separate it from f
+        keep_sub = tt .>= (tt[end] - n_sub * T)
+        sub = subharmonic_ratio(tt[keep_sub], zz[keep_sub], ω)
+        row["subharmonic_ratio"] = sub
+        isfinite(sub) && sub > 0.10 && (row["quality"] = "subharmonic")
+    end
     return row
 end
 
@@ -187,10 +195,9 @@ function write_gain_phase(path::AbstractString, rows::AbstractVector)
 end
 
 """
-    postprocess_sweep(outdir, params, gammas, freqs; bead, basis, scheme, domain) -> Vector{Dict}
+postprocess_sweep(outdir, params, gammas, freqs; bead, basis, scheme, domain) -> Vector{Dict}
 
-One row per (gamma, freq) of the requested grid, in grid order. A case with no CSV gets
-quality `missing`; an exception in this function for one case never stops the others.
+One row per (gamma, freq), grid order. Missing CSV -> `missing`; a failure in one case never stops the others.
 """
 function postprocess_sweep(outdir::AbstractString, params::SimulationParams, gammas, freqs; bead, basis, scheme, domain)
     status = read_summary_status(joinpath(outdir, "summary.csv"))

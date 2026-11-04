@@ -80,9 +80,10 @@ def main():
     ap.add_argument("--bead", default="ptfe")
     ap.add_argument("--ref-gamma", type=float, default=0.5)
     ap.add_argument("--main-gamma", type=float, default=0.5)
+    ap.add_argument("--out-dir", default=None, help="default: <campaign>/gate")
     a = ap.parse_args()
 
-    out_dir = os.path.join(a.campaign, "gate")
+    out_dir = a.out_dir or os.path.join(a.campaign, "gate")
     os.makedirs(out_dir, exist_ok=True)
     lines = []
 

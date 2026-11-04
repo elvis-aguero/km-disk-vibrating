@@ -160,4 +160,8 @@ function main(args)
     return nothing
 end
 
-main(ARGS)
+# Only run when executed directly, so that repostprocess.jl can `include` this file.
+# (`... == @__FILE__ && main(ARGS)` is a parse error: a macro call swallows what follows it.)
+if abspath(PROGRAM_FILE) == @__FILE__
+    main(ARGS)
+end
