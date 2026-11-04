@@ -86,7 +86,7 @@ DTN = DTNnew345; clear DTNnew345;
 
 [dr, Delta, pressureIntegral] = domainMaker(bathDiameter, spatialResolution);
 cPoints = spatialResolution + 1;
-pIntegral = pressureIntegral(cPoints, :);
+pIntegral = contactWeights(cPoints, dr);
 SF = surface_force_adim;
 Ma = obj_mass_adim;
 

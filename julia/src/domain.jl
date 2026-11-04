@@ -46,12 +46,11 @@ function build_domain(bathDiameter::Real, spatialResolution::Real)
 
     Laplacian = Tridiagonal(dl, d, du)
 
-    # --- Pressure-integral matrix ---
-    # Interior weights are the trapezoid rule for ∫ 2πr p dr. The end weights are not:
-    # the contact pressure is taken to act at the midpoint between the last two grid
-    # points (a ghost-point assumption inherited from the original kinematic-match solver,
-    # where the contact area can change). For a uniform pressure this integrates to
-    # π R² (1 + 1/(2q) + 1/(12q²)) rather than π R²; see test_physics_limits.jl.
+    # --- Pressure-integral matrix (legacy; no longer used for the disk force) ---
+    # Exact integral of a piecewise-linear pressure that decays to zero half a cell beyond
+    # the edge node (from the original kinematic-match solver, where the contact area can
+    # change). The disk force now uses `contact_weights` instead: the edge pressure here
+    # carries the meniscus pull, which these weights would count only ~3/4 of.
     nlmax = Int(quant) + 1
     n_int = 2 * nlmax
     IntMat = zeros(n_int, n_int)
@@ -66,4 +65,21 @@ function build_domain(bathDiameter::Real, spatialResolution::Real)
     IntMat .*= pi * dr^2
 
     return (dr = dr, Laplacian = Laplacian, IntMat = IntMat, nr = nr)
+end
+
+"""
+    contact_weights(cPoints, dr) -> Vector{Float64}
+
+Area weights for the pressure under the disk, as the fluid applies it: the ring
+`2π r_j dr` at contact node `j` (`π (dr/2)²` at the centre), in units of the disk radius
+squared. These are the weights under which the discrete Laplacian is symmetric, so the
+disk receives exactly the load the water feels. Summed, the pressure rows then give the
+buoyancy plus the meniscus pull on the rim exactly — the edge node's pressure carries that
+pull, because its Laplacian row reaches the first free node — so the disk force uses these
+weights and no separate contact-line term (see `system_matrix.jl`).
+"""
+function contact_weights(cPoints::Integer, dr::Real)
+    w = [2pi * (j - 1) * dr * dr for j in 1:cPoints]
+    w[1] = pi * (dr / 2)^2
+    return w
 end

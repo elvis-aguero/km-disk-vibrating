@@ -4,7 +4,9 @@ Each `julia/cluster/run_baseline_sweep.sh` submission writes one folder here,
 `<slurm_job_id>_<timestamp>/`, with `sweep/` (per-case CSVs, `summary.csv`, overlay
 plots vs. experiment) and `logs/`. New runs are gitignored.
 
-Two runs are committed as reference evidence (full 30-case sweep, nr=2500):
+Two runs are committed as reference evidence (full 30-case sweep, nr=2500). Both predate
+the contact-line fix of 2026-11-04 (see `docs/audit/`), so they reflect the old disk force
+balance; they remain the reference for the overlay code's regression test.
 
 | Run | Result vs. experiment | Status |
 |---|---|---|
