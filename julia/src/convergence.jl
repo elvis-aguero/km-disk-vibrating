@@ -1,26 +1,9 @@
 """
-Shared least-squares oscillation fit and the corrected early-stop convergence check.
+Least-squares oscillation fit and early-stop convergence check.
 
-## Why the MATLAB check was replaced, not patched
-
-`matlab/1_code/simulation_code/solve_motion.m` (lines ~308-337) stopped a simulation once
-the standard deviation of a rolling 1-period average of the raw center-of-mass trace,
-divided by its mean, dropped below a tolerance. This was audited and found to be broken:
-it measures whether the *smoothed baseline* has stopped drifting, which is a different
-condition from "the oscillation has reached periodic steady state." Because the
-static-equilibrium initial condition removes most of the transient drift up front, the
-ratio's denominator (a fairly large, non-oscillating equilibrium offset) makes the ratio
-trivially small almost immediately — verified directly against a real sweep run, where
-all 30 (gamma, frequency) cases stopped at exactly the earliest allowed check point (3
-forcing periods), before the oscillation had even completed one full cycle, degrading the
-amplitude match to experimental data by roughly 10x and the phase match by roughly 50x.
-
-The check below instead fits oscillation amplitude and phase (via the same least-squares
-regression already used by the validation/overlay tooling) over two consecutive
-multi-period windows, and only declares convergence when *both* are stable across those
-windows — i.e., the state is actually periodic, not merely non-drifting. A hard
-minimum-periods floor (independent of the tolerance check) prevents firing before the
-system has had a chance to complete enough cycles to fit a meaningful window at all.
+Convergence = amplitude and phase fitted over two consecutive multi-period windows agree within tolerance,
+with a hard floor of `minPeriods`. (Replaces the MATLAB check, which tested drift of a smoothed baseline and
+stopped every case after 3 periods.)
 """
 
 Base.@kwdef struct ConvergenceOptions
@@ -44,17 +27,10 @@ end
 not_converged(periods_elapsed::Real) = ConvergenceResult(false, periods_elapsed, NaN, NaN, Inf, Inf)
 
 """
-    fit_oscillation(t, z, ω) -> (amplitude, phase, offset)
+fit_oscillation(t, z, ω) -> (amplitude, phase, offset)
 
-Least-squares fit of `z(t) ≈ amplitude*cos(ω*t + phase) + offset` via the design matrix
-`[cos(ωt) sin(ωt) 1]` (note the `+`: `X = [amplitude*cos(phase), -amplitude*sin(phase),
-offset]`, so `phase = atan2(-X1,X0)` recovers the `+phase` convention below, not `-phase`
-— confirmed against a synthetic-signal test after the first real test run caught the sign
-flipped in this docstring and in `test/unit/test_fit.jl`). Ported from the fit already
-used in `overlay_validation.py` (`M = [cos(ωt), sin(ωt), 1]`, `amplitude = hypot(X0,X1)`,
-`phase = atan2(-X1,X0)`). The constant column absorbs any DC offset (e.g. the
-static-equilibrium depth), so the recovered amplitude/phase are insensitive to that
-offset — precisely the property the old rolling-mean check lacked.
+Least squares z ≈ amplitude cos(ωt + phase) + offset, using the basis [cos(ωt), sin(ωt), 1] = X;
+amplitude = hypot(X1, X2), phase = atan(-X2, X1).
 """
 function fit_oscillation(t::AbstractVector{<:Real}, z::AbstractVector{<:Real}, ω::Real)
     length(t) == length(z) || throw(ArgumentError("t and z must have the same length"))
@@ -67,12 +43,10 @@ function fit_oscillation(t::AbstractVector{<:Real}, z::AbstractVector{<:Real}, �
 end
 
 """
-    check_convergence(t, z, ω, opts) -> ConvergenceResult
+check_convergence(t, z, ω, opts) -> ConvergenceResult
 
-Fits amplitude/phase over two consecutive, non-overlapping `opts.windowPeriods`-period
-windows ending at `t[end]`, and declares convergence only when both are stable across
-those windows within tolerance. Never returns `converged=true` before
-`opts.minPeriods` periods have elapsed, regardless of tolerances.
+Fits amplitude and phase over two consecutive non-overlapping `opts.windowPeriods` windows ending at `t[end]`;
+converged only if both change less than the tolerances. Never converged before `opts.minPeriods` periods.
 """
 function check_convergence(t::AbstractVector{<:Real}, z::AbstractVector{<:Real}, ω::Real, opts::ConvergenceOptions)
     T = 2 * pi / ω
