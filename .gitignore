@@ -61,3 +61,7 @@ julia/data/dtn_cache/
 
 *.out
 *.err
+
+# Python bytecode
+__pycache__/
+*.pyc
