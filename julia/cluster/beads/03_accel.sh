@@ -4,7 +4,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=6
-#SBATCH --mem=56G
+#SBATCH --mem=80G
 #SBATCH --time=04:00:00
 #SBATCH --output=output/beads/03_accel/%x-%j.out
 #SBATCH --error=output/beads/03_accel/%x-%j.err
@@ -20,7 +20,7 @@
 #
 # Resources (an ESTIMATE from the committed reference run, 116-203 s per case at nr=2500;
 # refine it from the stage-02 pilot):
-#   - Memory: ~6.2 GB per concurrent case. 56G -> floor(0.7*56/6.2) = 6 concurrent cases.
+#   - Memory: measured peak 55 GB (campaign 20261102_170942) for 6 concurrent cases = ~9 GB per case; it hit 99% of 56G, so 80G.
 #   - CPUs: 6, one per concurrent case.
 #   - Time: 136 cases x ~150 s / 6 = ~1.0 h. 4 h is a ~4x margin. For the Gamma > 1 job
 #     (68 cases) the same limit is more than enough.

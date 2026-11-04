@@ -4,7 +4,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=6
-#SBATCH --mem=56G
+#SBATCH --mem=64G
 #SBATCH --time=03:00:00
 #SBATCH --output=output/beads/06_euler_check/%x-%j.out
 #SBATCH --error=output/beads/06_euler_check/%x-%j.err
@@ -22,7 +22,7 @@
 #
 # Resources (ESTIMATE): 2 variants x 7 freqs x (number of Gamma) = 14 cases per Gamma,
 # ~150 s each / 6 concurrent = ~10 min. 3 h is a very wide margin. The 30-step variant
-# needs about half the LU memory per case, so the same 56G is safe.
+# needs about half the LU memory per case; measured peak 47 GB at 56G, now 64G.
 
 : "${GAMMAS:?set GAMMAS first, e.g.  GAMMAS=0.5 sbatch julia/cluster/beads/06_numerics_check.sh}"
 source "${SLURM_SUBMIT_DIR:?run with sbatch}/julia/cluster/beads/_common.sh"

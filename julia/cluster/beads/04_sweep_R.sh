@@ -4,7 +4,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=6
-#SBATCH --mem=56G
+#SBATCH --mem=80G
 #SBATCH --time=04:00:00
 #SBATCH --output=output/beads/04_sweep_R/%x-%j.out
 #SBATCH --error=output/beads/04_sweep_R/%x-%j.err
@@ -18,7 +18,7 @@
 # Resources (ESTIMATE; refine from the pilot): 4 beads x 34 frequencies x (number of Gamma)
 # cases. For one Gamma that is 136 cases x ~150 s / 6 concurrent = ~1 h. The 4 h limit
 # covers up to about 3 Gamma values; for more, raise it:  sbatch --time=08:00:00 ...
-# Memory: ~6.2 GB per concurrent case -> 56G gives 6 concurrent cases (0.7 budget factor).
+# Memory: measured peak 57-58 GB for 6 concurrent cases (~9.5 GB per case; hit 99% of 56G in the first campaign), so 80G.
 #
 # One bead failing, or any case failing, does not stop the others: see gain_phase.csv
 # (column `quality`) and the end-of-job "Quality counts" line.

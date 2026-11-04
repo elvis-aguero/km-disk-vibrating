@@ -4,7 +4,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=6
-#SBATCH --mem=56G
+#SBATCH --mem=80G
 #SBATCH --time=04:00:00
 #SBATCH --output=output/beads/05_sweep_rc/%x-%j.out
 #SBATCH --error=output/beads/05_sweep_rc/%x-%j.err
