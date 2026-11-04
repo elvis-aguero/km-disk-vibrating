@@ -40,8 +40,7 @@ function assemble_system_matrix!(Mat::AbstractMatrix{Float64}, problem::Problem,
     We = problem.We
     Delta = problem.laplacian
     DTN = problem.DTN
-    pIntegral = problem.pressureIntegral
-    SF = problem.surface_force_constant
+    w = problem.contact_weights
     dr = problem.dr
     Ma = problem.obj_mass
 
@@ -103,13 +102,15 @@ function assemble_system_matrix!(Mat::AbstractMatrix{Float64}, problem::Problem,
         Mat[nr + i, 2 * nr + 2] = s_bot
     end
 
-    # --- disk force balance row (2nr+1) ---
-    Mat[2 * nr + 1, 1] = -SF * dt / dr
+    # --- disk force balance row (2nr+1): v⁺ = v + dt (Σ w_j p_j / Ma − g/Fr − force) ---
+    # Pressure weighted by the fluid's own ring weights and no separate contact-line term:
+    # the edge node's pressure already carries the meniscus pull on the rim (its row in the
+    # φ block reaches the first free node), so adding SF·(η_out[1] − z)/dr would count it
+    # twice. See `contact_weights`.
     for p in 1:cPoints
-        Mat[2 * nr + 1, (2 * nr - cPoints) + p] = -dt * pIntegral[p] / Ma
+        Mat[2 * nr + 1, (2 * nr - cPoints) + p] = -dt * w[p] / Ma
     end
     Mat[2 * nr + 1, 2 * nr + 1] = 1.0
-    Mat[2 * nr + 1, 2 * nr + 2] = SF * dt / dr
 
     # --- kinematic update row (2nr+2): z_{n+1} = z_n + dt*v_{n+1} ---
     Mat[2 * nr + 2, 2 * nr + 1] = -dt

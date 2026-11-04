@@ -29,7 +29,10 @@
         Mat0 = assemble_system_matrix(problem, 0.0)
         nr = problem.nr
         @test Mat0[2 * nr + 1, 2 * nr + 1] ≈ 1.0
-        @test Mat0[2 * nr + 1, 2 * nr + 2] ≈ problem.surface_force_constant * problem.dt / problem.dr
+        # No separate contact-line term in the disk row (the edge pressure carries it).
+        @test Mat0[2 * nr + 1, 2 * nr + 2] == 0.0
+        @test Mat0[2 * nr + 1, 1] == 0.0
+        @test Mat0[2 * nr + 1, (2nr - problem.cPoints + 1):(2nr)] ≈ -problem.dt .* problem.contact_weights ./ problem.obj_mass
         @test Mat0[2 * nr + 2, 2 * nr + 1] ≈ -problem.dt
         @test Mat0[2 * nr + 2, 2 * nr + 2] ≈ 1.0
     end

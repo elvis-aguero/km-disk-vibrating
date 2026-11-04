@@ -21,9 +21,8 @@ function solve_static_equilibrium(problem::Problem)
     We = problem.We
     Delta = problem.laplacian
     dr = problem.dr
-    SF = problem.surface_force_constant
     Ma = problem.obj_mass
-    pIntegral = problem.pressureIntegral
+    w = problem.contact_weights
 
     # A_static(i,j) = (eye(nr)/Fr - laplacian/We)(i,j), evaluated lazily (Delta is
     # tridiagonal, so this is O(1) per entry) rather than materializing a dense nr x nr
@@ -62,10 +61,9 @@ function solve_static_equilibrium(problem::Problem)
         row += 1
     end
 
-    # 3. Disk force balance: capillary edge force + integrated pressure force = weight
-    M[row, 1] = SF / dr
-    @views M[row, (nr - cPoints + 1):nr] .= pIntegral ./ Ma
-    M[row, n] = -SF / dr
+    # 3. Disk force balance: integrated pressure (incl. the meniscus pull at the edge) = weight
+    # (no separate contact-line term: the edge pressure carries it; see contact_weights)
+    @views M[row, (nr - cPoints + 1):nr] .= w ./ Ma
     rhs[row] = 1.0 / Fr
     row == n || error("internal error: static equilibrium row count mismatch ($row != $n)")
 

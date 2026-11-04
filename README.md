@@ -172,7 +172,7 @@ Cost grows as `nr³`: seconds for `nr = 50`, hours for the production `nr = 2500
 
 Each step is implicit. `timeScheme = :euler` (default, identical to MATLAB) is first order:
 at 60 steps/period the amplitude is several percent off its converged value.
-`timeScheme = :bdf2` is second order at the same cost (amplitude within ~0.1% at 60
+`timeScheme = :bdf2` is second order at the same cost (amplitude within ~0.5% at 60
 steps/period). BDF2 also stops damping waves artificially, which exposes two things Euler
 hid: waves reaching the domain edge sooner, and a growing half-frequency (Faraday) mode at
 large Γ. Validate a BDF2 sweep against the experiment before relying on it:

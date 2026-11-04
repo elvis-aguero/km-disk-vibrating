@@ -53,13 +53,13 @@ struct Problem
     dr::Float64
     laplacian::Tridiagonal{Float64,Vector{Float64}}
     DTN::Matrix{Float64}
-    pressureIntegral::Vector{Float64}          # pressureIntegral(cPoints, 1:cPoints) row, length cPoints
+    contact_weights::Vector{Float64}           # area weights of the contact nodes (see contact_weights)
     force_amplitude::Float64                    # force_adim
     force_frequency::Float64                     # freq_adim (always 1.0 by construction: see build_problem)
     bath_forcing_amplitude::Float64             # gamma = A*omega_bath^2/g, dimensionless
     bath_frequency::Float64                      # bath_freq_adim
     phase_difference::Float64                     # radians
-    surface_force_constant::Float64              # surface_force_adim
+    surface_force_constant::Float64              # surface_force_adim (2πRσ/m, scaled); not used in the disk force
     obj_mass::Float64                             # obj_mass_adim
     stepsPerCycle::Int
     dt::Float64
@@ -123,10 +123,10 @@ function build_problem(params::SimulationParams, dtn::AbstractMatrix{<:Real})
     size(dtn, 1) == dom.nr || throw(DimensionMismatch(
         "DTN matrix has size $(size(dtn)) but domain requires nr=$(dom.nr) " *
         "(spatialResolution=$(params.spatialResolution), bathDiameter=$(params.bathDiameter))"))
-    pressure_integral_row = dom.IntMat[cPoints, 1:cPoints]
+    weights = contact_weights(cPoints, dom.dr)
 
     return Problem(Re, Fr, We, dom.nr, cPoints, dom.dr, dom.Laplacian, Matrix{Float64}(dtn),
-                   pressure_integral_row, force_adim, freq_adim, bath_forcing_amplitude,
+                   weights, force_adim, freq_adim, bath_forcing_amplitude,
                    bath_freq_adim, phase_diff_rad, surface_force_adim, obj_mass_adim,
                    stepsPerCycle, dt, effective_w_adim, v_bath_0_adim, units)
 end
