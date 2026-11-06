@@ -162,11 +162,17 @@ The bath surface outside the disk is coupled to the fluid below through a dense
 Dirichlet-to-Neumann (DTN) matrix of size `nr × nr`, which depends only on the domain
 (`bathDiameter`, `spatialResolution`). It is computed once per domain and cached:
 - MATLAB: `matlab/1_code/D<…>Quant<…>/*.mat`.
-- Julia: `julia/data/dtn_cache/`, filled from those `.mat` files by
-  `julia/scripts/migrate_dtn_caches.jl`, or built natively with
-  `julia/scripts/generate_dtn.jl` / `generate_dtn(nr, bathDiameter)`.
+- Julia: `julia/data/dtn_cache/`, built natively with `julia/scripts/generate_dtn.jl` /
+  `generate_dtn(nr, bathDiameter)`, or filled from the `.mat` files by `julia/scripts/migrate_dtn_caches.jl`.
 
-Cost grows as `nr³`: seconds for `nr = 50`, hours for the production `nr = 2500`.
+Two constructions exist for the same operator, selected by `method`:
+- `:single_layer` (default): `N = -Δ_H S` with an exact angular integral, `O(nr²)`. About 25 s at `nr = 2500`,
+  3.5 min at `nr = 8750`. Derivation and checks: [`docs/dtn_single_layer.md`](docs/dtn_single_layer.md).
+- `:polar`: the scheme of Galeano-Rios et al. (2017), `O(nr³)` with a large constant: hours for `nr = 2500`.
+  `generate_dtn(nr, D; method = :polar)` or `generate_dtn_polar`. This is what the MATLAB caches contain.
+
+The registry holds one cache per (domain, method). `resolve_dtn` uses the method named by the environment variable
+`KMDISK_DTN_METHOD` (`single_layer` if unset); set `KMDISK_DTN_METHOD=polar` to run with the older matrices.
 
 ### Time stepping
 

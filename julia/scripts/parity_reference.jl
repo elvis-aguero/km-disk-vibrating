@@ -41,7 +41,7 @@ cases = [
 # Generated natively (not via resolve_dtn/default_registry()) because julia/data/dtn_cache/
 # is gitignored (regenerate-locally-only, see .gitignore) and so isn't present on a fresh CI
 # checkout. nr=50 for this domain matches build_domain's nr = ceil(D*quant/2).
-dtn = generate_dtn(50, base.bathDiameter)
+dtn = generate_dtn_polar(50, base.bathDiameter)
 for (name, p) in cases
     result = run_simulation(p; dtn = dtn)
     tail = result.t_s .>= (result.t_s[end] - 3 / freqHz)

@@ -1,7 +1,12 @@
 #!/usr/bin/env julia
 #= Generate a DTN cache natively in Julia for a given domain, and register it.
 
-Usage: `julia -t auto julia/scripts/generate_dtn.jl <spatialResolution> <bathDiameter>`
+Usage: `julia -t auto julia/scripts/generate_dtn.jl <spatialResolution> <bathDiameter> [single_layer|polar]`
+
+The method defaults to `single_layer` (docs/dtn_single_layer.md; seconds to minutes). `polar` is the paper's scheme
+(`generate_dtn_polar`, hours at nr = 2500; for large domains use `julia/cluster/beads/regenerate_dtn.jl`, which
+parallelizes it over worker processes). Both can be registered for the same domain; `resolve_dtn` picks the one named
+by `KMDISK_DTN_METHOD` (default `single_layer`).
 
 Equivalent to MATLAB's `generate_dtn.m` (which calls `DTNVectorized.m`), but threaded via
 `Threads.@threads :dynamic` instead of `parfor` — run with `-t auto` (or `-t N`) to get
@@ -19,27 +24,31 @@ include("_bootstrap.jl")
 using JLD2
 
 function main(args)
-    length(args) == 2 || error("usage: generate_dtn.jl <spatialResolution> <bathDiameter>")
+    length(args) in (2, 3) || error("usage: generate_dtn.jl <spatialResolution> <bathDiameter> [single_layer|polar]")
     spatialResolution = parse(Float64, args[1])
     bathDiameter = parse(Float64, args[2])
+    method = length(args) == 3 ? Symbol(args[3]) : :single_layer
+    method in (:single_layer, :polar) || error("method must be single_layer or polar, got $method")
     nr = ceil(Int, spatialResolution * bathDiameter / 2)
 
-    @info "generating DTN" spatialResolution = spatialResolution bathDiameter = bathDiameter nr = nr threads = Threads.nthreads()
+    @info "generating DTN" spatialResolution = spatialResolution bathDiameter = bathDiameter nr = nr method = method threads = Threads.nthreads()
     t0 = time()
-    DTN = generate_dtn(nr, bathDiameter)
+    DTN = generate_dtn(nr, bathDiameter; method = method)
+    check_dtn(DTN; source = "generated $method matrix")
     elapsed = time() - t0
     @info "DTN generation complete" nr = nr elapsed_s = elapsed
 
     cache_dir = joinpath(@__DIR__, "..", "data", "dtn_cache")
     mkpath(cache_dir)
-    jld2_name = "D$(Int(spatialResolution))_Quant$(Int(bathDiameter))_nr$(nr).jld2"
+    suffix = method === :polar ? "" : "_singlelayer"
+    jld2_name = "D$(Int(spatialResolution))_Quant$(Int(bathDiameter))_nr$(nr)$(suffix).jld2"
     out_path = joinpath(cache_dir, jld2_name)
     JLD2.jldsave(out_path; DTN = DTN)
 
     manifest_path = joinpath(cache_dir, "manifest.toml")
     manifest = isfile(manifest_path) ? load_manifest(manifest_path) : DTNManifest()
     register!(manifest, DTNCacheEntry(spatialResolution, bathDiameter, nr, 10, out_path,
-                                        "generated natively via scripts/generate_dtn.jl"))
+                                        "generated natively via scripts/generate_dtn.jl ($method)", method))
     save_manifest(manifest_path, manifest)
 
     @info "registered DTN cache" path = out_path manifest = manifest_path

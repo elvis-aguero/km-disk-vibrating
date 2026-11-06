@@ -24,6 +24,7 @@ if !@isdefined(FaradayDisk)
 end
 using Dates  # Dates.now()/format below; not re-exported by `using FaradayDisk`
 using Logging  # global_logger() below; not re-exported by `using FaradayDisk`
+import JLD2  # KMDISK_DTN_FILE override below
 include("run_sweep.jl")
 include("run_validation_overlay.jl")
 
@@ -48,7 +49,10 @@ function run_matlab_baseline_check(; outdir::Union{Nothing,String} = nothing)
 
     global_logger(setup_logging(name = "matlab_baseline_check", jsonlines = true))
 
-    run_sweep(default_sweep_spec(), outdir)
+    # KMDISK_DTN_FILE=<file.jld2 with key "DTN"> replaces the registered DtN cache (test of an alternative construction).
+    dtn_file = get(ENV, "KMDISK_DTN_FILE", "")
+    dtn = isempty(dtn_file) ? nothing : FaradayDisk.check_dtn(JLD2.load(dtn_file, "DTN"); source = dtn_file)
+    run_sweep(default_sweep_spec(), outdir; dtn = dtn)
     cases = compute_sim_overlay(outdir)
     isempty(cases) && error("baseline check produced no valid steady-state cases — cannot compute RMSE")
 

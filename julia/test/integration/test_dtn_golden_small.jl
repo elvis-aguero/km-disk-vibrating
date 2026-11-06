@@ -26,7 +26,7 @@ using MAT
 
         results = NamedTuple[]
         for D_candidate in (20.0, 5.0)
-            DTN_native = generate_dtn(50, D_candidate)
+            DTN_native = generate_dtn_polar(50, D_candidate)
             max_abs_diff = maximum(abs, DTN_native .- DTN_legacy)
             rel_diff = max_abs_diff / maximum(abs, DTN_legacy)
             @info "DTN golden comparison" D_candidate = D_candidate max_abs_diff = max_abs_diff rel_diff = rel_diff
@@ -37,7 +37,7 @@ using MAT
         @info "best-matching D for the D5Quant20 cache" D = best.D rel_diff = best.rel_diff
 
         @test best.D == 20.0
-        @test size(generate_dtn(50, best.D)) == size(DTN_legacy)
+        @test size(generate_dtn_polar(50, best.D)) == size(DTN_legacy)
         @test best.rel_diff < 1e-6
     end
 end

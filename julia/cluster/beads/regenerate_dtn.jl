@@ -123,7 +123,7 @@ function main(args)
         # the same domain: the local D5_Quant20 cache is stale (migrated from the old D=5
         # matrix before commit 5391c98), which made the first test fail with a 0.75 difference.
         nr <= 200 || error("test mode compares with the serial generator and is meant for small domains (nr <= 200), got nr=$nr")
-        ref = FaradayDisk.generate_dtn(nr, bd)
+        ref = FaradayDisk.generate_dtn_polar(nr, bd)
         relerr = maximum(abs, back .- ref) / maximum(abs, ref)
         @info "test mode: comparison with the serial generator" relerr = relerr
         flush(stderr)

@@ -18,13 +18,30 @@ struct DTNCacheEntry
     refp::Int
     path::String
     source_file::String
+    method::Symbol      # :polar (the paper's scheme, generate_dtn_polar) or :single_layer (docs/dtn_single_layer.md)
 end
 
+# Entries written before the `method` field existed, and callers that build polar caches, omit it.
+DTNCacheEntry(sr, bd, nr, refp, path, source_file) = DTNCacheEntry(sr, bd, nr, refp, path, source_file, :polar)
+
+# One entry per (spatialResolution, bathDiameter, method): both constructions of a domain can be registered side by side.
 struct DTNManifest
-    entries::Dict{Tuple{Float64,Float64},DTNCacheEntry}
+    entries::Dict{Tuple{Float64,Float64,Symbol},DTNCacheEntry}
 end
 
-DTNManifest() = DTNManifest(Dict{Tuple{Float64,Float64},DTNCacheEntry}())
+DTNManifest() = DTNManifest(Dict{Tuple{Float64,Float64,Symbol},DTNCacheEntry}())
+
+"""
+    default_dtn_method() -> Symbol
+
+The construction a domain is resolved with: `:single_layer`, unless the environment variable `KMDISK_DTN_METHOD`
+is set to `polar` (the paper's scheme, the matrices used before the single-layer construction became the default).
+"""
+function default_dtn_method()
+    m = Symbol(get(ENV, "KMDISK_DTN_METHOD", "single_layer"))
+    m in (:single_layer, :polar) || error("KMDISK_DTN_METHOD must be single_layer or polar, got $m")
+    return m
+end
 
 """
     load_manifest(path) -> DTNManifest
@@ -57,8 +74,9 @@ function load_manifest(path::AbstractString)
             Int(get(e, "refp", 10)),
             joinpath(dir, e["path"]),
             get(e, "source_file", ""),
+            Symbol(get(e, "method", "polar")),
         )
-        manifest.entries[(entry.spatialResolution, entry.bathDiameter)] = entry
+        manifest.entries[(entry.spatialResolution, entry.bathDiameter, entry.method)] = entry
     end
     return manifest
 end
@@ -74,6 +92,7 @@ function save_manifest(path::AbstractString, manifest::DTNManifest)
                 "refp" => e.refp,
                 "path" => relpath(abspath(e.path), dir),
                 "source_file" => e.source_file,
+                "method" => String(e.method),
             ) for e in values(manifest.entries)
         ],
     )
@@ -95,20 +114,23 @@ default_manifest_path() = joinpath(@__DIR__, "..", "..", "data", "dtn_cache", "m
 default_registry() = load_manifest(default_manifest_path())
 
 """
-    resolve_dtn(registry, spatialResolution, bathDiameter) -> DTNCacheEntry
+    resolve_dtn(registry, spatialResolution, bathDiameter; method=default_dtn_method()) -> DTNCacheEntry
 
-Look up the cache entry for a domain. Throws a clear, actionable error (naming the
-script to run) rather than silently guessing a filename, if no entry is registered.
+Look up the cache entry for a domain and construction method. Throws a clear, actionable error (naming the
+script to run) rather than silently guessing a filename or switching method, if no entry is registered.
 """
-function resolve_dtn(registry::DTNManifest, spatialResolution::Real, bathDiameter::Real)
-    key = (float(spatialResolution), float(bathDiameter))
+function resolve_dtn(registry::DTNManifest, spatialResolution::Real, bathDiameter::Real; method::Symbol = default_dtn_method())
+    key = (float(spatialResolution), float(bathDiameter), method)
     entry = get(registry.entries, key, nothing)
     if entry === nothing
+        others = sort!([String(k[3]) for k in keys(registry.entries) if k[1] == key[1] && k[2] == key[2]])
         error(
-            "No DTN cache registered for spatialResolution=$spatialResolution, " *
-            "bathDiameter=$bathDiameter. Run `scripts/generate_dtn.jl` for this domain " *
+            "No DTN cache (method $method) registered for spatialResolution=$spatialResolution, " *
+            "bathDiameter=$bathDiameter" * (isempty(others) ? "" : " (registered for this domain: $(join(others, ", ")); " *
+            "set KMDISK_DTN_METHOD to use one of those)") *
+            ". Run `julia scripts/generate_dtn.jl $spatialResolution $bathDiameter` " *
             "(or `scripts/migrate_dtn_caches.jl` if a MATLAB .mat cache already exists " *
-            "for it), then add an entry to $(default_manifest_path()).",
+            "for it), which adds an entry to $(default_manifest_path()).",
         )
     end
     return entry
@@ -145,9 +167,9 @@ end
 """
     register!(manifest, entry)
 
-Insert or replace a manifest entry, keyed by `(spatialResolution, bathDiameter)`.
+Insert or replace a manifest entry, keyed by `(spatialResolution, bathDiameter, method)`.
 """
 function register!(manifest::DTNManifest, entry::DTNCacheEntry)
-    manifest.entries[(entry.spatialResolution, entry.bathDiameter)] = entry
+    manifest.entries[(entry.spatialResolution, entry.bathDiameter, entry.method)] = entry
     return manifest
 end

@@ -50,10 +50,11 @@ Output goes to `julia/data/results/sweeps/sweep_<timestamp>/` — one CSV per ca
 
 **Generating a DTN cache natively** (port of `generate_dtn.m` / `DTNVectorized.m`):
 ```sh
-julia -t auto --project=scripts julia/scripts/generate_dtn.jl <spatialResolution> <bathDiameter>
+julia -t auto --project=scripts julia/scripts/generate_dtn.jl <spatialResolution> <bathDiameter> [single_layer|polar]
 ```
-⚠️ The largest domains in this repo (`nr=2500`) took MATLAB's `parfor`-based generator on
-the order of *hours*. Expect the same order of magnitude here regardless of language.
+The default method, `single_layer`, builds `nr = 2500` in about 25 s (see `docs/dtn_single_layer.md`). The `polar`
+method (the paper's scheme, what the MATLAB code does) needs hours at that size: for it use the process-parallel
+`julia/cluster/beads/regenerate_dtn.jl`. Both caches of a domain can be registered; `KMDISK_DTN_METHOD` picks one.
 
 **Migrating the existing MATLAB `.mat` DTN caches to Julia-native JLD2** (one-off, run
 once):

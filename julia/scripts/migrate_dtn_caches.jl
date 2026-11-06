@@ -96,7 +96,7 @@ function main()
 
         if src.nr <= 200
             @info "cross-validating against native Julia generator" nr = src.nr validation_D = src.validation_D
-            DTN_native = generate_dtn(src.nr, src.validation_D)
+            DTN_native = generate_dtn_polar(src.nr, src.validation_D)
             max_abs_diff = maximum(abs, DTN_native .- DTN_to_store)
             rel_diff = max_abs_diff / max(maximum(abs, DTN_to_store), eps())
             if rel_diff < 1e-8

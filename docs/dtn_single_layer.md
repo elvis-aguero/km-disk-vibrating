@@ -1,6 +1,6 @@
 # DtN matrix construction: the paper's scheme and a single-layer alternative
 
-Status: pilot. The production matrix is still the one built by `generate_dtn`. The single-layer construction below is implemented in `julia/scripts/pilot_dtn_singlelayer.jl` and `julia/scripts/build_dtn_singlelayer.jl`. It is not the default.
+Status: this is the default construction. `generate_dtn(nr, D)` uses `method = :single_layer` (code in `julia/src/dtn/dtn_single_layer.jl`). The paper's scheme remains available as `generate_dtn_polar` or `method = :polar`, and the environment variable `KMDISK_DTN_METHOD=polar` makes the registry resolve the older caches. The exploratory scripts used for the evidence below are in `julia/scripts/pilot_dtn_*.jl`; they call `generate_dtn_polar` as the reference.
 
 Reference: C. A. Galeano-Rios, P. A. Milewski, J.-M. Vanden-Broeck, *Non-wetting impact of a sphere onto a bath and its application to bouncing droplets*, J. Fluid Mech. 826 (2017). Equation numbers below are the paper's.
 
@@ -159,7 +159,15 @@ The finite differences divide by $\delta r^2$, so they multiply any error in $G$
    | Al 1/32", rc, 60 Hz | 0.026% | 0.005 deg |
    | Al 1/32", rc, 70 Hz | 0.030% | 0.010 deg |
 6. **The large matrix has an independent check.** Al 1/32" at rc in the 25 x 700 domain ($n_r=8750$, built in 222 s, job 8459008) gives lab gains 1.2266, 1.4586, 1.5622 at 40, 60, 70 Hz. The production traces, which use the old matrix, refit on periods 2 to 3 (before the wall echo arrives) give 1.2258, 1.4576, 1.5616. The two routes share no code for the matrix and agree within 0.07% in gain.
-7. **Cost.** Measured: 0.04 to 0.17 s at $n_r=200$ to 400, against 66 s and 530 s for the paper's scheme; 24 s at $n_r=2500$; 222 s at $n_r=8750$.
+7. **The experimental measurements show no regression.** The 30-case validation sweep (disk $R=0.2$ cm, domain 50 x 100, $n_r=2500$, $\Gamma=0.05, 0.2, 0.5$, 10 to 100 Hz, BDF2) against `matlab/0_data/external/experimental_measurements`, with the old matrix (the registered cache) and the new one built in the job (24.5 s). The criterion was fixed before the runs: new amplitude RMSE at most 1.02 times the old one, and new wrapped-phase RMSE at most the old one plus 0.1 deg. Jobs 8466188 and 8466189, same commit and settings.
+
+   | | Old matrix | New matrix | Criterion |
+   |---|---:|---:|---:|
+   | Amplitude RMSE | 0.022186 | 0.022135 | $\le$ 0.022630 |
+   | Phase RMSE (wrapped) | 3.0629 deg | 3.0557 deg | $\le$ 3.163 deg |
+
+   The centre-of-mass RMS of the 30 cases differs by at most 0.032% between the two runs.
+8. **Cost.** Measured: 0.04 to 0.17 s at $n_r=200$ to 400, against 66 s and 530 s for the paper's scheme; 24 s at $n_r=2500$; 222 s at $n_r=8750$.
 
 ## 6. Where the two matrices differ, and what is not checked
 
@@ -172,7 +180,7 @@ Not checked, or weaker:
 - **Symmetry is not a usable quality test here.** The exact $N$ is self-adjoint, but a discrete matrix is symmetric only in the inner product that matches its discretization. With rows weighted by ring area $W_i$, the paper's matrix has relative asymmetry $4\times10^{-4}$ and the new one $3.6\times10^{-2}$. Each matrix was replaced by its weighted symmetric part, $\tfrac12(A+W^{-1}A^{T}W)$, and the wavelength test repeated (job 8464406). Both matrices got much worse. At 12 nodes the error went from 0.13% to 240% for the paper's matrix and from 0.11% to 19% for the new one. At 150 nodes it went to 1970% and 170%. So the ring-area weights are not the inner product in which either matrix is self-adjoint. A small asymmetry in the matrix norm is made of entries of order one, while $N\varphi$ for a long wave is a small difference of such entries. A relative change of $10^{-4}$ in the entries therefore changes the long-wave result by order one. The asymmetry number does not predict accuracy, and symmetrizing with these weights is harmful.
 - **Kinks.** Piecewise-cubic interpolation is continuous but has derivative jumps at every node. For such a function, $w$ is not $C^{2}$ up to the boundary, so statement 3 holds only in the distribution sense, and the exact $N$ of the interpolant is logarithmically singular at each node. The paper's exclusion ball and the finite differences after the integral each regularize that differently at the grid scale. This is the likely reason the matrices differ there. It has not been tested.
 - **Function spaces.** $S\psi$ has a tail $\sim(\int\psi)/(2\pi\lvert\mathbf x\rvert)$, which breaks the paper's decay condition (A 1) unless $\int\psi=0$. That is consistent: a function that decays faster than $1/\lvert\mathbf x\rvert$ has $\int N f=0$.
-- **Coverage.** The solver comparison covers two beads, six cases, at $\Gamma=0.5$. The wall convention is $\varphi=0$ beyond the last node in both matrices, but the paper's treatment of the last cells differs in detail. The first interval near the axis uses different weights from the production code (section 4). No comparison with the experimental measurements in `matlab/0_data/external/experimental_measurements` has been made yet.
+- **Coverage.** The solver comparison covers two beads, six cases, at $\Gamma=0.5$. The wall convention is $\varphi=0$ beyond the last node in both matrices, but the paper's treatment of the last cells differs in detail. The first interval near the axis uses different weights from the production code (section 4). The experimental comparison (section 5, point 7) uses one disk and one domain (50 x 100).
 
 ## Reproduction
 
@@ -183,6 +191,8 @@ Not checked, or weaker:
 | Comparison with the production cache | `julia/scripts/pilot_dtn_vs_production.jl` via `julia/cluster/beads/00e_dtn_vs_production.sh` | 8458810 |
 | Error vs wavelength, with and without symmetrization | `julia/scripts/pilot_dtn_spectrum.jl` via `00i_dtn_spectrum.sh`, `00j_dtn_spectrum_sym.sh` | 8462521, 8464406 |
 | Solver check at 25 x 200 (PTFE R; Al 1/32" rc) | `00f_dtn_e2e.sh`, `00g_dtn_control.sh` | 8458894, 8459007 |
+| Experimental validation, old vs new matrix | `julia/cluster/validate_vs_experiment.sh` (`DTN_BUILD=single_layer` for the new one) | 8466188 (old), 8466189 (new) |
+| Fast test tier with the new default (362 tests) | `julia/cluster/run_tests.sh` | 8466803 |
 | Al 1/32" rc in the 25 x 700 domain | `00h_dtn_big_al32rc.sh` | 8459008 |
 
 The sweep script `julia/cluster/beads/run_bead_sweep.jl` accepts `KMDISK_DTN_FILE=<file.jld2 with key "DTN">` to replace the registered cache for a test run.

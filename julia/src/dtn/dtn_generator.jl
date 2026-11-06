@@ -134,15 +134,19 @@ function far_part!(Line::Vector{Float64}, rn_k::Float64, i_far::Vector{Float64},
 end
 
 """
-    generate_dtn(nr, D; refp=10) -> Matrix{Float64}
+    generate_dtn_polar(nr, D; refp=10) -> Matrix{Float64}
+
+The paper's scheme (Galeano-Rios et al. 2017, Appendix B): polar mesh around every node. O(nr^3) with a large constant.
+`generate_dtn(nr, D)` (default method `:single_layer`, see `dtn_single_layer.jl`) builds a matrix for the same operator in
+O(nr^2); `generate_dtn(nr, D; method=:polar)` calls this function.
 
 Computes the `nr x nr` dense Dirichlet-to-Neumann operator for a domain of diameter `D`
 (in disk radii), matching `DTNVectorized.m`'s output. Each row is independent
 (`dtn_row`); rows `4:nr` are computed in parallel via `Threads.@threads :dynamic` —
 dynamic, not static, because the per-row cost grows with the row index.
 """
-function generate_dtn(nr::Int, D::Real; refp::Int = DTN_DEFAULT_REFP)
-    nr >= 4 || error("generate_dtn requires nr >= 4, got nr=$nr")
+function generate_dtn_polar(nr::Int, D::Real; refp::Int = DTN_DEFAULT_REFP)
+    nr >= 4 || error("generate_dtn_polar requires nr >= 4, got nr=$nr")
     q = _DTNQuadrature(nr, D, refp)
     DTN = zeros(nr, nr)
     for k in 1:3
@@ -169,7 +173,7 @@ end
 """
     dtn_row(nr, D, k; refp=10) -> Vector{Float64}
 
-Row `k` of `generate_dtn(nr, D)`, computed on its own. Rows are independent, so this costs
+Row `k` of `generate_dtn_polar(nr, D)`, computed on its own. Rows are independent, so this costs
 about `1/nr` of the full matrix — cheap enough to spot-check single rows of a large cached
 operator (e.g. the nr=2500 production cache) against the generator.
 """

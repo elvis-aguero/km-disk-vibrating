@@ -16,6 +16,7 @@ using LoggingExtras
 include("domain.jl")
 include(joinpath("dtn", "dtn_registry.jl"))
 include(joinpath("dtn", "dtn_generator.jl"))
+include(joinpath("dtn", "dtn_single_layer.jl"))
 include("convergence.jl")           # ConvergenceOptions needed by SimulationParams below
 include("parameters.jl")            # Problem needed by system_matrix.jl below
 include("system_matrix.jl")         # SystemMatrixTemplate needed by lu_cache.jl / solver_dispatch.jl
@@ -36,7 +37,7 @@ export SimulationParams, Problem, Units, build_problem, with_overrides,
        SweepSpec, SweepCaseResult, run_sweep, run_sweep_case, case_id, case_csv_path,
        DTNManifest, DTNCacheEntry, default_registry, resolve_dtn, load_dtn, check_dtn, register!,
        load_manifest, save_manifest, default_manifest_path,
-       generate_dtn, dtn_row,
+       generate_dtn, generate_dtn_polar, generate_dtn_single_layer, dtn_row, default_dtn_method,
        build_domain, contact_weights,
        assemble_system_matrix, assemble_system_matrix!, build_template, materialize!, repatch!, assemble_rhs!,
        LUCache, get_or_factorize!, hit_rate, n_factorizations, lu_factor_count, G_DEDUP_ATOL, mean_iterations,

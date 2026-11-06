@@ -134,7 +134,7 @@ end
 function main(nr)
     s = nr / 8
     rs = collect(0.0:(nr - 1))
-    t_ref = @elapsed Aref = FaradayDisk.generate_dtn(nr, 2.0 * nr)
+    t_ref = @elapsed Aref = FaradayDisk.generate_dtn_polar(nr, 2.0 * nr)
     (A4, _) = dtn_from_single_layer(nr, :cubic; ord = 4)
     (A6, _) = dtn_from_single_layer(nr, :cubic; ord = 6)
     # ring-area weights (unit spacing): W A is symmetric if A is self-adjoint in the L2 inner product of the plane

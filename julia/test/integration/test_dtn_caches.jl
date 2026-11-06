@@ -4,13 +4,13 @@ using MAT
     repo_root = normpath(joinpath(@__DIR__, "..", "..", ".."))
     legacy(folder, file) = Matrix{Float64}(MAT.matread(joinpath(repo_root, "matlab", "1_code", folder, file))["DTNnew345"])
 
-    @testset "dtn_row is exactly a row of generate_dtn" begin
-        M = generate_dtn(50, 20.0)
+    @testset "dtn_row is exactly a row of generate_dtn_polar" begin
+        M = generate_dtn_polar(50, 20.0)
         @test all(dtn_row(50, 20.0, k) == M[k, :] for k in 1:50)
     end
 
     @testset "check_dtn rejects incomplete or non-finite matrices" begin
-        M = generate_dtn(50, 20.0)
+        M = generate_dtn_polar(50, 20.0)
         @test check_dtn(M) === M
         M_partial = copy(M); M_partial[30:end, :] .= 0
         @test_throws ErrorException check_dtn(M_partial)

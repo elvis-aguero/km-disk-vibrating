@@ -33,7 +33,7 @@ nr = 50
 D = 20.0
 
 @info "generating corrected DTN" nr = nr D = D
-DTN = generate_dtn(nr, D)
+DTN = generate_dtn_polar(nr, D)
 size(DTN) == (nr, nr) || error("expected $(nr)x$(nr), got $(size(DTN))")
 
 MAT.matwrite(NEW_PATH, Dict("DTNnew345" => DTN))

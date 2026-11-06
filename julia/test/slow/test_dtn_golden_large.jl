@@ -19,7 +19,7 @@ using MAT
             end
             DTN_legacy = Matrix{Float64}(MAT.matread(d.mat_path)["DTNnew345"])
             t0 = time()
-            DTN_native = generate_dtn(d.nr, d.bathDiameter)
+            DTN_native = generate_dtn_polar(d.nr, d.bathDiameter)
             elapsed = time() - t0
             rel_diff = maximum(abs, DTN_native .- DTN_legacy) / maximum(abs, DTN_legacy)
             @info "large DTN golden comparison" nr = d.nr bathDiameter = d.bathDiameter elapsed_s = elapsed rel_diff = rel_diff

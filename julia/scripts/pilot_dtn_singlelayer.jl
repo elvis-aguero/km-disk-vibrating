@@ -159,7 +159,7 @@ function main(nrs)
     @printf("%-4s %-3s | %-9s | %-9s %-9s %-9s | %-9s %-9s | %-8s %-8s\n", "nr", "s", "ref", "lin tot", "lin Gpart", "FD part", "cub tot", "cub Gpart", "t_ref", "t_new")
     rich = String[]
     for nr in nrs
-        t_ref = nr <= 200 ? (@elapsed Aref = FaradayDisk.generate_dtn(nr, 2.0 * nr)) : NaN
+        t_ref = nr <= 200 ? (@elapsed Aref = FaradayDisk.generate_dtn_polar(nr, 2.0 * nr)) : NaN
         t_new = @elapsed ((Al, Gl) = dtn_from_single_layer(nr, :linear))
         (Ac, Gc) = dtn_from_single_layer(nr, :cubic)
         (Ac6, _) = dtn_from_single_layer(nr, :cubic; ord = 6)
