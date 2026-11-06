@@ -98,7 +98,7 @@ def fig1_gamma(acc, hi, out):
                                cols(s, "echo_ok"), fs.gamma_color(g), "o", linestyle=ls, linewidth=lw, markersize=2.8,
                                label=(f"Γ = {g:g}" if (i, j) == (0, 0) else None))
     h, l = axes[0][0].get_legend_handles_labels()
-    axes[0][1].legend(h, l, frameon=False, loc="upper left", ncol=2, handlelength=1.6)   # empty corner, no data under it
+    axes[0][1].legend(h, l, frameon=False, loc="lower right", ncol=2, handlelength=1.6)   # lower right of the shaker-gain panel: no data there
     fig.legend(handles=fs.key_quality_echo(), loc="lower center", ncol=3, frameon=False, bbox_to_anchor=(0.5, -0.03))
     fig.tight_layout(rect=(0, 0.03, 1, 1))
     fs.save(fig, os.path.join(out, "fig1_gamma_independence"))
@@ -156,7 +156,7 @@ def fig3_numerics(acc, eul, b30, out):
     return excluded
 
 
-def fig4_quality(acc, hi, R, rc, out):
+def fig3_quality(acc, hi, R, rc, out):
     freqs = sorted({r["freq_Hz"] for r in R})
     xi = {f: i for i, f in enumerate(freqs)}
     lines = []
@@ -187,7 +187,7 @@ def fig4_quality(acc, hi, R, rc, out):
     handles.append(Line2D([], [], color="k", lw=1.2, alpha=fs.ALPHA_ECHO_NOT_OK, label="faded: waves can reach the wall"))
     fig.legend(handles=handles, loc="lower center", ncol=6, frameon=False, bbox_to_anchor=(0.5, -0.04))
     fig.tight_layout(rect=(0, 0.04, 1, 1))
-    fs.save(fig, os.path.join(out, "fig4_quality_map"))
+    fs.save(fig, os.path.join(out, "fig3_quality_map"))
 
 
 def main():
@@ -197,12 +197,10 @@ def main():
     p = lambda *a: os.path.join(camp, *a, "gain_phase_all.csv")  # noqa: E731
     acc, hi = load(p("03_accel")), load(p("03b_accel_gt1"))
     R, rc = load(p("04_sweep_R")), load(p("05_sweep_rc"))
-    eul, b30 = load(p("06_numerics", "euler_tres60")), load(p("06_numerics", "bdf2_tres30"))
 
     fig1_gamma(acc, hi, out)
     fig2_beads(R, rc, out)
-    ex3 = fig3_numerics(acc, eul, b30, out)
-    fig4_quality(acc, hi, R, rc, out)
+    fig3_quality(acc, hi, R, rc, out)
 
     cap = f"""# Captions (campaign {os.path.basename(camp.rstrip('/'))})
 
@@ -221,11 +219,6 @@ Note. Same encodings as Figure 1; colour and marker: bead. Quality counts, R: {f
 rc: {fmt_counts(counts(pick(rc, gamma=0.5)))}. The gain axis does not start at zero.
 
 **Figure 3**
-*Time-stepping error of the PTFE (radius R) result at Γ = 0.5, relative to BDF2 with 60 steps per period.*
-Note. Dotted lines: ±2 % and ±2 degrees, the code's own convergence tolerance. Only frequencies that
-are good in both the variant and the reference are shown. Excluded: {ex3 if ex3 else 'none'}.
-
-**Figure 4**
 *Quality of every simulated case.*
 Note. One row per sweep, one marker per frequency. Marker shape and colour give the quality label
 (good, unconverged, wave_cut, subharmonic = the f/2 component exceeds 10 % of the f component, error =
