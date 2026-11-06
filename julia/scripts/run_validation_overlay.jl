@@ -171,7 +171,8 @@ function rmse_against_experiment(sim::Vector{OverlayCase}, exp_amp_path::Abstrac
         end
         for i in eachindex(exp_phase["gamma"])
             if isapprox(exp_phase["gamma"][i], s.gamma; atol = 1e-3) && isapprox(exp_phase["frequency_Hz"][i], s.freq; atol = 1e-6)
-                push!(sq_phase, (exp_phase["value"][i] - s.phaseDiff)^2)
+                # wrap to (-180, 180]: s.phaseDiff is in [0, 360), so a lag of -6 deg is stored as 354
+                push!(sq_phase, (mod(exp_phase["value"][i] - s.phaseDiff + 180, 360) - 180)^2)
             end
         end
     end
