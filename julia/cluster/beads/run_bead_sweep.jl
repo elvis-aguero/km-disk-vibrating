@@ -101,7 +101,10 @@ function main(args)
     end
 
     # Fail early, before any compute, if the DTN cache is missing or incomplete.
-    entry = resolve_dtn(default_registry(), sr, bd)
+    # KMDISK_DTN_FILE=<file.jld2 with key "DTN"> replaces the registered cache (TEST ONLY, e.g. an alternative DtN builder).
+    dtn_override = get(ENV, "KMDISK_DTN_FILE", "")
+    entry = isempty(dtn_override) ? resolve_dtn(default_registry(), sr, bd) :
+            DTNCacheEntry(sr, bd, ceil(Int, sr * bd / 2), 10, abspath(dtn_override), "override via KMDISK_DTN_FILE")
     dtn = load_dtn(entry)      # load_dtn runs check_dtn
     @info "DTN cache loaded" path = entry.path nr = size(dtn, 1)
 
