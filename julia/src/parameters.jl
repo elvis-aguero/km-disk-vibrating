@@ -155,7 +155,7 @@ function with_overrides(params::SimulationParams; kwargs...)
 end
 
 """
-    graded_grid_for(params, freqHz; ppw = 12, q = 1.04, r_in = 2.0, ramp = 20, smooth = 0.1, laplacian_order = 2) -> RadialGrid
+    graded_grid_for(params, freqHz; ppw = 32, q = 1.04, r_in = 2.0, ramp = 20, smooth = 0.1, laplacian_order = 2) -> RadialGrid
 
 Graded grid for the bath frequency `freqHz`: the cap spacing is `dr_max = lambda(f)/ppw` (disk radii), with `lambda` the
 gravity-capillary wavelength of the bath fluid ([`capillary_wavelength_cm`](@ref)), so the shortest wave of the run has `ppw`
@@ -163,7 +163,7 @@ nodes per wavelength in the coarse part. Domain radius `bathDiameter/2`, `spatia
 disk region. Use as `with_overrides(params; grid = graded_grid_for(params, f))`, then build the DtN matrix with
 `generate_dtn(grid)`.
 """
-function graded_grid_for(params::SimulationParams, freqHz::Real; ppw::Real = 12.0, q::Real = 1.04, r_in::Real = 2.0,
+function graded_grid_for(params::SimulationParams, freqHz::Real; ppw::Real = 32.0, q::Real = 1.04, r_in::Real = 2.0,
                          ramp::Real = 20.0, smooth::Real = 0.1, laplacian_order::Int = 2)
     lambda_cm = capillary_wavelength_cm(freqHz, params.bathDensity, params.bathSurfaceTension, params.g)
     dr_max = lambda_cm / ppw / params.diskRadius

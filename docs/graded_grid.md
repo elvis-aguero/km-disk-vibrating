@@ -1,6 +1,12 @@
 # Graded radial grid: fewer nodes, same physics
 
-Status: pilot on branch `pilot/graded-grid`. Nothing here changes the default. The default grid stays uniform (`dr = a/25`, `nr = 8750` in the 25 x 700 domain), and its results must not change.
+Status: experimental, opt-in. The default grid stays uniform (`dr = a/25`, `nr = 8750` in the 25 x 700 domain) and its results do not change (a test asserts bit-identical output). Select a graded grid with `graded_grid_for(params, f)` or `KMDISK_GRADED="ppw,q,order"` in the validation runner. It works with `solverType = :schur` only for `laplacian_order = 2`.
+
+Measured (pilot, criteria in section 5, fixed before the runs):
+* C1, C2, C5 pass. C3 (28 bead rows vs the uniform results, within 0.3 % gain and 0.3 deg phase) passes for second-order Laplacian at 24 and 32 points per wavelength (ppw), and fails at ppw 12 and 16 because one 15 Hz row changes its quality flag from `good` to `subharmonic`, and for the fourth-order Laplacian at every ppw (one 90 Hz row, +0.306 % gain). The default is therefore `ppw = 32`.
+* C4 (30-case experimental validation): ppw 32 passes (0.022068 / 3.0628 deg); ppw 24 fails on amplitude (0.024107 > 0.022578). The change comes from one case, gamma 0.5 at 10 Hz, an unstable run whose fit window is set by a wall-echo cut; the other 29 cases agree with the uniform grid.
+
+Not validated: any frequency below 15 Hz in the physics comparison (no `good` reference row at 10 Hz), domains larger than 25 x 700, a disk other than the ones in the bead campaign and R = 0.2 cm.
 
 ## 1. Why
 

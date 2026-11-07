@@ -221,3 +221,12 @@ into `julia/` — see the path resolution in `scripts/migrate_dtn_caches.jl` and
 | `src/io.jl` | `results_saver` in `solve_motion.m` / the CSV writers in `sweeper.m` |
 | `scripts/run_validation_overlay.jl` | `overlay_validation.py` |
 | `scripts/live_plot.jl` | the `drawnow` debug-plot block in `solve_motion.m` |
+
+## Step solvers
+
+`SimulationParams.solverType` is `:auto` (default), `:lu`, `:gmres` or `:schur`. `:schur` solves the same linear system after
+eliminating the velocity potential with the tridiagonal block, so the cached matrices are `(nr+1) x (nr+1)` instead of
+`(2nr+2) x (2nr+2)` (`julia/src/solver/schur_solver.jl`). It needs a tridiagonal Laplacian (uniform grid, or graded grid with
+`laplacian_order = 2`). Measured at nr = 2500 (one bath-driven case, 31 matrices): 13.1 s against 31.7 s and 2.6 GB against 7.6 GB
+peak memory, CoM traces equal to 3e-13 relative; the 30-case experimental validation gives the same RMSE as `:lu` to every printed
+digit. `:auto` still chooses `:lu`. The sweep scripts read `KMDISK_SOLVER=schur` to select it. Graded radial grids: `docs/graded_grid.md`.
