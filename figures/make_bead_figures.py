@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Figures for the bead campaign (see figstyle.py for the shared encodings).
 
-Usage: python3 figures/make_bead_figures.py <campaign dir> [<resim_glob>]
+Usage: python3 figures/make_bead_figures.py <campaign dir> [<resim_glob> ...]
 <resim_glob> (optional): gain_phase.csv files of the large-domain resimulation (08_resim); their rows replace the
 Γ = 0.5 rows of the R and rc sweeps with the same bead, basis and frequency.
 Reads  <campaign>/{03_accel,03b_accel_gt1,04_sweep_R,05_sweep_rc,06_numerics/*}/gain_phase_all.csv
@@ -202,7 +202,7 @@ def main():
     R, rc = load(p("04_sweep_R")), load(p("05_sweep_rc"))
     if len(sys.argv) > 2:
         new = {}
-        for f in sorted(glob.glob(sys.argv[2])):
+        for f in [g for pat in sys.argv[2:] for g in sorted(glob.glob(pat))]:
             for r in load(f):
                 new[(r["bead"], r["basis"], r["freq_Hz"])] = r
         sub = lambda rows: [new.get((r["bead"], r["basis"], r["freq_Hz"]), r) if abs(r["gamma"] - 0.5) < 1e-9 else r  # noqa: E731
