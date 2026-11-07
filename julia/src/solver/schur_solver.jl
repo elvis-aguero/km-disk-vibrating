@@ -59,6 +59,9 @@ function build_schur_system(problem::Problem, dt::Float64)
     nr, c = problem.nr, problem.cPoints
     no = nr - c
     Δ = problem.laplacian
+    Δ isa Tridiagonal || throw(ArgumentError(
+        "solverType = :schur needs a tridiagonal Laplacian (uniform grid, or graded grid with laplacian_order = 2); " *
+        "got $(typeof(Δ)). Use solverType = :lu, or laplacian_order = 2."))
     Re, Fr, We, Ma = problem.Re, problem.Fr, problem.We, problem.obj_mass
     N = problem.DTN
     m = nr + 1

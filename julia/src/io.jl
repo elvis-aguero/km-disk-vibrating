@@ -13,9 +13,26 @@ produce different folder names for the same physical configuration.
 Port of `sweeper.m`'s post-processing step: for each recorded timestep (column), the max
 `|eta|` over the outermost `ceil(2*spatialResolution)` radial nodes (rows) — used to
 detect when a finite-domain wave reflection has contaminated the "steady state."
+With a graded `grid`, `eta` interpolated at the same physical radii as the uniform grid samples (`boundary_stencil`).
 """
-function compute_eta_boundary(eta_history_cm::AbstractMatrix{<:Real}, spatialResolution::Real)
+function compute_eta_boundary(eta_history_cm::AbstractMatrix{<:Real}, spatialResolution::Real;
+                               grid::Union{Nothing,RadialGrid} = nothing)
     nr, nsteps = size(eta_history_cm)
+    if grid !== nothing && !grid.uniform
+        # graded grid: eta at the same physical radii as the uniform grid samples (cubic interpolation, `boundary_stencil`)
+        j0, w, _ = boundary_stencil(grid)
+        res = Vector{Float64}(undef, nsteps)
+        @inbounds for j in 1:nsteps
+            m = 0.0
+            for k in eachindex(j0)
+                v = w[k, 1] * eta_history_cm[j0[k] + 1, j] + w[k, 2] * eta_history_cm[j0[k] + 2, j] +
+                    w[k, 3] * eta_history_cm[j0[k] + 3, j] + w[k, 4] * eta_history_cm[j0[k] + 4, j]
+                m = max(m, abs(v))
+            end
+            res[j] = m
+        end
+        return res
+    end
     boundary_nodes = min(nr, ceil(Int, 2 * spatialResolution))
     result = Vector{Float64}(undef, nsteps)
     @inbounds for j in 1:nsteps
@@ -121,6 +138,7 @@ function config_digest(params::SimulationParams)
     io = IOBuffer()
     for f in sort(collect(fieldnames(SimulationParams)); by = string)
         v = getfield(params, f)
+        f === :grid && v === nothing && continue      # default grid: keeps the digests of runs made before the field existed
         entry = v isa ConvergenceOptions ?
                 join(("$(cf)=$(getfield(v, cf))" for cf in fieldnames(ConvergenceOptions)), ";") :
                 string(v)
@@ -143,7 +161,10 @@ function _params_to_dict(params::SimulationParams)
     d = Dict{String,Any}()
     for f in fieldnames(SimulationParams)
         v = getfield(params, f)
-        d[string(f)] = if v isa ConvergenceOptions
+        f === :grid && v === nothing && continue
+        d[string(f)] = if v isa RadialGrid
+            string(v)
+        elseif v isa ConvergenceOptions
             Dict{String,Any}(string(cf) => _toml_safe(getfield(v, cf)) for cf in fieldnames(ConvergenceOptions))
         elseif v isa Symbol
             string(v)

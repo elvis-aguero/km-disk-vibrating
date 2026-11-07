@@ -13,6 +13,7 @@ using LoggingExtras
 # Include order matters: struct field types and function-signature type annotations must
 # already exist at include time (unlike plain function-body references, which only need
 # to resolve by call time). See the comment in each file for what it depends on.
+include("grid.jl")                  # RadialGrid needed by domain.jl, parameters.jl and the DtN builders
 include("domain.jl")
 include(joinpath("dtn", "dtn_registry.jl"))
 include(joinpath("dtn", "dtn_generator.jl"))
@@ -40,6 +41,7 @@ export SimulationParams, Problem, Units, build_problem, with_overrides,
        load_manifest, save_manifest, default_manifest_path,
        generate_dtn, generate_dtn_polar, generate_dtn_single_layer, dtn_row, default_dtn_method,
        build_domain, contact_weights,
+       RadialGrid, uniform_grid, graded_grid, graded_grid_for, capillary_wavelength_cm, boundary_node_count, boundary_stencil, wall_radius,
        assemble_system_matrix, assemble_system_matrix!, build_template, materialize!, repatch!, assemble_rhs!,
        LUCache, get_or_factorize!, hit_rate, n_factorizations, lu_factor_count, G_DEDUP_ATOL, mean_iterations,
        StepPhase, step_phase, g_prefactor, force_term, resolve_solver_type, estimated_lu_cache_bytes, estimated_schur_bytes, build_schur_system, schur_solve!, solve_startup!, SchurStepSolver, build_step_solver, implicit_dt,

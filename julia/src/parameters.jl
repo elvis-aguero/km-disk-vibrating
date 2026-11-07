@@ -34,6 +34,7 @@ Base.@kwdef struct SimulationParams
     startStatic::Bool = true
     earlyStop::Bool = true
     convergence::ConvergenceOptions = ConvergenceOptions()
+    grid::Union{Nothing,RadialGrid} = nothing  # nothing = today's uniform grid (spatialResolution, bathDiameter); else see grid.jl
 end
 
 struct Units
@@ -44,14 +45,14 @@ struct Units
     force::Float64
 end
 
-struct Problem
+struct Problem{L<:AbstractMatrix{Float64}}
     Re::Float64
     Fr::Float64
     We::Float64
     nr::Int
     cPoints::Int
     dr::Float64
-    laplacian::Tridiagonal{Float64,Vector{Float64}}
+    laplacian::L                               # Tridiagonal (uniform grid, or graded grid with laplacian_order = 2) or dense banded
     DTN::Matrix{Float64}
     contact_weights::Vector{Float64}           # area weights of the contact nodes (see contact_weights)
     force_amplitude::Float64                    # force_adim
@@ -66,6 +67,7 @@ struct Problem
     effective_w::Float64                          # dimensionless angular frequency governing periodicity
     v_bath_0::Float64                             # initial CoM velocity offset (v_bath_0_adim)
     units::Units
+    r::Vector{Float64}                            # node radii, disk radii (r[i] = (i-1) dr on the uniform grid)
 end
 
 """
@@ -118,17 +120,21 @@ function build_problem(params::SimulationParams, dtn::AbstractMatrix{<:Real})
 
     params.timeScheme in (:euler, :bdf2) ||
         throw(ArgumentError("timeScheme must be :euler or :bdf2, got :$(params.timeScheme)"))
-    dom = build_domain(params.bathDiameter, params.spatialResolution)
+    grid = params.grid
+    grid === nothing || grid.sr == params.spatialResolution || throw(ArgumentError(
+        "grid has $(grid.sr) nodes per disk radius but spatialResolution is $(params.spatialResolution)"))
+    dom = grid === nothing ? build_domain(params.bathDiameter, params.spatialResolution) : build_domain(grid)
+    node_r = grid === nothing ? [dom.dr * (i - 1) for i in 1:dom.nr] : dom.r
     cPoints = Int(params.spatialResolution) + 1
     size(dtn, 1) == dom.nr || throw(DimensionMismatch(
         "DTN matrix has size $(size(dtn)) but domain requires nr=$(dom.nr) " *
-        "(spatialResolution=$(params.spatialResolution), bathDiameter=$(params.bathDiameter))"))
+        "(spatialResolution=$(params.spatialResolution), bathDiameter=$(params.bathDiameter), grid=$(grid))"))
     weights = contact_weights(cPoints, dom.dr)
 
     return Problem(Re, Fr, We, dom.nr, cPoints, dom.dr, dom.Laplacian, Matrix{Float64}(dtn),
                    weights, force_adim, freq_adim, bath_forcing_amplitude,
                    bath_freq_adim, phase_diff_rad, surface_force_adim, obj_mass_adim,
-                   stepsPerCycle, dt, effective_w_adim, v_bath_0_adim, units)
+                   stepsPerCycle, dt, effective_w_adim, v_bath_0_adim, units, node_r)
 end
 
 """
@@ -146,4 +152,21 @@ function with_overrides(params::SimulationParams; kwargs...)
         values[k] = v
     end
     return SimulationParams((values[f] for f in fields)...)
+end
+
+"""
+    graded_grid_for(params, freqHz; ppw = 12, q = 1.04, r_in = 2.0, ramp = 20, smooth = 0.1, laplacian_order = 2) -> RadialGrid
+
+Graded grid for the bath frequency `freqHz`: the cap spacing is `dr_max = lambda(f)/ppw` (disk radii), with `lambda` the
+gravity-capillary wavelength of the bath fluid ([`capillary_wavelength_cm`](@ref)), so the shortest wave of the run has `ppw`
+nodes per wavelength in the coarse part. Domain radius `bathDiameter/2`, `spatialResolution` nodes per disk radius in the
+disk region. Use as `with_overrides(params; grid = graded_grid_for(params, f))`, then build the DtN matrix with
+`generate_dtn(grid)`.
+"""
+function graded_grid_for(params::SimulationParams, freqHz::Real; ppw::Real = 12.0, q::Real = 1.04, r_in::Real = 2.0,
+                         ramp::Real = 20.0, smooth::Real = 0.1, laplacian_order::Int = 2)
+    lambda_cm = capillary_wavelength_cm(freqHz, params.bathDensity, params.bathSurfaceTension, params.g)
+    dr_max = lambda_cm / ppw / params.diskRadius
+    return graded_grid(params.spatialResolution, params.bathDiameter / 2; q = q, dr_max = dr_max, r_in = r_in, ramp = ramp,
+                       smooth = smooth, laplacian_order = laplacian_order)
 end

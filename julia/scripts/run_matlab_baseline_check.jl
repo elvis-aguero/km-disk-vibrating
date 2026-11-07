@@ -34,6 +34,28 @@ const AMPLITUDE_RMSE_MUST_BEAT = 1.09          # the buggy sweep's amplitude RMS
 const PHASE_RMSE_DEG_MUST_BEAT = 100.0         # the buggy sweep's phase RMSE was ~285 deg — must not be anywhere near it
 
 """
+    run_graded_sweeps(spec, outdir, graded)
+
+The same sweep on a graded radial grid (docs/graded_grid.md), one `run_sweep` per frequency because the cap spacing follows the
+wavelength: `graded = "<ppw>,<q>,<laplacian_order>"`. The DtN matrix of each grid is built in process. All cases land in the same
+`outdir/cases`, so the overlay and the RMSE are computed as for the uniform sweep.
+"""
+function run_graded_sweeps(spec::SweepSpec, outdir::AbstractString, graded::AbstractString)
+    ppw_s, q_s, ord_s = split(graded, ',')
+    nodes = Int[]
+    for f in spec.bathFrequenciesHz
+        grid = graded_grid_for(spec.fixed, f; ppw = parse(Float64, ppw_s), q = parse(Float64, q_s), laplacian_order = parse(Int, ord_s))
+        push!(nodes, grid.nr)
+        t0 = time()
+        dtn = generate_dtn(grid)
+        @info "graded grid" freq_Hz = f grid = string(grid) dtn_build_s = time() - t0
+        run_sweep(SweepSpec(gammas = spec.gammas, bathFrequenciesHz = [f], fixed = with_overrides(spec.fixed; grid = grid)), outdir; dtn = dtn)
+    end
+    println("graded grid nodes per frequency (", join(spec.bathFrequenciesHz, ","), " Hz): ", join(nodes, ","))
+    return nodes
+end
+
+"""
     run_matlab_baseline_check(; outdir=nothing) -> NamedTuple
 
 Runs the full sweep, computes the overlay RMSE against experiment, and returns
@@ -52,7 +74,13 @@ function run_matlab_baseline_check(; outdir::Union{Nothing,String} = nothing)
     # KMDISK_DTN_FILE=<file.jld2 with key "DTN"> replaces the registered DtN cache (test of an alternative construction).
     dtn_file = get(ENV, "KMDISK_DTN_FILE", "")
     dtn = isempty(dtn_file) ? nothing : FaradayDisk.check_dtn(JLD2.load(dtn_file, "DTN"); source = dtn_file)
-    run_sweep(default_sweep_spec(), outdir; dtn = dtn)
+    # KMDISK_GRADED="<ppw>,<q>,<laplacian_order>" runs the sweep on graded grids instead (DtN matrices built in process).
+    graded = get(ENV, "KMDISK_GRADED", "")
+    if isempty(graded)
+        run_sweep(default_sweep_spec(), outdir; dtn = dtn)
+    else
+        run_graded_sweeps(default_sweep_spec(), outdir, graded)
+    end
     cases = compute_sim_overlay(outdir)
     isempty(cases) && error("baseline check produced no valid steady-state cases — cannot compute RMSE")
 

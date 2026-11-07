@@ -46,6 +46,14 @@ using LinearAlgebra, Random
         @test norm(xs - xd) / norm(xd) <= 1e-9
     end
 
+    @testset "a banded (non-tridiagonal) Laplacian is refused with a clear error" begin
+        pg = SimulationParams(bathDiameter = 40.0, spatialResolution = 5.0, temporalResolution = 20)
+        gg = graded_grid_for(pg, 40.0; ppw = 12.0, q = 1.05, laplacian_order = 4)
+        prob4 = build_problem(with_overrides(pg; grid = gg), generate_dtn(gg))
+        @test !(prob4.laplacian isa Tridiagonal)
+        @test_throws ArgumentError build_schur_system(prob4, prob4.dt)
+    end
+
     @testset "memory estimate: about one quarter of the full-system LU cache" begin
         r = estimated_schur_bytes(31, 8750) / estimated_lu_cache_bytes(31, 2 * 8750 + 2)
         @test 0.24 < r < 0.30
