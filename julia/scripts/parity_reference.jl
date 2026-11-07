@@ -16,7 +16,16 @@ top-level string directly followed by a non-declaration statement here would fai
 parse. =#
 
 import Pkg
-Pkg.activate(joinpath(@__DIR__, ".."))
+# Project choice: KM_JULIA_PROJECT overrides; on GitHub CI (GITHUB_ACTIONS=true) use julia/ (built by
+# julia-buildpkg); anywhere else (cluster, no Manifest at julia/) use julia/scripts, which is
+# develop'd onto the package in place exactly as _bootstrap.jl does.
+let proj = get(ENV, "KM_JULIA_PROJECT", get(ENV, "GITHUB_ACTIONS", "") == "true" ? joinpath(@__DIR__, "..") : @__DIR__)
+    Pkg.activate(proj)
+    if !haskey(Pkg.project().dependencies, "FaradayDisk")
+        Pkg.develop(path = joinpath(@__DIR__, ".."))
+    end
+    abspath(proj) == abspath(@__DIR__) && Pkg.instantiate()
+end
 using FaradayDisk
 using Logging
 global_logger(Logging.NullLogger())  # keep stdout clean for the caller to parse
