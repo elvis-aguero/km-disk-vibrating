@@ -245,18 +245,26 @@ function part_C7(outdir, t_start, budget_min)
 end
 
 # ------------------------------------------------------------------------------------------------ G: C7b
-# any production row (any quality) of the campaign CSV: (domain, bead, basis, f) => (gain, phase, quality, wall_echo_pred)
+# any production row (any quality) with gamma 0.5: (domain, bead, basis, f) => (gain, phase, quality, wall_echo_pred); blank numbers are NaN.
+# 25x700 rows come from the main CSV; 25x200 rows from the archive copy made before the resimulation replaced them (no `domain` column).
+const REF_CSV_25x200 = "/oscar/data/dharri15/eaguerov/Github/km-disk-vibrating/output/beads/campaign_20261104_174348/deliverables/archive/bead_gain_phase_bdf2_25x200_only.csv"
+_pf(s) = isempty(strip(s)) ? NaN : parse(Float64, s)
 function read_ref_any()
-    lines = readlines(REF_CSV)
-    hdr = split(lines[1], ',')
     ref = Dict{Tuple{String,String,String,Float64},Tuple{Float64,Float64,String,Float64}}()
-    for ln in lines[2:end]
-        isempty(strip(ln)) && continue
-        v = split(ln, ',')
-        row = Dict(hdr[i] => v[i] for i in eachindex(hdr))
-        row["role"] == "production" || continue
-        ref[(row["domain"], row["bead"], row["radius_basis"], parse(Float64, row["freq_Hz"]))] =
-            (parse(Float64, row["gain_lab"]), parse(Float64, row["phase_lag_lab_deg"]), row["quality"], parse(Float64, row["wall_echo_pred"]))
+    for (path, fixed_domain) in ((REF_CSV, nothing), (REF_CSV_25x200, "25x200"))
+        lines = readlines(path)
+        hdr = split(lines[1], ',')
+        for ln in lines[2:end]
+            isempty(strip(ln)) && continue
+            v = split(ln, ',')
+            row = Dict(hdr[i] => v[i] for i in eachindex(hdr) if i <= length(v))
+            get(row, "role", "") == "production" || continue
+            dom = fixed_domain === nothing ? row["domain"] : fixed_domain
+            fixed_domain === nothing && dom != "25x700" && continue
+            _pf(get(row, "gamma", "0.5")) == 0.5 || continue
+            ref[(dom, row["bead"], row["radius_basis"], _pf(row["freq_Hz"]))] =
+                (_pf(get(row, "gain_lab", "")), _pf(get(row, "phase_lag_lab_deg", "")), get(row, "quality", ""), _pf(get(row, "wall_echo_pred", "")))
+        end
     end
     return ref
 end
