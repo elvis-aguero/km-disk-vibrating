@@ -98,7 +98,8 @@ end
 
 # ------------------------------------------------------------------------------------------------ C: C3
 function run_graded_case(dom, key, basis, f, cfg, outroot; bd = dom == "25x200" ? 200.0 : 700.0, wall_zone = 0.0)
-    order, ppw, q = cfg
+    order, ppw, q = cfg[1], cfg[2], cfg[3]
+    length(cfg) > 3 && (wall_zone = cfg[4])        # cfg = (order, ppw, q[, wall_zone])
     params = bead_params(key, basis, 25.0, bd, :bdf2, 60)
     t0 = time()
     grid = graded_grid_for(params, f; ppw = ppw, q = q, laplacian_order = order, wall_zone = wall_zone)
@@ -118,7 +119,7 @@ function run_graded_case(dom, key, basis, f, cfg, outroot; bd = dom == "25x200" 
             gain = Float64(row["gain_lab"]), phase = Float64(row["phase_lag_lab_deg"]), wave_cut = row["wave_cut"], echo = Float64(row["echo_pred"]))
 end
 
-function part_C3(outdir, t_start, budget_min)
+function part_C3(outdir, t_start, budget_min; configs = C3_CONFIGS)
     println("\n=== C3: graded vs uniform rows (criterion per row: |d gain| <= 0.3 %, |d phase| <= 0.3 deg; all 28 rows must pass) ===")
     ref = read_ref()
     cases = [c for c in C3_CASES if haskey(ref, (c[1], BEAD_CSV_NAME[c[2]], c[3], c[4]))]
@@ -130,13 +131,13 @@ function part_C3(outdir, t_start, budget_min)
         println(io, "order,ppw,q,domain,bead,basis,freq_Hz,nr,wall_cm,t_grid_s,t_dtn_s,t_run_s,lu_bytes,quality,gain,gain_ref,dgain_pct,phase,phase_ref,dphase_deg,pass")
     end
     summary = Tuple[]
-    for cfg in C3_CONFIGS
+    for cfg in configs
         if (time() - t_start) / 60 > budget_min
             println("BUDGET REACHED: configuration ", cfg, " and later ones not started")
             break
         end
-        order, ppw, q = cfg
-        println("\n--- config: laplacian_order=$order ppw=$ppw q=$q ---")
+        order, ppw, q = cfg[1], cfg[2], cfg[3]
+        println("\n--- config: laplacian_order=$order ppw=$ppw q=$q wall_zone=$(length(cfg) > 3 ? cfg[4] : 0.0) ---")
         @printf("%-7s %-6s %-5s %-4s | %-5s %-8s %-8s | %-8s %-9s %-9s | %-9s %-9s %-8s %-5s\n", "domain", "bead", "basis", "f", "nr", "t_dtn_s", "t_run_s",
                 "quality", "gain", "dgain_%", "phase", "dphase", "", "pass")
         npass = 0
@@ -197,14 +198,16 @@ end
 
 # ------------------------------------------------------------------------------------------------ E: C3b (5 Hz rows)
 const C3B_CONFIGS = [(2, 24.0, 1.04), (2, 32.0, 1.04)]
+# with the fine wall zone (order, ppw, q, wall_zone in disk radii): parts I (C3) and J (C3b)
+const WZ_CONFIGS = [(2, 32.0, 1.04, 2.0), (2, 24.0, 1.04, 2.0)]
 
-function part_C3b(outdir, t_start, budget_min)
+function part_C3b(outdir, t_start, budget_min; configs = C3B_CONFIGS)
     println("\n=== C3b: every quality=good 5 Hz row of the 25x700 domain; same criterion as C3 (|d gain| <= 0.3 %, |d phase| <= 0.3 deg) ===")
     ref = read_ref()
     inv = Dict(v => k for (k, v) in BEAD_CSV_NAME)
     cases = [(d, inv[b], k, f) for (d, b, k, f) in sort(collect(keys(ref))) if d == "25x700" && f == 5.0]
     println("rows: ", length(cases), " ", cases)
-    for cfg in C3B_CONFIGS
+    for cfg in configs
         (time() - t_start) / 60 > budget_min && (println("BUDGET REACHED: C3b config ", cfg, " not started"); break)
         println("\n--- config (order, ppw, q) = ", cfg, " ---")
         npass = 0
@@ -352,6 +355,8 @@ function pilot_main()
     occursin('F', parts) && part_C7(outdir, t_start, budget_min)
     occursin('G', parts) && part_C7b(outdir, t_start, budget_min)
     occursin('H', parts) && part_C7c(outdir, t_start, budget_min)
+    occursin('I', parts) && part_C3(outdir, t_start, budget_min; configs = WZ_CONFIGS)
+    occursin('J', parts) && part_C3b(outdir, t_start, budget_min; configs = WZ_CONFIGS)
     println("graded_pilot done in $(round((time() - t_start) / 60; digits = 1)) min")
 end
 

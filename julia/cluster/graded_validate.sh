@@ -12,7 +12,7 @@
 # (1) The fast test tier (362 existing tests + the new graded-grid tests). (2) C4 of docs/graded_grid.md: the 30-case experimental
 # validation (50 x 100 domain, disk R = 0.2 cm, BDF2) on graded grids, one run per configuration "<ppw>,<q>,<laplacian_order>".
 # From the repo (worktree) root:   mkdir -p output/graded && sbatch julia/cluster/graded_validate.sh
-# Required: C4_CONFIGS="12,1.04,4 16,1.04,2" (ppw,q,order). Optional: SKIP_TESTS=1, BUDGET_MIN=100.
+# Required: C4_CONFIGS="12,1.04,4 16,1.04,2" (ppw,q,order[,wall_zone]). Optional: SKIP_TESTS=1, BUDGET_MIN=100.
 # Criterion (fixed before the run): amplitude RMSE <= 0.022578 and wrapped-phase RMSE <= 3.1557 deg (uniform single-layer: 0.022135 / 3.0557).
 # Resources (ESTIMATES, not measured): the test tier takes tens of minutes (run_tests.sh); one C4 configuration, 30 cases at nr 300-700,
 # about 5-10 min including the plots; 32G is far more than needed.
@@ -38,7 +38,7 @@ fi
 : "${C4_CONFIGS:?set C4_CONFIGS, e.g. C4_CONFIGS=\"12,1.04,4 16,1.04,2\" (ppw,q,order per entry)}"
 for cfg in $C4_CONFIGS; do
     if (( ($(date +%s) - T0) / 60 > ${BUDGET_MIN:-100} )); then echo "BUDGET REACHED: C4 config $cfg not started"; continue; fi
-    echo "=== C4 config (ppw,q,order) = $cfg"
+    echo "=== C4 config (ppw,q,order[,wall_zone]) = $cfg"
     KMDISK_TIME_SCHEME=bdf2 KMDISK_GRADED="$cfg" julia -t "$SLURM_CPUS_PER_TASK" --project=julia/scripts \
         julia/scripts/run_matlab_baseline_check.jl "$OUT/c4_${cfg//,/_}" 2>&1 | tail -n 8
     echo "C4 criterion: amplitude RMSE <= 0.022578 and phase RMSE <= 3.1557 deg (config $cfg)"
