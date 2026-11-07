@@ -23,7 +23,7 @@ isdefined(Main, :_gg_exact_packet) || include(joinpath(@__DIR__, "..", "..", "sc
     end
 
     @testset "C1: graded DtN vs exact wave packet, compared with a uniform grid of spacing dr_max" begin
-        sr, R, q, dmax, rin, ppw = 4.0, 40.0, 1.05, 1.0, 2.0, 10.0
+        sr, R, q, dmax, rin, ppw = 4.0, 40.0, 1.05, 1.0, 2.25, 10.0   # r_in >= 1 + 5 dr0 = 2.25
         g = graded_grid(sr, R; q = q, dr_max = dmax, r_in = rin)
         ug = uniform_grid(1 / dmax, R)
         lam = ppw * dmax
