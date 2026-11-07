@@ -6,13 +6,17 @@ lab and shaker frames (`gain_phase.jl`).
 Usage (key=value arguments, order free):
   julia -t N julia/cluster/beads/run_bead_sweep.jl \
       outdir=<dir> gammas=0.1,0.5 [beads=ptfe,al32,al16,nylon] [basis=R|rc] [scheme=bdf2|euler] \
-      [freqs=grid|<comma list in Hz>] [domain=25,200] [tres=60] [stage=<label>] [require_finite=true]
+      [freqs=grid|<comma list in Hz>] [domain=25,200] [tres=60] [stage=<label>] [require_finite=true] \
+      [grid=<ppw>,<q>,<laplacian_order>]
 
   gammas     required: there is deliberately no default.
   basis      R  = diskRadius is the actual bead radius; rc = the contact-line radius.
   domain     "<spatialResolution>,<bathDiameter>": resolves the DTN cache in the manifest.
   tres       steps per bath period (reference runs used 60).
   require_finite=true  makes the script fail if any case is error/missing/nonfinite (smoke tests).
+  grid       graded radial grid (docs/graded_grid.md), e.g. grid=12,1.04,4: nodes per wavelength at the cap, growth per node, Laplacian
+             order (2 = tridiagonal). Needs exactly ONE frequency (the cap spacing follows the wavelength). The DtN matrix is built
+             in process (no cache, KMDISK_DTN_FILE is ignored); `domain` still gives nodes per disk radius and the diameter.
 
 Failure policy: a failing case never stops the campaign. `run_sweep_case` catches errors per
 case; a failing bead never stops the other beads; post-processing catches errors per case.
@@ -102,17 +106,21 @@ function main(args)
 
     # Fail early, before any compute, if the DTN cache is missing or incomplete.
     # KMDISK_DTN_FILE=<file.jld2 with key "DTN"> replaces the registered cache (TEST ONLY, e.g. an alternative DtN builder).
+    gridspec = get(kv, "grid", "")
+    grid_mode = !isempty(gridspec)
+    grid_mode && length(freqs) != 1 && error("grid=... needs exactly one frequency (freqs=<f>), got $(length(freqs))")
     dtn_override = get(ENV, "KMDISK_DTN_FILE", "")
-    entry = isempty(dtn_override) ? resolve_dtn(default_registry(), sr, bd) :
+    entry = grid_mode ? DTNCacheEntry(sr, bd, 0, 10, "(built in process, graded grid)", "graded grid") :
+            isempty(dtn_override) ? resolve_dtn(default_registry(), sr, bd) :
             DTNCacheEntry(sr, bd, ceil(Int, sr * bd / 2), 10, abspath(dtn_override), "override via KMDISK_DTN_FILE")
-    dtn = load_dtn(entry)      # load_dtn runs check_dtn
+    dtn = grid_mode ? zeros(0, 0) : load_dtn(entry)      # load_dtn runs check_dtn
     @info "DTN cache loaded" path = entry.path nr = size(dtn, 1)
 
     git = git_info()
     config = Dict{String,Any}(
         "stage" => stage, "basis" => basis, "scheme" => String(scheme), "temporalResolution" => tres,
         "domain" => domain, "spatialResolution" => sr, "bathDiameter" => bd, "dtn_file" => entry.path,
-        "gammas" => gammas, "freqs_Hz" => freqs, "beads" => beads,
+        "gammas" => gammas, "freqs_Hz" => freqs, "beads" => beads, "grid" => gridspec,
         "fluid" => Dict{String,Any}("density_g_cm3" => BEAD_FLUID.density, "surface_tension_dyne_cm" => BEAD_FLUID.surface_tension,
                                     "viscosity_St" => BEAD_FLUID.viscosity, "g_cm_s2" => BEAD_FLUID.g),
         "git_commit" => git.sha, "git_dirty" => git.dirty, "julia_version" => string(VERSION),
@@ -129,10 +137,20 @@ function main(args)
     all_rows = Dict{String,Any}[]
     for key in beads
         params = bead_params(key, basis, sr, bd, scheme, tres)
+        dtn_bead = dtn
+        if grid_mode
+            ppw_s, q_s, ord_s = split(gridspec, ',')
+            g = graded_grid_for(params, freqs[1]; ppw = parse(Float64, ppw_s), q = parse(Float64, q_s), laplacian_order = parse(Int, ord_s))
+            params = with_overrides(params; grid = g)
+            t0 = time()
+            dtn_bead = generate_dtn(g)
+            t_dtn = time() - t0
+            @info "graded grid" bead = key grid = string(g) dtn_build_s = t_dtn
+        end
         beaddir = joinpath(outroot, key)
         @info "bead sweep starting" bead = key basis = basis diskRadius_cm = params.diskRadius diskMass_g = params.diskMass scheme = scheme n_cases = length(gammas) * length(freqs)
         try
-            run_sweep(SweepSpec(gammas = gammas, bathFrequenciesHz = freqs, fixed = params), beaddir; dtn = dtn)
+            run_sweep(SweepSpec(gammas = gammas, bathFrequenciesHz = freqs, fixed = params), beaddir; dtn = dtn_bead)
         catch err
             @error "sweep aborted for this bead; continuing with the next bead" bead = key exception = (err, catch_backtrace())
         end

@@ -13,10 +13,12 @@ produce different folder names for the same physical configuration.
 Port of `sweeper.m`'s post-processing step: for each recorded timestep (column), the max
 `|eta|` over the outermost `ceil(2*spatialResolution)` radial nodes (rows) — used to
 detect when a finite-domain wave reflection has contaminated the "steady state."
+With a graded `grid`, the nodes within 2 disk radii of the wall, at least 3 (`boundary_node_count`).
 """
-function compute_eta_boundary(eta_history_cm::AbstractMatrix{<:Real}, spatialResolution::Real)
+function compute_eta_boundary(eta_history_cm::AbstractMatrix{<:Real}, spatialResolution::Real;
+                               grid::Union{Nothing,RadialGrid} = nothing)
     nr, nsteps = size(eta_history_cm)
-    boundary_nodes = min(nr, ceil(Int, 2 * spatialResolution))
+    boundary_nodes = grid === nothing ? min(nr, ceil(Int, 2 * spatialResolution)) : boundary_node_count(grid)
     result = Vector{Float64}(undef, nsteps)
     @inbounds for j in 1:nsteps
         result[j] = maximum(abs, @view eta_history_cm[(nr - boundary_nodes + 1):nr, j])
@@ -121,6 +123,7 @@ function config_digest(params::SimulationParams)
     io = IOBuffer()
     for f in sort(collect(fieldnames(SimulationParams)); by = string)
         v = getfield(params, f)
+        f === :grid && v === nothing && continue      # default grid: keeps the digests of runs made before the field existed
         entry = v isa ConvergenceOptions ?
                 join(("$(cf)=$(getfield(v, cf))" for cf in fieldnames(ConvergenceOptions)), ";") :
                 string(v)
@@ -143,7 +146,10 @@ function _params_to_dict(params::SimulationParams)
     d = Dict{String,Any}()
     for f in fieldnames(SimulationParams)
         v = getfield(params, f)
-        d[string(f)] = if v isa ConvergenceOptions
+        f === :grid && v === nothing && continue
+        d[string(f)] = if v isa RadialGrid
+            string(v)
+        elseif v isa ConvergenceOptions
             Dict{String,Any}(string(cf) => _toml_safe(getfield(v, cf)) for cf in fieldnames(ConvergenceOptions))
         elseif v isa Symbol
             string(v)

@@ -135,3 +135,134 @@ function generate_dtn(nr::Int, D::Real; method::Symbol = :single_layer, order::I
     method === :polar && return generate_dtn_polar(nr, D; refp = refp)
     throw(ArgumentError("method must be :single_layer or :polar, got :$method"))
 end
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Non-uniform nodes (graded grid, `docs/graded_grid.md`). Same construction in physical units (disk radii): panels
+# [r_q, r_{q+1}] of width h_q, cubic Lagrange interpolation through r_{q-1}..r_{q+2} written in t = (r' - r_q)/h_q, graded
+# substitution on the two singular panels, N = -Δ_H G with the mapped stencil Δ g = g_ξξ/s² + (1/(r s) - s'/s³) g_ξ.
+# ---------------------------------------------------------------------------------------------------------------------
+
+# I[n+1] = ∫_{panel} kernel(r, r') t^n h dt, n = 0..3, `t = (r' - a)/h`. For the singular panels the distance |r' - r| comes from
+# the substitution (h u^4 or h (1-u)^4), not from subtracting two nearby radii.
+function _sl_panel_moments_grid!(I::Vector{Float64}, r::Float64, a::Float64, h::Float64, sing::Symbol)
+    fill!(I, 0.0)
+    xs, ws = _SL_GL
+    for k in eachindex(xs)
+        u = (xs[k] + 1) / 2
+        if sing === :left                       # r = a
+            t, dt, d = u^4, 4u^3, h * u^4
+        elseif sing === :right                  # r = a + h
+            v = (1 - u)^4
+            t, dt, d = 1 - v, 4 * (1 - u)^3, -h * v
+        else
+            t, dt = u, 1.0
+            d = a + h * t - r
+        end
+        rp = a + h * t
+        kv = (2 / pi) * rp / (r + rp) * _ellipK_b(abs(d) / (r + rp))
+        wt = (ws[k] / 2) * dt * kv * h
+        p = 1.0
+        for n in 1:4
+            I[n] += wt * p
+            p *= t
+        end
+    end
+    return I
+end
+
+# Matrix of S on nodal values (rows: nodes 0..nr+2, columns: nodes 0..nr-1), physical units.
+function _sl_single_layer_matrix_grid(g::RadialGrid)
+    nr, r = g.nr, g.r
+    node(j) = j < 0 ? -r[-j + 1] : r[j + 1]            # odd extension about the axis
+    LC = zeros(4, 4, nr - 1)                           # LC[n, p, q+1]: coefficient of t^(n-1) of the cubic of node offset p-2
+    hq = zeros(nr - 1)
+    for q in 0:(nr - 2)
+        a = r[q + 1]
+        h = r[q + 2] - a
+        hq[q + 1] = h
+        x = ((node(q - 1) - a) / h, 0.0, (r[q + 2] - a) / h, (r[q + 3] - a) / h)
+        for p in 1:4
+            c = [1.0]
+            den = 1.0
+            for j in 1:4
+                j == p && continue
+                xj = x[j]
+                c = [(i <= length(c) ? -xj * c[i] : 0.0) + (i > 1 ? c[i - 1] : 0.0) for i in 1:(length(c) + 1)]
+                den *= (x[p] - xj)
+            end
+            LC[:, p, q + 1] .= c ./ den
+        end
+    end
+    G = zeros(nr + 3, nr)
+    Threads.@threads :dynamic for m in 0:(nr + 2)
+        I = zeros(4)
+        rm = r[m + 1]
+        for q in 0:(nr - 2)
+            sing = m == q ? :left : (m == q + 1 ? :right : :none)
+            _sl_panel_moments_grid!(I, rm, r[q + 1], hq[q + 1], sing)
+            for (p, tp) in enumerate((-1, 0, 1, 2))
+                col = abs(q + tp) + 1                  # even extension about r = 0
+                col > nr && continue                   # φ = 0 beyond the last node
+                G[m + 1, col] += LC[1, p, q + 1] * I[1] + LC[2, p, q + 1] * I[2] + LC[3, p, q + 1] * I[3] + LC[4, p, q + 1] * I[4]
+            end
+        end
+    end
+    return G
+end
+
+"""
+    generate_dtn_single_layer(grid::RadialGrid; order=6, force_general=false) -> Matrix{Float64}
+
+DtN matrix for a [`RadialGrid`](@ref), physical units (disk radii), `order` the finite-difference order (4 or 6) of the
+mapped Laplacian applied to `S φ`. For a uniform grid this calls `generate_dtn_single_layer(nr, 2R; order)` unchanged
+(bit-identical); `force_general = true` runs the non-uniform routine on it instead (used by the tests).
+"""
+function generate_dtn_single_layer(grid::RadialGrid; order::Int = 6, force_general::Bool = false)
+    haskey(_SL_STENCIL, order) || throw(ArgumentError("order must be 4 or 6, got $order"))
+    if grid.uniform && !force_general
+        return generate_dtn_single_layer(grid.nr, 2 * grid.R_req; order = order)
+    end
+    nr = grid.nr
+    nr >= 8 || error("generate_dtn_single_layer requires nr >= 8, got nr=$nr")
+    G = _sl_single_layer_matrix_grid(grid)
+    st = _SL_STENCIL[order]
+    h = length(st.c2) ÷ 2
+    A = zeros(nr, nr)
+    Threads.@threads :dynamic for m in 0:(nr - 1)
+        s = grid.s[m + 1]
+        if m == 0                                           # Δ_H g(0) = 2 g_ξξ(0)/s², even symmetry
+            for j in 1:nr
+                acc = 0.0
+                for k in -h:h
+                    acc += st.c2[k + h + 1] * G[abs(k) + 1, j]
+                end
+                A[1, j] = -2 * acc / s^2
+            end
+        else
+            A2 = 1 / s^2
+            A1 = 1 / (grid.r[m + 1] * s) - grid.sp[m + 1] / s^3
+            for j in 1:nr
+                acc = 0.0
+                for k in -h:h
+                    acc += (A2 * st.c2[k + h + 1] + A1 * st.c1[k + h + 1]) * G[abs(m + k) + 1, j]
+                end
+                A[m + 1, j] = -acc
+            end
+        end
+    end
+    return A
+end
+
+"""
+    generate_dtn(grid::RadialGrid; method=:single_layer, order=6, force_general=false) -> Matrix{Float64}
+
+DtN matrix of a radial grid (in process, no cache). `method = :polar` needs a uniform grid.
+"""
+function generate_dtn(grid::RadialGrid; method::Symbol = :single_layer, order::Int = 6, force_general::Bool = false)
+    method === :single_layer && return generate_dtn_single_layer(grid; order = order, force_general = force_general)
+    if method === :polar
+        grid.uniform || throw(ArgumentError("method :polar needs a uniform grid"))
+        return generate_dtn_polar(grid.nr, 2 * grid.R_req)
+    end
+    throw(ArgumentError("method must be :single_layer or :polar, got :$method"))
+end

@@ -164,7 +164,7 @@ function run_sweep_case(spec::SweepSpec, gamma::Float64, freqHz::Float64, dtn::A
 
         result = run_simulation(case_params; dtn = dtn, ram_budget_bytes = ram_budget_bytes)
 
-        eta_boundary_cm = compute_eta_boundary(result.eta_history_cm, spec.fixed.spatialResolution)
+        eta_boundary_cm = compute_eta_boundary(result.eta_history_cm, spec.fixed.spatialResolution; grid = spec.fixed.grid)
         write_case_csv(csv_path, result.t_s, result.CoM_cm, eta_boundary_cm)
 
         elapsed = time() - t0
