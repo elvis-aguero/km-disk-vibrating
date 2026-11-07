@@ -37,6 +37,7 @@ const RUN_SLOW = get(ENV, "KMDISK_RUN_SLOW_TESTS", "0") == "1"
         include("integration/test_physics_limits.jl")
         include("integration/test_lab_frame.jl")
         include("integration/test_sweep_end_to_end.jl")
+        include("integration/test_sweep_graded.jl")
         include("integration/test_plotting.jl")
         include("integration/test_validation_regression.jl")
     end

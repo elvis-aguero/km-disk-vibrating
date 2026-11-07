@@ -46,7 +46,9 @@ function main()
 
     global_logger(setup_logging(name = "sweep", jsonlines = true))
 
-    results = run_sweep(default_sweep_spec(), outdir)
+    # Graded grid by default (docs/graded_grid.md); KMDISK_GRID=uniform selects the uniform grid and its registered DtN.
+    uniform = get(ENV, "KMDISK_GRID", "graded") == "uniform"
+    results = uniform ? run_sweep(default_sweep_spec(), outdir) : run_sweep_graded(default_sweep_spec(), outdir)
     println("Sweep complete. Results in: ", outdir)
     return results
 end

@@ -181,3 +181,28 @@ function run_sweep_case(spec::SweepSpec, gamma::Float64, freqHz::Float64, dtn::A
         return SweepCaseResult(gamma, freqHz, bath_amplitude, NaN, NaN, elapsed, :error)
     end
 end
+
+"""
+    run_sweep_graded(spec, outdir; ppw = 32, q = 1.04, r_in = 2, ramp = 20, smooth = 0.1, laplacian_order = 2, wall_zone = 2) -> Vector{SweepCaseResult}
+
+The default way to run a sweep. The cap spacing of a graded grid follows the capillary wavelength ([`graded_grid_for`](@ref)),
+so every frequency gets its own grid and its own DtN matrix, built here (all Γ of one frequency share it). `spec.fixed.grid`
+must be `nothing`. For the uniform grid with a registered DtN, call [`run_sweep`](@ref) directly. Cases land in the same
+`outdir/cases`; `summary.csv` covers all frequencies.
+"""
+function run_sweep_graded(spec::SweepSpec, outdir::AbstractString; ppw::Real = 32.0, q::Real = 1.04, r_in::Real = 2.0,
+                           ramp::Real = 20.0, smooth::Real = 0.1, laplacian_order::Int = 2, wall_zone::Real = 2.0)
+    spec.fixed.grid === nothing || throw(ArgumentError("run_sweep_graded builds the grids itself; spec.fixed.grid must be nothing"))
+    all_results = SweepCaseResult[]
+    for f in spec.bathFrequenciesHz
+        grid = graded_grid_for(spec.fixed, f; ppw = ppw, q = q, r_in = r_in, ramp = ramp, smooth = smooth,
+                               laplacian_order = laplacian_order, wall_zone = wall_zone)
+        t0 = time()
+        dtn = generate_dtn(grid)
+        @info "graded grid" freq_Hz = f grid = string(grid) dtn_build_s = time() - t0
+        append!(all_results, run_sweep(SweepSpec(gammas = spec.gammas, bathFrequenciesHz = [f],
+                                                  fixed = with_overrides(spec.fixed; grid = grid)), outdir; dtn = dtn))
+    end
+    write_summary_csv(joinpath(outdir, "summary.csv"), all_results)
+    return all_results
+end
