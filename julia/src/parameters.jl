@@ -164,9 +164,15 @@ disk region. Use as `with_overrides(params; grid = graded_grid_for(params, f))`,
 `generate_dtn(grid)`.
 """
 function graded_grid_for(params::SimulationParams, freqHz::Real; ppw::Real = 12.0, q::Real = 1.04, r_in::Real = 2.0,
-                         ramp::Real = 20.0, smooth::Real = 0.1, laplacian_order::Int = 2)
+                         ramp::Real = 20.0, smooth::Real = 0.1, laplacian_order::Int = 2, wall_zone::Real = 0.0)
     lambda_cm = capillary_wavelength_cm(freqHz, params.bathDensity, params.bathSurfaceTension, params.g)
     dr_max = lambda_cm / ppw / params.diskRadius
+    # a-priori wall-echo amplitude exp(-2 R_domain / L_e) (same formula as echo_prediction in julia/cluster/beads/gain_phase.jl)
+    omega = 2pi * freqHz
+    k = 2pi / lambda_cm
+    cg = (params.g + 3 * (params.bathSurfaceTension / params.bathDensity) * k^2) / (2 * omega)
+    echo = exp(-2 * (params.bathDiameter / 2 * params.diskRadius) / (cg / (2 * params.bathViscosity * k^2)))
+    echo > 0.01 && @warn "graded_grid_for: predicted wall echo $(round(echo; sigdigits = 3)) exceeds 0.01 at $freqHz Hz for R = $(params.bathDiameter / 2) disk radii; the graded grid is validated only for echo-negligible domains (docs/graded_grid.md)"
     return graded_grid(params.spatialResolution, params.bathDiameter / 2; q = q, dr_max = dr_max, r_in = r_in, ramp = ramp,
-                       smooth = smooth, laplacian_order = laplacian_order)
+                       smooth = smooth, laplacian_order = laplacian_order, wall_zone = wall_zone)
 end

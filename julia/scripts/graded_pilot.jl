@@ -97,17 +97,17 @@ function part_C2()
 end
 
 # ------------------------------------------------------------------------------------------------ C: C3
-function run_graded_case(dom, key, basis, f, cfg, outroot; bd = dom == "25x200" ? 200.0 : 700.0)
+function run_graded_case(dom, key, basis, f, cfg, outroot; bd = dom == "25x200" ? 200.0 : 700.0, wall_zone = 0.0)
     order, ppw, q = cfg
     params = bead_params(key, basis, 25.0, bd, :bdf2, 60)
     t0 = time()
-    grid = graded_grid_for(params, f; ppw = ppw, q = q, laplacian_order = order)
+    grid = graded_grid_for(params, f; ppw = ppw, q = q, laplacian_order = order, wall_zone = wall_zone)
     t_grid = time() - t0
     params = with_overrides(params; grid = grid)
     t0 = time()
     dtn = generate_dtn(grid)
     t_dtn = time() - t0
-    dir = joinpath(outroot, "o$(order)_ppw$(Int(ppw))_q$(q)", "$(key)_$(basis)_$(dom)_bd$(Int(bd))_f$(Int(f))")
+    dir = joinpath(outroot, "o$(order)_ppw$(Int(ppw))_q$(q)", "$(key)_$(basis)_$(dom)_bd$(Int(bd))_wz$(Int(wall_zone))_f$(Int(f))")
     t0 = time()
     run_sweep(SweepSpec(gammas = [0.5], bathFrequenciesHz = [f], fixed = params), dir; dtn = dtn)
     t_run = time() - t0
@@ -306,6 +306,34 @@ function part_C7b(outdir, t_start, budget_min)
     end
 end
 
+# C7c: wall zone. Uniform single-layer 25x200 values (job 8556893, al32 rc): lab gain, phase deg
+const UNI_SL_200 = Dict(52.0 => (1.4480396, 12.501994), 60.0 => (1.4244545, 16.194568), 70.0 => (1.4583415, 28.812908))
+
+function part_C7c(outdir, t_start, budget_min)
+    println("\n=== C7c: al32 rc, graded (order 2, ppw 32, q 1.04) with a fine wall zone, R = 100 a and 200 a, vs the uniform single-layer 25x200 values ===")
+    println("criterion (fixed): |d gain| <= 0.3 % and |d phase| <= 0.3 deg at all three frequencies, for R = 100 a (the uniform 25x200 domain)")
+    cfg = (2, 32.0, 1.04)
+    for Rdisk in (100.0, 200.0), wz in (0.0, 2.0, 5.0)
+        (time() - t_start) / 60 > budget_min && (println("BUDGET REACHED: R = ", Rdisk, " zone ", wz, " not started"); continue)
+        npass = 0
+        for f in (52.0, 60.0, 70.0)
+            try
+                r = run_graded_case("25x$(Int(2 * Rdisk))", "al32", "rc", f, cfg, joinpath(outdir, "runs_c7c"); bd = 2 * Rdisk, wall_zone = wz)
+                g, ph = UNI_SL_200[f]
+                dg, dp = 100 * (r.gain / g - 1), wrap180(r.phase - ph)
+                ok = r.quality == "good" && abs(dg) <= 0.3 && abs(dp) <= 0.3
+                npass += ok
+                @printf("R=%-5g a zone=%g a f=%g Hz: nr=%-5d gain %.5f phase %.4f quality %-8s echo %.4f | vs uniform SL 25x200: dgain %+.3f %% dphase %+.3f deg %s (only R = 100 a is the same domain)\n",
+                        Rdisk, wz, f, r.nr, r.gain, r.phase, r.quality, r.echo, dg, dp, ok ? "ok" : "off")
+            catch err
+                println("R=", Rdisk, " zone=", wz, " f=", f, " ERROR ", sprint(showerror, err))
+            end
+            flush(stdout)
+        end
+        Rdisk == 100.0 && println("  -> R = 100 a, zone ", wz, ": ", npass, "/3 frequencies within the criterion")
+    end
+end
+
 function pilot_main()
     length(ARGS) >= 1 || error("usage: graded_pilot.jl <outdir> [parts=ABCD] [budget_min=95]")
     outdir = ARGS[1]
@@ -323,6 +351,7 @@ function pilot_main()
     occursin('E', parts) && part_C3b(outdir, t_start, budget_min)
     occursin('F', parts) && part_C7(outdir, t_start, budget_min)
     occursin('G', parts) && part_C7b(outdir, t_start, budget_min)
+    occursin('H', parts) && part_C7c(outdir, t_start, budget_min)
     println("graded_pilot done in $(round((time() - t_start) / 60; digits = 1)) min")
 end
 

@@ -55,6 +55,10 @@ For a uniform grid the code calls the old routine unchanged, so `generate_dtn(gr
 
 DtN matrices of graded grids are built in process. There is no file cache and no registry entry (build time is well below one second at `nr` near 500; the job reports it).
 
+### Optional wall zone
+
+`graded_grid(...; wall_zone = w)` keeps the fine spacing `dr0` in the last `w` disk radii. The log-spacing is multiplied by `1 - rho((xi - xd)/md)` for `xi > xd` (`rho` the smooth step above, `md = max(ramp, ln(dr_max/dr0)/ln q)` nodes), so the spacing returns smoothly from the cap to `dr0`; `xd` is the largest integer index such that the return ends at `r <= R - w`. `s' = s l'` with `l' = l_up'(1-D) - l_up D'`, `D' = 140 u^3 (1-u)^3 / md`. `w = 0` (default) is the grid without a zone, bit for bit. Reason (HYPOTHESIS, untested): coarse spacing at the wall puts the effective wall position and the echo phase off by about `k dr`, which only shows when the echo is not negligible. `graded_grid_for` warns when the a-priori echo exceeds 0.01. Test C7c (criterion fixed before the run): at R = 100 a, al32 rc, 52/60/70 Hz, gain within 0.3 % and phase within 0.3 deg of the uniform single-layer 25x200 values.
+
 ### Wall-echo diagnostic on the map
 
 `eta_boundary(t)` (the trace that cuts the fit window at `|eta_boundary| > 0.10 A_ref`) is, on the uniform grid, the maximum of `|eta|` over the outermost `ceil(2 sr)` nodes, that is over the radii `r_wall - k dr0`, `k = 1 .. ceil(2 sr)`. On a graded grid it is the maximum over the same physical radii `x_k = r_wall - k dr0` of the interpolated `eta(x_k) = sum_m w_km eta_{j0+m-1}`, with the Lagrange cubic through the 4 nodes `j0 .. j0+3` (`j0 = q-1` for the panel `q` that holds `x_k`, clamped to `0 .. nr-4`; last panel: extrapolated from the last 4 nodes). Code: `boundary_stencil`, `compute_eta_boundary(...; grid)`. The uniform grid keeps the old code path (bit-identical, tested). Before this fix a graded grid used the nodes within 2 disk radii, at least 3, which sample a different set of radii; H2 below was the suspicion.

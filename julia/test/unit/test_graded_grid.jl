@@ -114,4 +114,31 @@ isdefined(Main, :_gg_exact_packet) || include(joinpath(@__DIR__, "..", "..", "sc
         got = compute_eta_boundary(eta, sr; grid = g)
         @test got ≈ [abs(c) * maximum(abs.(p.(radii))) for c in (1.0, -2.0, 0.5)] rtol = 1e-9
     end
+
+    @testset "wall zone" begin
+        sr, R, q, dmax = 25.0, 100.0, 1.04, 0.5
+        g0 = graded_grid(sr, R; q = q, dr_max = dmax)
+        gz0 = graded_grid(sr, R; q = q, dr_max = dmax, wall_zone = 0.0)
+        @test gz0.r == g0.r && gz0.s == g0.s && gz0.sp == g0.sp && gz0.xd == Inf     # default: no zone, unchanged
+        for zone in (2.0, 5.0)
+            g = graded_grid(sr, R; q = q, dr_max = dmax, wall_zone = zone)
+            steps = diff(g.r[1:(g.nr + 1)])
+            dr0 = 1 / sr
+            nz = floor(Int, zone / dr0)
+            @test all(isapprox.(steps[(end - nz + 1):end], dr0; rtol = 1e-9))            # fine spacing in the last `zone` radii
+            @test maximum(steps) <= dmax * (1 + 1e-12)
+            @test all(steps[2:end] ./ steps[1:(end - 1)] .<= q + 1e-9)                   # growth per node unchanged
+            @test minimum(steps[2:end] ./ steps[1:(end - 1)]) >= 0.85                    # the return to dr0 is gradual
+            @test wall_radius(g) >= R && g.r[g.nr] < R
+            @test g.nr > g0.nr + nz - 5                                                  # more nodes: the zone and the return
+            for i in (g.nr - nz - 20, g.nr - nz - 60, g.nr - nz - 100)
+                @test isapprox((g.r[i + 2] - g.r[i]) / 2, g.s[i + 1]; rtol = 5e-3)       # s consistent with the nodes
+            end
+            L = build_domain(g).Laplacian
+            @test L isa Tridiagonal
+            Lones = L * ones(g.nr)
+            @test all(abs.(Lones[1:(g.nr - 1)]) .<= 1e-8 * maximum(abs, L))
+        end
+        @test_throws ArgumentError graded_grid(sr, 20.0; q = q, dr_max = dmax, wall_zone = 19.0)
+    end
 end
