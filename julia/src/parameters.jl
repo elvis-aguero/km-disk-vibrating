@@ -164,7 +164,7 @@ disk region. Use as `with_overrides(params; grid = graded_grid_for(params, f))`,
 `generate_dtn(grid)`.
 """
 function graded_grid_for(params::SimulationParams, freqHz::Real; ppw::Real = 12.0, q::Real = 1.04, r_in::Real = 2.0,
-                         ramp::Real = 20.0, smooth::Real = 0.1, laplacian_order::Int = 2, wall_zone::Real = 0.0)
+                         ramp::Real = 20.0, smooth::Real = 0.1, laplacian_order::Int = 2, wall_zone::Real = 2.0)
     lambda_cm = capillary_wavelength_cm(freqHz, params.bathDensity, params.bathSurfaceTension, params.g)
     dr_max = lambda_cm / ppw / params.diskRadius
     # a-priori wall-echo amplitude exp(-2 R_domain / L_e) (same formula as echo_prediction in julia/cluster/beads/gain_phase.jl)
