@@ -24,7 +24,7 @@ arguments
     NameValueArgs.temporalResolution (1, 1) double = 30; % Number of temporal steps in one adimensional unit
     NameValueArgs.simulationTime (1, 1) double = 10/90; % Time to be simulated in seconds
     NameValueArgs.debug_flag (1, 1) logical = false; % true: diary log + live plot every step (slow)
-    NameValueArgs.solverType (1, 1) string = "auto" % "auto": LU-cached if RAM allows, else GMRES. Override with "lu" or "gmres".
+    NameValueArgs.solverType (1, 1) string {mustBeMember(NameValueArgs.solverType, ["auto", "lu", "gmres", "schur"])} = "auto" % "auto": Schur if the Laplacian is tridiagonal and fits, else LU-cached if RAM allows, else GMRES. Override with "lu", "gmres" or "schur".
     NameValueArgs.gmresTolerance (1, 1) double = 1e-10 % GMRES convergence tolerance (used when GMRES is active)
     NameValueArgs.startStatic (1, 1) logical = true % Whether to start at static equilibrium
     NameValueArgs.earlyStop (1, 1) logical = true % Whether to enable early stopping on convergence
@@ -146,19 +146,14 @@ steps = ceil(simulationTime / (dt * T_unit)); % Minimum number of time steps
 % --- Resolve solver: LU-cached (default) or GMRES fallback ---
 % stepsPerCycle = round(2*pi * temporalResolution)
 % Each factorization stores L, U, P as full dense matrices: 3*(2*nr+2)^2*8 bytes.
-luSizeBytes = stepsPerCycle * 3 * (2*nr+2)^2 * 8; %Estimated bytes needed in memory
-availRAM    = getAvailableRAM(); %Max RAM available to the computer
-
-if solverType == "auto"
-    if availRAM >= luSizeBytes
-        resolvedSolver = "lu";
-    else
-        resolvedSolver = "gmres";
-        fprintf('RAM check: LU cache needs ~%.1f GB (%d matrices x %.0f MB), available ~%.1f GB. Falling back to GMRES.\n', ...
-            luSizeBytes/1e9, stepsPerCycle, luSizeBytes/stepsPerCycle/1e6, availRAM/1e9);
-    end
-else
-    resolvedSolver = solverType; % explicit override by caller
+% Mirrors Julia's solver dispatch (see resolve_solver_type.m): auto prefers "schur" when the Laplacian is
+% tridiagonal and its cache fits, else "lu" if the (deduplicated, one per distinct g) cache fits, else "gmres".
+nFactors = lu_factor_count(stepsPerCycle, phase_diff_rad, bath_forcing_amplitude ~= 0);
+budgetBytes = ram_budget_bytes();
+[resolvedSolver, solverInfo] = resolve_solver_type(solverType, laplacian, nr, nFactors, budgetBytes);
+if solverType == "auto" && resolvedSolver == "gmres"
+    fprintf('RAM check: LU cache needs ~%.1f GB (%d matrices), budget ~%.1f GB. Falling back to GMRES.\n', ...
+        solverInfo.luBytes/1e9, nFactors, budgetBytes/1e9);
 end
 
 %Initial conditions for the fluid
@@ -243,14 +238,29 @@ PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "luFutures", {{}}, ...
     "L_Library", {cell(stepsPerCycle, 1)}, ...
     "U_Library", {cell(stepsPerCycle, 1)}, ...
-    "P_Library", {cell(stepsPerCycle, 1)});
+    "P_Library", {cell(stepsPerCycle, 1)}, ...
+    "g_Library", nan(stepsPerCycle, 1), ...      % g value of each filled cache slot (dedup, tol 1e-12)
+    "F_Library", {cell(stepsPerCycle, 1)}, ...   % Schur factorizations (decomposition objects)
+    "schurSys", []);
+
+% Schur reduced system for the implicit coefficient (dt for euler, 2dt/3 for bdf2).
+if resolvedSolver == "schur"
+    if NameValueArgs.timeScheme == "bdf2"
+        dt_implicit = 2 * dt / 3;
+    else
+        dt_implicit = dt;
+    end
+    PROBLEM_CONSTANTS.schurSys = schur_system(PROBLEM_CONSTANTS, dt_implicit);
+end
 
 fprintf("Starting simulation on %s\n", pwd);
 
 % --- LU caching ---
 % Lazy-sync: each cycle's factorization is computed on first miss inside
 % advance_one_step, then cached for every subsequent cycle.
-if resolvedSolver == "lu"
+if resolvedSolver == "schur"
+    fprintf('Solver: Schur-reduced (%dx%d), factorizations cached per distinct g.\n', nr + 1, nr + 1);
+elseif resolvedSolver == "lu"
     fprintf('LU caching active (lazy-sync: in-memory factorization on demand).\n');
 else
     fprintf('Solver: GMRES (tol=%.0e, warm-started).\n', NameValueArgs.gmresTolerance);
@@ -343,7 +353,7 @@ try
     
     % Strip large / non-serializable fields before saving
     if isfield(PROBLEM_CONSTANTS, 'L_Library')
-        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, {'L_Library', 'U_Library', 'P_Library'});
+        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, {'L_Library', 'U_Library', 'P_Library', 'F_Library', 'g_Library', 'schurSys'});
     end
     if isfield(PROBLEM_CONSTANTS, 'luFutures')
         PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, 'luFutures');
@@ -357,7 +367,7 @@ try
 catch ME
     % Strip large / non-serializable fields before saving errored results
     if isfield(PROBLEM_CONSTANTS, 'L_Library')
-        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, {'L_Library', 'U_Library', 'P_Library'});
+        PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, {'L_Library', 'U_Library', 'P_Library', 'F_Library', 'g_Library', 'schurSys'});
     end
     if isfield(PROBLEM_CONSTANTS, 'luFutures')
         PROBLEM_CONSTANTS = rmfield(PROBLEM_CONSTANTS, 'luFutures');

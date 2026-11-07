@@ -46,8 +46,28 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
     % --- Solver Logic ---
     if bdf2 && ~hasHistory
         % bdf2 start-up: one implicit Euler step with its own one-off matrix (Julia solve_startup!)
-        Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
-        sol = Mat \ indep;
+        if PROBLEM_CONSTANTS.solverType == "schur"
+            sysE = schur_system(PROBLEM_CONSTANTS, dt);                 % reduced Euler system, discarded after
+            FE = decomposition(sysE.S0 + g_prefactor * sysE.G1, 'lu');
+            sol = schur_solve(sysE, FE, g_prefactor, indep);
+        else
+            Mat = buildSystemMatrix(PROBLEM_CONSTANTS, g_prefactor, dt, nr, cPoints, dr, SF);
+            sol = Mat \ indep;
+        end
+    elseif PROBLEM_CONSTANTS.solverType == "schur"
+        % Schur step: one (nr+1)^2 factorization per distinct g (|dg| <= 1e-12, Julia G_DEDUP_ATOL), cached by slot
+        if isempty(PROBLEM_CONSTANTS.F_Library{cycleIdx})
+            j = find(abs(PROBLEM_CONSTANTS.g_Library - g_prefactor) <= 1e-12, 1);
+            if ~isempty(j)
+                Fsch = PROBLEM_CONSTANTS.F_Library{j};
+            else
+                sysS = PROBLEM_CONSTANTS.schurSys;
+                Fsch = decomposition(sysS.S0 + g_prefactor * sysS.G1, 'lu');
+            end
+            PROBLEM_CONSTANTS.F_Library{cycleIdx} = Fsch;
+            PROBLEM_CONSTANTS.g_Library(cycleIdx) = g_prefactor;
+        end
+        sol = schur_solve(PROBLEM_CONSTANTS.schurSys, PROBLEM_CONSTANTS.F_Library{cycleIdx}, g_prefactor, indep);
     elseif ~bdf2 && gamma == 0 && ~any(isnan(PROBLEM_CONSTANTS.precomputedInverse(:)))
         sol = PROBLEM_CONSTANTS.precomputedInverse * indep;
     elseif PROBLEM_CONSTANTS.solverType == "gmres"
@@ -60,8 +80,15 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
         PROBLEM_CONSTANTS.gmres_x0 = sol;
     elseif PROBLEM_CONSTANTS.solverType == "lu"
         if isempty(PROBLEM_CONSTANTS.L_Library{cycleIdx})
+            % Same g as an already-factorized slot (|dg| <= 1e-12, Julia G_DEDUP_ATOL): share its factors
+            % (MATLAB copy-on-write: no extra memory). Disk-forced runs have g == 1 on every step: one LU.
+            j = find(abs(PROBLEM_CONSTANTS.g_Library - g_prefactor) <= 1e-12, 1);
+            if ~isempty(j)
+                L = PROBLEM_CONSTANTS.L_Library{j};
+                U = PROBLEM_CONSTANTS.U_Library{j};
+                P = PROBLEM_CONSTANTS.P_Library{j};
             % Fetch async future if available (fired by solve_motion before the loop)
-            if ~isempty(PROBLEM_CONSTANTS.luFutures) && ~isempty(PROBLEM_CONSTANTS.luFutures{cycleIdx})
+            elseif ~isempty(PROBLEM_CONSTANTS.luFutures) && ~isempty(PROBLEM_CONSTANTS.luFutures{cycleIdx})
                 [L, U, P] = fetchOutputs(PROBLEM_CONSTANTS.luFutures{cycleIdx});
                 PROBLEM_CONSTANTS.luFutures{cycleIdx} = []; % release handle
             else
@@ -72,6 +99,7 @@ function [next_condition, PROBLEM_CONSTANTS] = advance_one_step(previous_conditi
             PROBLEM_CONSTANTS.L_Library{cycleIdx} = L;
             PROBLEM_CONSTANTS.U_Library{cycleIdx} = U;
             PROBLEM_CONSTANTS.P_Library{cycleIdx} = P;
+            PROBLEM_CONSTANTS.g_Library(cycleIdx) = g_prefactor;
         end
         L = PROBLEM_CONSTANTS.L_Library{cycleIdx};
         U = PROBLEM_CONSTANTS.U_Library{cycleIdx};
