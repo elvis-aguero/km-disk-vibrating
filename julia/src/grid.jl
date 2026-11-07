@@ -50,12 +50,16 @@ struct RadialGrid
     ramp::Float64
     smooth::Float64
     laplacian_order::Int
+    wall_zone::Float64                 # fine zone (spacing dr0) of this width in disk radii at the wall; 0 = none
+    xd::Float64                        # index where the spacing returns to dr0 starts (Inf = no wall zone)
+    md::Float64                        # length (nodes) of that return
 end
 
 function Base.show(io::IO, g::RadialGrid)
     if g.uniform
         print(io, "RadialGrid(uniform, nr=", g.nr, ", dr=", g.dr0, ")")
     else
+        g.wall_zone > 0 && print(io, "wall_zone=", g.wall_zone, " ")
         print(io, "RadialGrid(graded, nr=", g.nr, ", dr0=", g.dr0, ", q=", g.q, ", dr_max=", g.dr_max, ", r_in=", g.r_in,
               ", ramp=", g.ramp, ", smooth=", g.smooth, ", R=", g.r[g.nr + 1], ", laplacian_order=", g.laplacian_order, ")")
     end
@@ -78,7 +82,7 @@ function uniform_grid(a_over_dr0::Real, R::Real)
     nr = ceil(Int, D * sr / 2)
     dr = D / (2 * nr)          # same expressions as build_domain
     r = [dr * i for i in 0:(nr + 3)]
-    return RadialGrid(nr, r, fill(dr, nr + 3), zeros(nr + 3), dr, sr, Rf, true, 1.0, dr, 0.0, 0, 0.0, 0.0, 2)
+    return RadialGrid(nr, r, fill(dr, nr + 3), zeros(nr + 3), dr, sr, Rf, true, 1.0, dr, 0.0, 0, 0.0, 0.0, 2, 0.0, Inf, 1.0)
 end
 
 # smooth step from 0 (x <= 0) to 1 (x >= 1), C^3, and its integral
@@ -104,81 +108,118 @@ function _grid_log_spacing(t::Float64, lnq::Float64, m::Float64, lmax::Float64, 
     return (lg - softplus / beta, lnq * _grid_rho(x) / (1 + exp(z)))
 end
 
-# s = r_xi and s' = r_xixi at the (real) index xi, from the map parameters
-function _grid_spacing(xi::Float64, dr0::Float64, xin::Int, lnq::Float64, m::Float64, lmax::Float64, beta::Float64)
+# s = r_xi and s' = r_xixi at the (real) index xi. P = (dr0, xin, lnq, ramp, lmax, beta, xd, md): the map parameters.
+# For xi > xd (only with a wall zone; xd = Inf otherwise) the log-spacing is multiplied by 1 - rho((xi - xd)/md): the spacing
+# returns smoothly to dr0 over md nodes.
+function _grid_spacing(xi::Float64, P)
+    dr0, xin, lnq, m, lmax, beta, xd, md = P
     l, lp = _grid_log_spacing(xi - xin, lnq, m, lmax, beta)
+    if xi > xd
+        u = (xi - xd) / md
+        D = _grid_rho(u)
+        drho = (0 < u < 1) ? 140 * u^3 * (1 - u)^3 / md : 0.0
+        lp = lp * (1 - D) - l * drho
+        l = l * (1 - D)
+    end
     s = dr0 * exp(l)
     return (s, s * lp)
 end
 
 # integral of s over [a, b] (Gauss-Legendre, 10 points)
-function _grid_integrate_s(a::Float64, b::Float64, dr0, xin, lnq, m, lmax, beta)
+function _grid_integrate_s(a::Float64, b::Float64, P)
     xg, wg = _GRID_GL
     h = (b - a) / 2
     c = (a + b) / 2
     acc = 0.0
     for k in eachindex(xg)
-        acc += wg[k] * _grid_spacing(c + h * xg[k], dr0, xin, lnq, m, lmax, beta)[1]
+        acc += wg[k] * _grid_spacing(c + h * xg[k], P)[1]
     end
     return h * acc
 end
 
-_grid_params(g::RadialGrid) = (g.dr0, g.xin, log(g.q), g.ramp, log(g.dr_max / g.dr0), 1 / g.smooth)
+_grid_params(g::RadialGrid) = (g.dr0, g.xin, log(g.q), g.ramp, log(g.dr_max / g.dr0), 1 / g.smooth, g.xd, g.md)
+
+# nodes r_0, r_1, ... until r >= R (the wall, index nr), then 3 more; returns (nr, r)
+function _grid_march(P, Rf::Float64)
+    dr0, xin = P[1], P[2]
+    r = Float64[0.0]
+    i = 0
+    while r[end] < Rf
+        i += 1
+        i > 20_000_000 && error("graded_grid: more than 2e7 nodes (check R and dr_max)")
+        push!(r, i <= xin ? dr0 * i : r[end] + _grid_integrate_s(i - 1.0, Float64(i), P))
+    end
+    nr = length(r) - 1
+    for _ in 1:3
+        i += 1
+        push!(r, i <= xin ? dr0 * i : r[end] + _grid_integrate_s(i - 1.0, Float64(i), P))
+    end
+    return nr, r
+end
 
 """
-    graded_grid(a_over_dr0, R; q = 1.04, dr_max, r_in = 2.0, ramp = 20, smooth = 0.1, laplacian_order = 2) -> RadialGrid
+    graded_grid(a_over_dr0, R; q = 1.04, dr_max, r_in = 2.0, ramp = 20, smooth = 0.1, laplacian_order = 2, wall_zone = 0) -> RadialGrid
 
 Graded grid for the domain radius `R` (disk radii), with `a_over_dr0` nodes per disk radius in the disk region. Identity map
 (`dr0 = 1/a_over_dr0`) for `r <= r_in` (needs `r_in >= 1 + 5 dr0`); then spacing growth `q` per node, capped at `dr_max`
 (disk radii). `ramp` is the length (nodes) of the smooth start of the growth, `smooth` the width (in `ln` spacing) of the cap.
 The wall is the first node with `r >= R`. If `dr_max <= dr0`, `q <= 1` or `R <= r_in`, the result is `uniform_grid`.
 `laplacian_order` is 2 (conservative, tridiagonal), 4 or 6 (finite difference, banded; not tridiagonal).
+`wall_zone > 0`: the last `wall_zone` disk radii keep the fine spacing `dr0`; before the zone the spacing returns smoothly from
+the cap to `dr0` over `max(ramp, ln(dr_max/dr0)/ln q)` nodes. `wall_zone = 0` (default) is the grid without such a zone,
+bit for bit.
 """
 function graded_grid(a_over_dr0::Real, R::Real; q::Real = 1.04, dr_max::Real, r_in::Real = 2.0, ramp::Real = 20.0,
-                     smooth::Real = 0.1, laplacian_order::Int = 2)
+                     smooth::Real = 0.1, laplacian_order::Int = 2, wall_zone::Real = 0.0)
     laplacian_order in (2, 4, 6) || throw(ArgumentError("laplacian_order must be 2, 4 or 6, got $laplacian_order"))
     sr, Rf, qf, dmax, rin, rampf, smf = float(a_over_dr0), float(R), float(q), float(dr_max), float(r_in), float(ramp), float(smooth)
+    wz = float(wall_zone)
+    wz >= 0 || throw(ArgumentError("wall_zone must be >= 0"))
     dr0 = 1 / sr
     if dmax <= dr0 * (1 + 1e-9) || qf <= 1 || Rf <= rin
         g = uniform_grid(sr, Rf)
-        return RadialGrid(g.nr, g.r, g.s, g.sp, g.dr0, g.sr, g.R_req, true, 1.0, g.dr0, 0.0, 0, 0.0, 0.0, laplacian_order)
+        return RadialGrid(g.nr, g.r, g.s, g.sp, g.dr0, g.sr, g.R_req, true, 1.0, g.dr0, 0.0, 0, 0.0, 0.0, laplacian_order, 0.0, Inf, 1.0)
     end
     rin >= 1 + 5 * dr0 || throw(ArgumentError("r_in must be at least 1 + 5 dr0 = $(1 + 5 * dr0) (contact nodes stay in the identity region), got $rin"))
     rampf > 0 && smf > 0 || throw(ArgumentError("ramp and smooth must be positive"))
     xin = ceil(Int, rin / dr0)
     lnq, lmax, beta = log(qf), log(dmax / dr0), 1 / smf
-    r = Float64[0.0]
-    i = 0
-    while r[end] < Rf
-        i += 1
-        i > 20_000_000 && error("graded_grid: more than 2e7 nodes (check R and dr_max)")
-        push!(r, i <= xin ? dr0 * i : r[end] + _grid_integrate_s(i - 1.0, Float64(i), dr0, xin, lnq, rampf, lmax, beta))
+    P = (dr0, xin, lnq, rampf, lmax, beta, Inf, 1.0)
+    if wz > 0
+        md = max(rampf, ceil(lmax / lnq))
+        _, rup = _grid_march(P, Rf)                    # grid without the zone: where the spacing could start to return
+        best = 0
+        for xd in (xin + ceil(Int, rampf)):(length(rup) - 2)
+            Pd = (dr0, xin, lnq, rampf, lmax, beta, Float64(xd), md)
+            r_end = rup[xd + 1]
+            for i in (xd + 1):(xd + Int(md))
+                r_end += _grid_integrate_s(i - 1.0, Float64(i), Pd)
+            end
+            r_end > Rf - wz && break
+            best = xd
+        end
+        best > 0 || throw(ArgumentError("wall_zone = $wz does not fit: the spacing cannot return to dr0 before R - wall_zone = $(Rf - wz)"))
+        P = (dr0, xin, lnq, rampf, lmax, beta, Float64(best), md)
     end
-    nr = length(r) - 1
-    for _ in 1:3
-        i += 1
-        push!(r, i <= xin ? dr0 * i : r[end] + _grid_integrate_s(i - 1.0, Float64(i), dr0, xin, lnq, rampf, lmax, beta))
-    end
+    nr, r = _grid_march(P, Rf)
     s = Vector{Float64}(undef, nr + 3)
     sp = Vector{Float64}(undef, nr + 3)
     for k in 0:(nr + 2)
-        s[k + 1], sp[k + 1] = _grid_spacing(Float64(k), dr0, xin, lnq, rampf, lmax, beta)
+        s[k + 1], sp[k + 1] = _grid_spacing(Float64(k), P)
     end
-    return RadialGrid(nr, r, s, sp, dr0, sr, Rf, false, qf, dmax, rin, xin, rampf, smf, laplacian_order)
+    return RadialGrid(nr, r, s, sp, dr0, sr, Rf, false, qf, dmax, rin, xin, rampf, smf, laplacian_order, wz, P[7], P[8])
 end
 
 # s and s' at a real index (works for both kinds of grid)
 function _grid_spacing_at(g::RadialGrid, xi::Float64)
     g.uniform && return (g.dr0, 0.0)
-    dr0, xin, lnq, m, lmax, beta = _grid_params(g)
-    return _grid_spacing(xi, dr0, xin, lnq, m, lmax, beta)
+    return _grid_spacing(xi, _grid_params(g))
 end
 
 # radius at the half node xi = j + 1/2
 function _grid_r_half(g::RadialGrid, j::Int)
     (g.uniform || j < g.xin) && return g.dr0 * (j + 0.5)
-    dr0, xin, lnq, m, lmax, beta = _grid_params(g)
-    return g.r[j + 1] + _grid_integrate_s(Float64(j), j + 0.5, dr0, xin, lnq, m, lmax, beta)
+    return g.r[j + 1] + _grid_integrate_s(Float64(j), j + 0.5, _grid_params(g))
 end
 
 """

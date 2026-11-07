@@ -37,14 +37,16 @@ const PHASE_RMSE_DEG_MUST_BEAT = 100.0         # the buggy sweep's phase RMSE wa
     run_graded_sweeps(spec, outdir, graded)
 
 The same sweep on a graded radial grid (docs/graded_grid.md), one `run_sweep` per frequency because the cap spacing follows the
-wavelength: `graded = "<ppw>,<q>,<laplacian_order>"`. The DtN matrix of each grid is built in process. All cases land in the same
+wavelength: `graded = "<ppw>,<q>,<laplacian_order>[,<wall_zone>]"` (wall_zone in disk radii, default 0). The DtN matrix of each grid is built in process. All cases land in the same
 `outdir/cases`, so the overlay and the RMSE are computed as for the uniform sweep.
 """
 function run_graded_sweeps(spec::SweepSpec, outdir::AbstractString, graded::AbstractString)
-    ppw_s, q_s, ord_s = split(graded, ',')
+    parts = split(graded, ',')
+    ppw_s, q_s, ord_s = parts[1], parts[2], parts[3]
+    wz = length(parts) > 3 ? parse(Float64, parts[4]) : 0.0
     nodes = Int[]
     for f in spec.bathFrequenciesHz
-        grid = graded_grid_for(spec.fixed, f; ppw = parse(Float64, ppw_s), q = parse(Float64, q_s), laplacian_order = parse(Int, ord_s))
+        grid = graded_grid_for(spec.fixed, f; ppw = parse(Float64, ppw_s), q = parse(Float64, q_s), laplacian_order = parse(Int, ord_s), wall_zone = wz)
         push!(nodes, grid.nr)
         t0 = time()
         dtn = generate_dtn(grid)
@@ -74,7 +76,7 @@ function run_matlab_baseline_check(; outdir::Union{Nothing,String} = nothing)
     # KMDISK_DTN_FILE=<file.jld2 with key "DTN"> replaces the registered DtN cache (test of an alternative construction).
     dtn_file = get(ENV, "KMDISK_DTN_FILE", "")
     dtn = isempty(dtn_file) ? nothing : FaradayDisk.check_dtn(JLD2.load(dtn_file, "DTN"); source = dtn_file)
-    # KMDISK_GRADED="<ppw>,<q>,<laplacian_order>" runs the sweep on graded grids instead (DtN matrices built in process).
+    # KMDISK_GRADED="<ppw>,<q>,<laplacian_order>[,<wall_zone>]" runs the sweep on graded grids instead (DtN matrices built in process).
     graded = get(ENV, "KMDISK_GRADED", "")
     if isempty(graded)
         run_sweep(default_sweep_spec(), outdir; dtn = dtn)

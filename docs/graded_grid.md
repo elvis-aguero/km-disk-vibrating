@@ -2,9 +2,11 @@
 
 Status: experimental, opt-in. The default grid stays uniform (`dr = a/25`, `nr = 8750` in the 25 x 700 domain) and its results do not change (a test asserts bit-identical output). Select a graded grid with `graded_grid_for(params, f)` or `KMDISK_GRADED="ppw,q,order"` in the validation runner. It works with `solverType = :schur` only for `laplacian_order = 2`.
 
-Measured (pilot, criteria in section 5, fixed before the runs):
-* C1, C2, C5 pass. C3 (28 bead rows vs the uniform results, within 0.3 % gain and 0.3 deg phase) passes for second-order Laplacian at 24 and 32 points per wavelength (ppw), and fails at ppw 12 and 16 because one 15 Hz row changes its quality flag from `good` to `subharmonic`, and for the fourth-order Laplacian at every ppw (one 90 Hz row, +0.306 % gain). The default is therefore `ppw = 32`.
-* C4 (30-case experimental validation): ppw 32 passes (0.022068 / 3.0628 deg); ppw 24 fails on amplitude (0.024107 > 0.022578). The change comes from one case, gamma 0.5 at 10 Hz, an unstable run whose fit window is set by a wall-echo cut; the other 29 cases agree with the uniform grid.
+Measured (pilot; criteria in section 5, fixed before the runs). Validated configuration: order 2, `ppw = 32`, `q = 1.04`, `wall_zone = 2` (the defaults of `graded_grid_for`):
+* C1, C2, C5 pass. C3 (30 bead rows vs the uniform results; gain within 0.3 %, phase within 0.3 deg) passes 30/30 (largest differences 0.030 % and 0.028 deg); C3b (the 8 good 5 Hz rows) passes 8/8; C4 (30-case experimental validation) gives 0.022163 / 3.0582 deg against the limits 0.022578 / 3.1557 (uniform 0.022135 / 3.0557). The same holds for ppw 24.
+* Without the wall zone the grid fails in small, echo-sensitive domains (25 x 200, al32 rc at 52-70 Hz: up to +1.3 % gain and 1.2 deg). With a fine zone of 2 disk radii at the wall the same rows agree to 0.21 % and 0.18 deg (C7c); the zone costs about 120 nodes at R = 100 a. The fourth-order Laplacian fails one C3 row (+0.306 %) and is not used.
+* Domain convergence (informational): al16 R at 5 Hz and al32 rc at 52-70 Hz do not change from R = 350 a to 3000 a (and 8000 a for the 5 Hz case, 3226 nodes).
+* `graded_grid_for` warns when the a-priori echo prediction exceeds 0.01.
 
 Not validated: any frequency below 15 Hz in the physics comparison (no `good` reference row at 10 Hz), domains larger than 25 x 700, a disk other than the ones in the bead campaign and R = 0.2 cm.
 
@@ -60,6 +62,10 @@ Same construction as `docs/dtn_single_layer.md` (`N = -Delta_H S`, elliptic-inte
 For a uniform grid the code calls the old routine unchanged, so `generate_dtn(grid)` equals `generate_dtn(nr, D)` bit for bit. The general routine also runs on uniform nodes (`force_general = true`) and must agree to `1e-8` of `max|A|`: this tests the generalization.
 
 DtN matrices of graded grids are built in process. There is no file cache and no registry entry (build time is well below one second at `nr` near 500; the job reports it).
+
+### Optional wall zone
+
+`graded_grid(...; wall_zone = w)` keeps the fine spacing `dr0` in the last `w` disk radii. The log-spacing is multiplied by `1 - rho((xi - xd)/md)` for `xi > xd` (`rho` the smooth step above, `md = max(ramp, ln(dr_max/dr0)/ln q)` nodes), so the spacing returns smoothly from the cap to `dr0`; `xd` is the largest integer index such that the return ends at `r <= R - w`. `s' = s l'` with `l' = l_up'(1-D) - l_up D'`, `D' = 140 u^3 (1-u)^3 / md`. `w = 0` (default) is the grid without a zone, bit for bit. Reason (HYPOTHESIS, untested): coarse spacing at the wall puts the effective wall position and the echo phase off by about `k dr`, which only shows when the echo is not negligible. `graded_grid_for` warns when the a-priori echo exceeds 0.01. Test C7c (criterion fixed before the run): at R = 100 a, al32 rc, 52/60/70 Hz, gain within 0.3 % and phase within 0.3 deg of the uniform single-layer 25x200 values.
 
 ### Wall-echo diagnostic on the map
 
