@@ -39,20 +39,24 @@ base = SimulationParams(diskRadius = 0.2, diskMass = 0.0283, forceAmplitude = 0.
                         simulationTime = 8 / freqHz, startStatic = true, earlyStop = false, solverType = :lu,
                         timeScheme = :euler)   # solve_motion.m is implicit Euler
 
-# Must match JuliaParityTest.m's cases exactly.
+# Must match JuliaParityTest.m's cases exactly. Each case: name => (params, DTN method). Polar cases use the paper's matrix
+# (MATLAB dtnMethod 'polar'), the others the single-layer matrix (MATLAB default).
 cases = [
-    "bath_lu" => base,
-    "disk_lu" => with_overrides(base; forceAmplitude = 0.1 * 0.0283 * 981.0, forceFrequency = freqHz, bathAmplitude = 0.0),
-    "bath_gmres" => with_overrides(base; solverType = :gmres, gmresTolerance = 1e-12),
-    "bath_earlystop" => with_overrides(base; earlyStop = true, simulationTime = 30 / freqHz),
+    "bath_lu" => (base, :polar),
+    "disk_lu" => (with_overrides(base; forceAmplitude = 0.1 * 0.0283 * 981.0, forceFrequency = freqHz, bathAmplitude = 0.0), :polar),
+    "bath_gmres" => (with_overrides(base; solverType = :gmres, gmresTolerance = 1e-12), :polar),
+    "bath_earlystop" => (with_overrides(base; earlyStop = true, simulationTime = 30 / freqHz), :polar),
+    "bath_sl_lu" => (base, :single_layer),
+    "bath_bdf2_lu" => (with_overrides(base; timeScheme = :bdf2), :single_layer),
 ]
 
 # Generated natively (not via resolve_dtn/default_registry()) because julia/data/dtn_cache/
 # is gitignored (regenerate-locally-only, see .gitignore) and so isn't present on a fresh CI
 # checkout. nr=50 for this domain matches build_domain's nr = ceil(D*quant/2).
-dtn = generate_dtn_polar(50, base.bathDiameter)
-for (name, p) in cases
-    result = run_simulation(p; dtn = dtn)
+dtns = Dict(:polar => generate_dtn_polar(50, base.bathDiameter),
+            :single_layer => generate_dtn_single_layer(50, base.bathDiameter; order = 6))
+for (name, (p, method)) in cases
+    result = run_simulation(p; dtn = dtns[method])
     tail = result.t_s .>= (result.t_s[end] - 3 / freqHz)
     fit = fit_oscillation(result.t_s[tail], result.CoM_cm[tail], omega)
     println(name, " ", result.t_s[end], " ", result.CoM_cm[1], " ", fit.amplitude, " ", fit.phase, " ", fit.offset)

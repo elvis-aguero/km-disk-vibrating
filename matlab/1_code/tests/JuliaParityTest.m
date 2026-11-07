@@ -6,7 +6,8 @@ classdef JuliaParityTest < matlab.unittest.TestCase
     % reference, which would silently go stale the moment either implementation changed.
     %
     % Cases (must match parity_reference.jl): bath-driven on the LU path, disk-forced,
-    % bath-driven on the GMRES path, and bath-driven with early stopping on (same stop step).
+    % bath-driven on the GMRES path, and bath-driven with early stopping on (same stop step); these four use the
+    % polar DtN matrix. Then bath_sl_lu (single-layer matrix, implicit Euler) and bath_bdf2_lu (single-layer, BDF2).
     %
     % Uses the cheapest domain shared by both implementations, D5Quant20 (nr=50), so any
     % disagreement points at the physics/stepping code, not the DTN operator. Requires
@@ -39,13 +40,15 @@ classdef JuliaParityTest < matlab.unittest.TestCase
                 'bathDensity', 1.175, 'bathSurfaceTension', 66.5, 'bathViscosity', 0.18 / 1.175, ...
                 'bathDiameter', 20.0, 'spatialResolution', 5.0, 'temporalResolution', 48, ...
                 'simulationTime', 8 / freqHz, 'debug_flag', false, 'solverType', 'lu', ...
-                'startStatic', true, 'earlyStop', false};
+                'startStatic', true, 'earlyStop', false, 'dtnMethod', 'polar', 'timeScheme', 'euler'};
             % Must match parity_reference.jl's cases exactly (later pairs override earlier).
             cases = {
                 'bath_lu',        {}
                 'disk_lu',        {'forceAmplitude', 0.1 * 0.0283 * 981.0, 'forceFrequency', freqHz, 'bathAmplitude', 0.0}
                 'bath_gmres',     {'solverType', 'gmres', 'gmresTolerance', 1e-12}
                 'bath_earlystop', {'earlyStop', true, 'simulationTime', 30 / freqHz}
+                'bath_sl_lu',     {'dtnMethod', 'single_layer'}
+                'bath_bdf2_lu',   {'dtnMethod', 'single_layer', 'timeScheme', 'bdf2'}
             };
 
             for c = 1:size(cases, 1)
