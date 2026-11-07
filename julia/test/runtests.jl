@@ -29,6 +29,7 @@ const RUN_SLOW = get(ENV, "KMDISK_RUN_SLOW_TESTS", "0") == "1"
         include("integration/test_dtn_golden_small.jl")
         include("integration/test_dtn_caches.jl")
         include("integration/test_dtn_single_layer.jl")
+        include("integration/test_dtn_pointsource.jl")
         include("integration/test_graded_grid_dtn.jl")
         include("integration/test_lu_cache.jl")
         include("integration/test_schur_solver.jl")
