@@ -12,12 +12,12 @@
 #SBATCH --output=output/beads/08_resim/%x-%A_%a.out
 #SBATCH --error=output/beads/08_resim/%x-%A_%a.err
 #
-# Same 96 cases as 08_resim_bigdomain.sh (groups A + B), one case per array task, so each task is small enough to
+# The 96 echo-contaminated rows (audit: wall-echo prediction >= 1% at 25 x 200), one case per array task, so each task is small enough to
 # start in a gap. Domain 25 x 700, single-layer DtN (nr = 8750), Gamma 0.5, bdf2, 60 steps per period.
 # Memory: one case needs ~76 GB measured (code estimate ~90 GB) for its 31 LU factorizations; the sweep budget is
 # 0.7 x --mem = 95 GB, which is >= the estimate, so the LU path is chosen (GMRES fallback would log a warning).
 # With one case per task the sweep runs concurrency 1 and gives all 8 BLAS threads to the LU phase.
-# ESTIMATE, not measured: LU phase 10-60 min depending on BLAS scaling, stepping ~3 min. 2 h cap.
+# MEASURED (array 8482751): 9 to 19 min per case, peak 83 GB RSS. 2 h cap.
 # %12 caps concurrent tasks: 12 x 136 G = 1.6 TB, under the QOS limit mem=2T.
 source "${SLURM_SUBMIT_DIR:?run with sbatch}/julia/cluster/beads/_common.sh"
 make_run_dir 08_resim
