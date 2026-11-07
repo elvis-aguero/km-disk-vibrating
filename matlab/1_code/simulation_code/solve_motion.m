@@ -33,6 +33,9 @@ arguments
     NameValueArgs.checkEveryPeriods (1, 1) double = 1.0 % Convergence-check cadence, in periods
     NameValueArgs.amplitudeRelTol (1, 1) double = 0.02 % Relative amplitude change tolerated between windows
     NameValueArgs.phaseAbsTolDeg (1, 1) double = 2.0 % Absolute phase change (degrees) tolerated between windows
+    NameValueArgs.dtnMethod (1, 1) string {mustBeMember(NameValueArgs.dtnMethod, ["single_layer", "polar"])} = "single_layer" % "single_layer": built in process (Julia default). "polar": load the cached paper matrix (DxQuantY folder).
+    NameValueArgs.dtnOrder (1, 1) double {mustBeMember(NameValueArgs.dtnOrder, [4 6])} = 6 % Finite-difference order of the single-layer matrix
+    NameValueArgs.timeScheme (1, 1) string {mustBeMember(NameValueArgs.timeScheme, ["euler", "bdf2"])} = "euler" % "euler": implicit Euler (Julia default). "bdf2": second order, first step Euler.
 end
 
 % Record the time the script is run
@@ -65,10 +68,14 @@ end
 
 % Set up folder for data saving
 fold = fullfile(pwd, sprintf("D%dQuant%d", spatialResolution, bathDiameter));
+nr = ceil(spatialResolution * bathDiameter / 2);
+if dtnMethod == "single_layer"
+    % Built in process (mirrors Julia's default); no cache and no precomputed inverse (it belongs to the polar matrix).
+    DTN = generate_dtn(nr, bathDiameter, 'method', 'single_layer', 'order', dtnOrder);
+else
 try
     % Navigate to the folder and load necessary matrices
     cd(fold)
-    nr = ceil(spatialResolution * bathDiameter / 2);
     load(sprintf('DTNnew345nr%dD%drefp10.mat', nr, bathDiameter), 'DTNnew345')
     DTN = DTNnew345;
     clear DTNnew345
@@ -80,6 +87,7 @@ try
 catch ME
     error("Could not load DTN for D=%d, Quant=%d. Please generate the matrix first", ...
         spatialResolution, bathDiameter);
+end
 end
 
 
@@ -229,6 +237,9 @@ PROBLEM_CONSTANTS = struct("froude", Fr, "weber", We, ...
     "solverType", resolvedSolver, ...
     "gmresTolerance", NameValueArgs.gmresTolerance, ...
     "gmres_x0", zeros(2*nr+2, 1), ...
+    "timeScheme", NameValueArgs.timeScheme, "has_history", false, ...
+    "prev_surface", zeros(nr, 1), "prev_potential", zeros(nr, 1), ...
+    "prev_velocity", 0, "prev_com", 0, ...
     "luFutures", {{}}, ...
     "L_Library", {cell(stepsPerCycle, 1)}, ...
     "U_Library", {cell(stepsPerCycle, 1)}, ...
