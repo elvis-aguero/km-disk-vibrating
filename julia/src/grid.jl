@@ -214,3 +214,36 @@ function boundary_node_count(g::RadialGrid; width::Real = 2.0, minimum_nodes::In
     n = count(i -> g.r[i + 1] >= rw - width, 0:(g.nr - 1))
     return min(g.nr, max(minimum_nodes, n))
 end
+
+"""
+    boundary_stencil(grid) -> (j0, w, radii)
+
+Cubic-interpolation stencil of the wall-echo diagnostic `eta_boundary` on a graded grid. The uniform grid samples `eta` at the
+nodes `wall - k dr`, `k = 1 .. ceil(2 sr)` (the outermost two disk radii). Here the same physical radii `x_k = r_wall - k dr0`
+are used, whatever the local spacing: `eta(x_k) = sum_m w[k, m] eta[j0[k] + m]`, `m = 1..4` (0-based node `j0 + m - 1`), the
+Lagrange cubic through the 4 nodes `j0 .. j0+3` around `x_k` (the same piecewise cubic as the DtN: nodes `q-1 .. q+2` of the panel
+containing `x_k`, shifted to stay inside `0 .. nr-1`; in the last panel it extrapolates from nodes `nr-4 .. nr-1`).
+"""
+function boundary_stencil(g::RadialGrid)
+    nb = ceil(Int, 2 * g.sr)
+    rw = g.r[g.nr + 1]
+    radii = [rw - k * g.dr0 for k in 1:nb]
+    j0 = zeros(Int, nb)
+    w = zeros(nb, 4)
+    for (k, x) in enumerate(radii)
+        q = searchsortedlast(view(g.r, 1:g.nr), x) - 1          # 0-based panel with r_q <= x
+        j = clamp(q - 1, 0, g.nr - 4)
+        j0[k] = j
+        for m in 1:4
+            num = 1.0
+            den = 1.0
+            for n in 1:4
+                n == m && continue
+                num *= x - g.r[j + n]
+                den *= g.r[j + m] - g.r[j + n]
+            end
+            w[k, m] = num / den
+        end
+    end
+    return j0, w, radii
+end

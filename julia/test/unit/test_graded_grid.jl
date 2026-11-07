@@ -96,4 +96,22 @@ isdefined(Main, :_gg_exact_packet) || include(joinpath(@__DIR__, "..", "..", "sc
         @test errs[:fd6][3] < errs[:fd4][3]                        # 6th order is more accurate than 4th (order itself not asserted)
         @info "Laplacian errors, p = 1, 2, 4" errs orders = (cons2 = ord(:cons2), fd4 = ord(:fd4), fd6 = ord(:fd6))
     end
+
+    @testset "eta_boundary at a fixed physical radius" begin
+        sr = 25.0
+        ug = uniform_grid(sr, 20.0)
+        eta = [sin(0.3 * i + 0.1 * j) for i in 1:ug.nr, j in 1:5]
+        @test compute_eta_boundary(eta, sr; grid = ug) == compute_eta_boundary(eta, sr)         # uniform: bit-identical
+        g = graded_grid(sr, 40.0; q = 1.04, dr_max = 1.5, r_in = 2.0)
+        j0, w, radii = boundary_stencil(g)
+        @test length(radii) == ceil(Int, 2 * sr)
+        @test radii ≈ [wall_radius(g) - k / sr for k in 1:ceil(Int, 2 * sr)]
+        @test all(sum(w; dims = 2) .≈ 1.0)
+        # a cubic in r is reproduced exactly by the stencil: eta_boundary = max |p(x_k)|
+        p(r) = 1.0 - 0.3r + 0.02r^2 - 0.0007r^3
+        r = g.r[1:g.nr]
+        eta = [c * p(ri) for ri in r, c in (1.0, -2.0, 0.5)]
+        got = compute_eta_boundary(eta, sr; grid = g)
+        @test got ≈ [abs(c) * maximum(abs.(p.(radii))) for c in (1.0, -2.0, 0.5)] rtol = 1e-9
+    end
 end

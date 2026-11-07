@@ -55,6 +55,10 @@ For a uniform grid the code calls the old routine unchanged, so `generate_dtn(gr
 
 DtN matrices of graded grids are built in process. There is no file cache and no registry entry (build time is well below one second at `nr` near 500; the job reports it).
 
+### Wall-echo diagnostic on the map
+
+`eta_boundary(t)` (the trace that cuts the fit window at `|eta_boundary| > 0.10 A_ref`) is, on the uniform grid, the maximum of `|eta|` over the outermost `ceil(2 sr)` nodes, that is over the radii `r_wall - k dr0`, `k = 1 .. ceil(2 sr)`. On a graded grid it is the maximum over the same physical radii `x_k = r_wall - k dr0` of the interpolated `eta(x_k) = sum_m w_km eta_{j0+m-1}`, with the Lagrange cubic through the 4 nodes `j0 .. j0+3` (`j0 = q-1` for the panel `q` that holds `x_k`, clamped to `0 .. nr-4`; last panel: extrapolated from the last 4 nodes). Code: `boundary_stencil`, `compute_eta_boundary(...; grid)`. The uniform grid keeps the old code path (bit-identical, tested). Before this fix a graded grid used the nodes within 2 disk radii, at least 3, which sample a different set of radii; H2 below was the suspicion.
+
 ## 5. Pass/fail criteria (fixed before any run; never loosened afterwards)
 
 | id | what | pass if |
