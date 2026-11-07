@@ -28,7 +28,7 @@ Base.@kwdef struct SimulationParams
     spatialResolution::Float64 = 50.0          # radial mesh points per disk radius
     temporalResolution::Int = 30               # steps per adimensional time unit
     simulationTime::Float64 = 10 / 90          # s
-    solverType::Symbol = :auto                 # :auto | :lu | :gmres | :schur (reduced (nr+1) system, same answer)
+    solverType::Symbol = :auto                 # :auto (Schur if the Laplacian is tridiagonal, else LU/GMRES) | :lu | :gmres | :schur
     gmresTolerance::Float64 = 1e-10
     timeScheme::Symbol = :euler                # :euler (first order, as MATLAB) | :bdf2 (second order)
     startStatic::Bool = true

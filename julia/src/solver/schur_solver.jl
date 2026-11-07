@@ -197,3 +197,13 @@ function solve_startup!(::SchurStepSolver, problem::Problem, g_pf::Float64, rhs:
     F = lu!(sys.S0 .+ g_pf .* sys.G1)
     return schur_solve!(sys, F, g_pf, rhs, sol)
 end
+
+"""
+    schur_applicable(params) -> Bool
+
+Whether a run with these parameters uses the Schur solver: `solverType = :schur`, or `:auto` on a grid whose Laplacian is
+tridiagonal (the uniform grid, or a graded grid with `laplacian_order = 2`). Used by the sweep to size its memory budget.
+"""
+schur_applicable(params::SimulationParams) =
+    params.solverType === :schur ||
+    (params.solverType === :auto && (params.grid === nothing || params.grid.laplacian_order == 2))

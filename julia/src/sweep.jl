@@ -88,7 +88,7 @@ function run_sweep(spec::SweepSpec, outdir::AbstractString; dtn_registry::Union{
     n_system = 2 * size(dtn, 1) + 2
     bath_driven = any(!iszero, spec.gammas)
     n_factors = lu_factor_count(spec.fixed.temporalResolution, deg2rad(spec.fixed.phaseDifference), bath_driven)
-    lu_bytes = spec.fixed.solverType === :schur ? estimated_schur_bytes(n_factors, size(dtn, 1)) :
+    lu_bytes = schur_applicable(spec.fixed) ? estimated_schur_bytes(n_factors, size(dtn, 1)) :
                estimated_lu_cache_bytes(n_factors, n_system)
     max_lu_concurrent = floor(Int, total_budget / lu_bytes)
 

@@ -229,4 +229,4 @@ eliminating the velocity potential with the tridiagonal block, so the cached mat
 `(2nr+2) x (2nr+2)` (`julia/src/solver/schur_solver.jl`). It needs a tridiagonal Laplacian (uniform grid, or graded grid with
 `laplacian_order = 2`). Measured at nr = 2500 (one bath-driven case, 31 matrices): 13.1 s against 31.7 s and 2.6 GB against 7.6 GB
 peak memory, CoM traces equal to 3e-13 relative; the 30-case experimental validation gives the same RMSE as `:lu` to every printed
-digit. `:auto` still chooses `:lu`. The sweep scripts read `KMDISK_SOLVER=schur` to select it. Graded radial grids: `docs/graded_grid.md`.
+digit. `:auto` chooses `:schur` when the Laplacian is tridiagonal and its cache fits in the memory budget, and otherwise `:lu` or `:gmres` as before; also checked at nr = 8750 against the dense solver (3 cases, gain and phase equal to the printed digits, 24 GB peak against 83 GB). The sweep scripts read `KMDISK_SOLVER=schur` to select it. Graded radial grids: `docs/graded_grid.md`.

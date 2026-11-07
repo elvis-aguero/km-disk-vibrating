@@ -54,6 +54,20 @@ using LinearAlgebra, Random
         @test_throws ArgumentError build_schur_system(prob4, prob4.dt)
     end
 
+    @testset ":auto resolves to :schur on a tridiagonal Laplacian and falls back to :lu on a banded one" begin
+        s_auto, r_auto = build_step_solver(problem, :auto, 1e-12; ram_budget_bytes = typemax(Int), scheme = :bdf2)
+        @test r_auto === :schur && s_auto isa SchurStepSolver
+        pg = SimulationParams(bathDiameter = 40.0, spatialResolution = 5.0, temporalResolution = 20)
+        gg4 = graded_grid_for(pg, 40.0; ppw = 12.0, q = 1.05, laplacian_order = 4)
+        prob4 = build_problem(with_overrides(pg; grid = gg4), generate_dtn(gg4))
+        _, r4 = build_step_solver(prob4, :auto, 1e-12; ram_budget_bytes = typemax(Int), scheme = :bdf2)
+        @test r4 === :lu
+        # too little memory for the Schur cache: the old logic decides
+        _, rsmall = build_step_solver(problem, :auto, 1e-12; ram_budget_bytes = 1_000, scheme = :bdf2)
+        @test rsmall === :gmres
+        @test schur_applicable(pg) && !schur_applicable(with_overrides(pg; grid = gg4))
+    end
+
     @testset "memory estimate: about one quarter of the full-system LU cache" begin
         r = estimated_schur_bytes(31, 8750) / estimated_lu_cache_bytes(31, 2 * 8750 + 2)
         @test 0.24 < r < 0.30

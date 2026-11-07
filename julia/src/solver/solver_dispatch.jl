@@ -162,6 +162,12 @@ function build_step_solver(problem::Problem, requested_type::Symbol, gmres_tol::
                             ram_budget_bytes::Union{Nothing,Integer} = nothing, scheme::Symbol = :euler)
     n = 2 * problem.nr + 2
     budget = ram_budget_bytes === nothing ? available_memory_bytes() : ram_budget_bytes
+    # :auto prefers the Schur solver (same answer, a quarter of the memory, faster) whenever the Laplacian is tridiagonal
+    # and its cache fits; otherwise the dense LU / GMRES logic below decides, as before.
+    if requested_type === :auto && problem.laplacian isa Tridiagonal &&
+       estimated_schur_bytes(lu_factor_count(problem), problem.nr) <= budget
+        return SchurStepSolver(build_schur_system(problem, implicit_dt(problem, scheme)), LUCache(problem.stepsPerCycle), scheme), :schur
+    end
     resolved = resolve_solver_type(requested_type, lu_factor_count(problem), n, budget)
     if resolved === :schur
         return SchurStepSolver(build_schur_system(problem, implicit_dt(problem, scheme)), LUCache(problem.stepsPerCycle), scheme), resolved
