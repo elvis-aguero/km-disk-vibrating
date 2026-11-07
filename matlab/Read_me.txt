@@ -22,3 +22,5 @@ and hit enter to save this variable in the U60Ang180 folder (or the analogue fol
 I hope you find this useful and if you run into trouble do not hesitate to contact me.
 
 Carlos
+
+Update (matlab-parity branch): solve_motion.m now mirrors the Julia package (julia/README.md). New name-value arguments: dtnMethod ("single_layer" default, built in process with generate_dtn / generate_dtn_single_layer; "polar" loads the cached paper matrix as before), dtnOrder, timeScheme ("euler" | "bdf2"), solverType ("auto" | "lu" | "gmres" | "schur"; auto prefers the Schur-reduced solver, schur_system.m / resolve_solver_type.m), and grid (graded radial grid from graded_grid_for.m / graded_grid.m; docs/graded_grid.md). The old cache-building script is generate_dtn_cache_D20.m. Tests and the live Julia cross-check: matlab/1_code/tests (JuliaParityTest, DtnSingleLayerTest, SchurSolverTest, GradedGridTest); run them on a compute node with matlab/cluster/run_matlab_tests.sh.

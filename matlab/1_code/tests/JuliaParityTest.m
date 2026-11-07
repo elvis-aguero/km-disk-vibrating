@@ -41,6 +41,7 @@ classdef JuliaParityTest < matlab.unittest.TestCase
                 'bathDiameter', 20.0, 'spatialResolution', 5.0, 'temporalResolution', 48, ...
                 'simulationTime', 8 / freqHz, 'debug_flag', false, 'solverType', 'lu', ...
                 'startStatic', true, 'earlyStop', false, 'dtnMethod', 'polar', 'timeScheme', 'euler'};
+            ggrid = graded_grid(5, 10, 'drMax', 0.4, 'q', 1.08);   % as parity_reference.jl's ggrid
             % Must match parity_reference.jl's cases exactly (later pairs override earlier).
             cases = {
                 'bath_lu',        {}
@@ -51,6 +52,8 @@ classdef JuliaParityTest < matlab.unittest.TestCase
                 'bath_bdf2_lu',   {'dtnMethod', 'single_layer', 'timeScheme', 'bdf2'}
                 'bath_schur',     {'dtnMethod', 'single_layer', 'solverType', 'schur'}
                 'bath_bdf2_schur', {'dtnMethod', 'single_layer', 'solverType', 'schur', 'timeScheme', 'bdf2'}
+                'graded_schur',   {'dtnMethod', 'single_layer', 'solverType', 'schur', 'grid', ggrid}
+                'graded_bdf2_lu', {'dtnMethod', 'single_layer', 'solverType', 'lu', 'timeScheme', 'bdf2', 'grid', ggrid}
                 'disk_schur',     {'dtnMethod', 'single_layer', 'solverType', 'schur', 'forceAmplitude', 0.1 * 0.0283 * 981.0, 'forceFrequency', freqHz, 'bathAmplitude', 0.0}
             };
 

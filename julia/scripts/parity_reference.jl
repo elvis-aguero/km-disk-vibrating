@@ -39,6 +39,8 @@ base = SimulationParams(diskRadius = 0.2, diskMass = 0.0283, forceAmplitude = 0.
                         simulationTime = 8 / freqHz, startStatic = true, earlyStop = false, solverType = :lu,
                         timeScheme = :euler)   # solve_motion.m is implicit Euler
 
+# Small graded grid for the end-to-end graded cases (must match JuliaParityTest.m: graded_grid(5, 10, 'drMax', 0.4, 'q', 1.08)).
+ggrid = graded_grid(5.0, 10.0; dr_max = 0.4, q = 1.08)
 # Must match JuliaParityTest.m's cases exactly. Each case: name => (params, DTN method). Polar cases use the paper's matrix
 # (MATLAB dtnMethod 'polar'), the others the single-layer matrix (MATLAB default).
 cases = [
@@ -50,6 +52,8 @@ cases = [
     "bath_bdf2_lu" => (with_overrides(base; timeScheme = :bdf2), :single_layer),
     "bath_schur" => (with_overrides(base; solverType = :schur), :single_layer),
     "bath_bdf2_schur" => (with_overrides(base; solverType = :schur, timeScheme = :bdf2), :single_layer),
+    "graded_schur" => (with_overrides(base; solverType = :schur, grid = ggrid), :graded),
+    "graded_bdf2_lu" => (with_overrides(base; timeScheme = :bdf2, grid = ggrid), :graded),
     "disk_schur" => (with_overrides(base; solverType = :schur, forceAmplitude = 0.1 * 0.0283 * 981.0, forceFrequency = freqHz, bathAmplitude = 0.0), :single_layer),
 ]
 
@@ -57,7 +61,8 @@ cases = [
 # is gitignored (regenerate-locally-only, see .gitignore) and so isn't present on a fresh CI
 # checkout. nr=50 for this domain matches build_domain's nr = ceil(D*quant/2).
 dtns = Dict(:polar => generate_dtn_polar(50, base.bathDiameter),
-            :single_layer => generate_dtn_single_layer(50, base.bathDiameter; order = 6))
+            :single_layer => generate_dtn_single_layer(50, base.bathDiameter; order = 6),
+            :graded => generate_dtn(ggrid))
 for (name, (p, method)) in cases
     result = run_simulation(p; dtn = dtns[method])
     tail = result.t_s .>= (result.t_s[end] - 3 / freqHz)

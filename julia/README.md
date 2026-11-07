@@ -230,3 +230,7 @@ eliminating the velocity potential with the tridiagonal block, so the cached mat
 `laplacian_order = 2`). Measured at nr = 2500 (one bath-driven case, 31 matrices): 13.1 s against 31.7 s and 2.6 GB against 7.6 GB
 peak memory, CoM traces equal to 3e-13 relative; the 30-case experimental validation gives the same RMSE as `:lu` to every printed
 digit. `:auto` chooses `:schur` when the Laplacian is tridiagonal and its cache fits in the memory budget, and otherwise `:lu` or `:gmres` as before; also checked at nr = 8750 against the dense solver (3 cases, gain and phase equal to the printed digits, 24 GB peak against 83 GB). The sweep scripts read `KMDISK_SOLVER=schur` to select it. Graded radial grids: `docs/graded_grid.md`.
+
+## MATLAB parity
+
+`matlab/1_code/simulation_code/solve_motion.m` reproduces `run_simulation` (single-layer DtN, `timeScheme` euler/bdf2, `:schur` solver and the `:auto` rule, graded grid). The cross-check runs live against this package: `matlab/1_code/tests/JuliaParityTest.m`, `DtnSingleLayerTest.m`, `GradedGridTest.m` call `julia/scripts/parity_reference.jl` and `julia/scripts/parity_dump.jl`. Cluster job: `matlab/cluster/run_matlab_tests.sh`.
