@@ -48,6 +48,9 @@ cases = [
     "bath_earlystop" => (with_overrides(base; earlyStop = true, simulationTime = 30 / freqHz), :polar),
     "bath_sl_lu" => (base, :single_layer),
     "bath_bdf2_lu" => (with_overrides(base; timeScheme = :bdf2), :single_layer),
+    "bath_schur" => (with_overrides(base; solverType = :schur), :single_layer),
+    "bath_bdf2_schur" => (with_overrides(base; solverType = :schur, timeScheme = :bdf2), :single_layer),
+    "disk_schur" => (with_overrides(base; solverType = :schur, forceAmplitude = 0.1 * 0.0283 * 981.0, forceFrequency = freqHz, bathAmplitude = 0.0), :single_layer),
 ]
 
 # Generated natively (not via resolve_dtn/default_registry()) because julia/data/dtn_cache/
