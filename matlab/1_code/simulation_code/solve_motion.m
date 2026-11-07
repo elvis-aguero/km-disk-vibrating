@@ -1,4 +1,4 @@
-function [t_s, CoM_cm, eta_history_cm] = solve_motion(NameValueArgs)
+function [t_s, CoM_cm, eta_history_cm, r_cm] = solve_motion(NameValueArgs)
 % SOLVE_MOTION Simulates the motion of a disk oscillating in a fluid bath.
 %   This function models the motion of a disk and a bath, both subjected to 
 %   sinusoidal forces using configurable parameters provided through
@@ -35,6 +35,7 @@ arguments
     NameValueArgs.phaseAbsTolDeg (1, 1) double = 2.0 % Absolute phase change (degrees) tolerated between windows
     NameValueArgs.dtnMethod (1, 1) string {mustBeMember(NameValueArgs.dtnMethod, ["single_layer", "polar"])} = "single_layer" % "single_layer": built in process (Julia default). "polar": load the cached paper matrix (DxQuantY folder).
     NameValueArgs.dtnOrder (1, 1) double {mustBeMember(NameValueArgs.dtnOrder, [4 6])} = 6 % Finite-difference order of the single-layer matrix
+    NameValueArgs.grid = [] % [] = uniform grid (spatialResolution, bathDiameter). Else a grid struct from graded_grid / graded_grid_for / uniform_grid (docs/graded_grid.md); its nr and radii replace the uniform ones.
     NameValueArgs.timeScheme (1, 1) string {mustBeMember(NameValueArgs.timeScheme, ["euler", "bdf2"])} = "euler" % "euler": implicit Euler (Julia default). "bdf2": second order, first step Euler.
 end
 
@@ -68,11 +69,26 @@ end
 
 % Set up folder for data saving
 fold = fullfile(pwd, sprintf("D%dQuant%d", spatialResolution, bathDiameter));
-nr = ceil(spatialResolution * bathDiameter / 2);
+useGrid = isstruct(grid);
+if useGrid
+    if abs(grid.sr - spatialResolution) > 0
+        error('solve_motion:grid', 'grid has %g nodes per disk radius but spatialResolution is %g', grid.sr, spatialResolution);
+    end
+    nr = grid.nr;
+else
+    nr = ceil(spatialResolution * bathDiameter / 2);
+end
 if dtnMethod == "single_layer"
     % Built in process (mirrors Julia's default); no cache and no precomputed inverse (it belongs to the polar matrix).
-    DTN = generate_dtn(nr, bathDiameter, 'method', 'single_layer', 'order', dtnOrder);
+    if useGrid
+        DTN = generate_dtn_grid(grid, 'method', 'single_layer', 'order', dtnOrder);
+    else
+        DTN = generate_dtn(nr, bathDiameter, 'method', 'single_layer', 'order', dtnOrder);
+    end
 else
+    if useGrid && ~grid.uniform
+        error('solve_motion:grid', 'dtnMethod "polar" needs a uniform grid');
+    end
 try
     % Navigate to the folder and load necessary matrices
     cd(fold)
@@ -92,7 +108,12 @@ end
 
 
 % Load useful matrices for the simulation (Laplacian and pressure integral)
-[dr, laplacian, pressureIntegral] = domainMaker(bathDiameter, spatialResolution);
+if useGrid
+    [dr, laplacian, pressureIntegral, ~, nodeRadii] = domainMaker(grid);   % node radii in disk radii
+else
+    [dr, laplacian, pressureIntegral] = domainMaker(bathDiameter, spatialResolution);
+    nodeRadii = dr * (0:nr - 1).';
+end
 
 % Define characteristic units
 L_unit = diskRadius; 
@@ -392,6 +413,7 @@ if nargout > 0
     % Collect the full bath surface history (each column is one time step)
     % Size: [nr x steps]
     eta_history_cm = cell2mat(cellfun(@(c) c.bath_surface, recordedConditions(valid), 'UniformOutput', false)') * L_unit;
+    r_cm = nodeRadii(:) * L_unit;   % node radii (cm); rows of eta_history_cm
 end
 
 mypwd = split(pwd, "1_code"); mypwd = mypwd{2};
