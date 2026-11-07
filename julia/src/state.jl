@@ -95,7 +95,7 @@ function advance_one_step!(state::SimulationState, problem::Problem, solver::Abs
         assemble_rhs!(buffers.rhs, state.bath_surface, state.bath_potential,
                       state.center_of_mass_velocity, state.center_of_mass, dt, problem.Fr, g_pf, f_term)
         if bdf2   # startup: one implicit Euler step
-            ldiv!(buffers.sol, lu!(assemble_system_matrix(problem, g_pf)), buffers.rhs)
+            solve_startup!(solver, problem, g_pf, buffers.rhs, buffers.sol)
         else
             solve_step!(solver, phase, g_pf, buffers.rhs, buffers.sol)
         end

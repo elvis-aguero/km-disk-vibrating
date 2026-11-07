@@ -59,7 +59,7 @@ function bead_params(key::AbstractString, basis::AbstractString, sr::Float64, bd
         bathViscosity = BEAD_FLUID.viscosity, g = BEAD_FLUID.g,
         bathDiameter = bd, spatialResolution = sr, temporalResolution = tres,
         simulationTime = 30 / 90,                          # replaced per case by 30/f in run_sweep_case
-        solverType = :auto, startStatic = true, earlyStop = true,
+        solverType = Symbol(get(ENV, "KMDISK_SOLVER", "auto")), startStatic = true, earlyStop = true,
         timeScheme = scheme,
     )
 end

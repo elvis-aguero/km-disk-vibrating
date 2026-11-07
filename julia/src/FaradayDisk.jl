@@ -24,6 +24,7 @@ include(joinpath("solver", "lu_cache.jl"))
 include(joinpath("solver", "gmres_solver.jl"))
 include(joinpath("solver", "static_equilibrium.jl"))
 include(joinpath("solver", "solver_dispatch.jl"))
+include(joinpath("solver", "schur_solver.jl"))   # reduced (nr+1) system; needs AbstractStepSolver, LUCache
 include("state.jl")
 include("simulate.jl")
 include("sweep.jl")                 # SweepCaseResult needed by io.jl below
@@ -41,7 +42,7 @@ export SimulationParams, Problem, Units, build_problem, with_overrides,
        build_domain, contact_weights,
        assemble_system_matrix, assemble_system_matrix!, build_template, materialize!, repatch!, assemble_rhs!,
        LUCache, get_or_factorize!, hit_rate, n_factorizations, lu_factor_count, G_DEDUP_ATOL, mean_iterations,
-       StepPhase, step_phase, g_prefactor, force_term, resolve_solver_type, estimated_lu_cache_bytes, build_step_solver, implicit_dt,
+       StepPhase, step_phase, g_prefactor, force_term, resolve_solver_type, estimated_lu_cache_bytes, estimated_schur_bytes, build_schur_system, schur_solve!, solve_startup!, SchurStepSolver, build_step_solver, implicit_dt,
        available_memory_bytes, MEMORY_SAFETY_FACTOR,
        compute_eta_boundary, write_case_csv, write_timeseries_csv, write_summary_csv,
        config_digest, run_id, save_result,

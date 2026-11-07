@@ -34,7 +34,7 @@ function default_sweep_spec()
         bathDensity = 1.175, bathSurfaceTension = 66.5, bathViscosity = 0.18 / 1.175,
         bathDiameter = 100.0, spatialResolution = 50.0, temporalResolution = 60,
         simulationTime = 30 / 90,
-        solverType = :auto, startStatic = true, earlyStop = true,
+        solverType = Symbol(get(ENV, "KMDISK_SOLVER", "auto")), startStatic = true, earlyStop = true,
         timeScheme = Symbol(get(ENV, "KMDISK_TIME_SCHEME", "euler")),
     )
     return SweepSpec(gammas = [0.05, 0.2, 0.5], bathFrequenciesHz = collect(10.0:10.0:100.0), fixed = fixed)

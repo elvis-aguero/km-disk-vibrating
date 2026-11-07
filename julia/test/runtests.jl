@@ -20,6 +20,7 @@ const RUN_SLOW = get(ENV, "KMDISK_RUN_SLOW_TESTS", "0") == "1"
         include("unit/test_fit.jl")
         include("unit/test_convergence_check.jl")
         include("unit/test_solver_dispatch.jl")
+        include("unit/test_schur_solver.jl")
         include("unit/test_logging_setup.jl")
     end
 
@@ -28,6 +29,7 @@ const RUN_SLOW = get(ENV, "KMDISK_RUN_SLOW_TESTS", "0") == "1"
         include("integration/test_dtn_caches.jl")
         include("integration/test_dtn_single_layer.jl")
         include("integration/test_lu_cache.jl")
+        include("integration/test_schur_solver.jl")
         include("integration/test_physics_grounded.jl")
         include("integration/test_physics_limits.jl")
         include("integration/test_lab_frame.jl")

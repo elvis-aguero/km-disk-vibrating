@@ -144,8 +144,8 @@ function run_simulation(params::SimulationParams; dtn_registry::Union{Nothing,DT
     CoM_cm = com_hist .* L_unit
     eta_history_cm = isempty(eta_hist) ? zeros(problem.nr, 0) : reduce(hcat, eta_hist) .* L_unit
 
-    hit_rate_value = solver isa LUStepSolver ? hit_rate(solver.cache) : NaN
-    if solver isa LUStepSolver
+    hit_rate_value = solver isa Union{LUStepSolver,SchurStepSolver} ? hit_rate(solver.cache) : NaN
+    if solver isa Union{LUStepSolver,SchurStepSolver}
         @info "LU cache summary" factorizations = n_factorizations(solver.cache) stepsPerCycle = problem.stepsPerCycle hit_rate = hit_rate_value
     elseif solver isa GMRESStepSolver
         @info "GMRES summary" mean_iterations = mean_iterations(solver.gmres) solves = solver.gmres.nsolves
