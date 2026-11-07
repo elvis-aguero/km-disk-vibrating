@@ -26,8 +26,8 @@ classdef SchurSolverTest < matlab.unittest.TestCase
         end
 
         function autoEqualsSchurEndToEnd(testCase)
-            a = SchurSolverTest.run('euler', false, 'auto');
-            s = SchurSolverTest.run('euler', false, 'schur');
+            a = SchurSolverTest.runCase('euler', false, 'auto');
+            s = SchurSolverTest.runCase('euler', false, 'schur');
             testCase.verifyEqual(a, s, 'AbsTol', 0, 'auto must run the schur path on the uniform grid');
         end
 
@@ -62,8 +62,8 @@ classdef SchurSolverTest < matlab.unittest.TestCase
 
     methods
         function compareSolvers(testCase, scheme, diskForced)
-            ref = SchurSolverTest.run(scheme, diskForced, 'lu');
-            sch = SchurSolverTest.run(scheme, diskForced, 'schur');
+            ref = SchurSolverTest.runCase(scheme, diskForced, 'lu');
+            sch = SchurSolverTest.runCase(scheme, diskForced, 'schur');
             testCase.assertEqual(size(ref), size(sch));
             d = norm(sch - ref) / norm(ref);
             fprintf('[schur-vs-lu] %s %s: relative difference %.2e\n', scheme, ...
@@ -73,7 +73,7 @@ classdef SchurSolverTest < matlab.unittest.TestCase
     end
 
     methods (Static)
-        function CoM = run(scheme, diskForced, solver)
+        function CoM = runCase(scheme, diskForced, solver)
             freqHz = 30.0;  omega = 2 * pi * freqHz;
             if diskForced
                 fA = 0.1 * 0.0283 * 981.0;  fF = freqHz;  bA = 0.0;

@@ -46,7 +46,9 @@ NameValueArgs.datetimeMarker = datetimeMarker;
 
 % Add arguments to the current scope
 NameValueArgs.forceFrequency = NameValueArgs.forceFrequency * 2 * pi; % We use angular frequency
-cellfun(@(f) assignin('caller', f, NameValueArgs.(f)), fieldnames(NameValueArgs));
+gridSpec = NameValueArgs.grid;   % read statically: a bare "grid" would resolve to MATLAB's built-in function (also used as "grid on" below)
+argNames = setdiff(fieldnames(NameValueArgs), {'grid'});
+cellfun(@(f) assignin('caller', f, NameValueArgs.(f)), argNames);
 
 % Reset any existing warnings
 lastwarn('', '');
@@ -69,24 +71,24 @@ end
 
 % Set up folder for data saving
 fold = fullfile(pwd, sprintf("D%dQuant%d", spatialResolution, bathDiameter));
-useGrid = isstruct(grid);
+useGrid = isstruct(gridSpec);
 if useGrid
-    if abs(grid.sr - spatialResolution) > 0
-        error('solve_motion:grid', 'grid has %g nodes per disk radius but spatialResolution is %g', grid.sr, spatialResolution);
+    if abs(gridSpec.sr - spatialResolution) > 0
+        error('solve_motion:grid', 'grid has %g nodes per disk radius but spatialResolution is %g', gridSpec.sr, spatialResolution);
     end
-    nr = grid.nr;
+    nr = gridSpec.nr;
 else
     nr = ceil(spatialResolution * bathDiameter / 2);
 end
 if dtnMethod == "single_layer"
     % Built in process (mirrors Julia's default); no cache and no precomputed inverse (it belongs to the polar matrix).
     if useGrid
-        DTN = generate_dtn_grid(grid, 'method', 'single_layer', 'order', dtnOrder);
+        DTN = generate_dtn_grid(gridSpec, 'method', 'single_layer', 'order', dtnOrder);
     else
         DTN = generate_dtn(nr, bathDiameter, 'method', 'single_layer', 'order', dtnOrder);
     end
 else
-    if useGrid && ~grid.uniform
+    if useGrid && ~gridSpec.uniform
         error('solve_motion:grid', 'dtnMethod "polar" needs a uniform grid');
     end
 try
@@ -109,7 +111,7 @@ end
 
 % Load useful matrices for the simulation (Laplacian and pressure integral)
 if useGrid
-    [dr, laplacian, pressureIntegral, ~, nodeRadii] = domainMaker(grid);   % node radii in disk radii
+    [dr, laplacian, pressureIntegral, ~, nodeRadii] = domainMaker(gridSpec);   % node radii in disk radii
 else
     [dr, laplacian, pressureIntegral] = domainMaker(bathDiameter, spatialResolution);
     nodeRadii = dr * (0:nr - 1).';
