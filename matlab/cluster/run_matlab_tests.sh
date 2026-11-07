@@ -24,14 +24,4 @@ cd "$CODE_DIR"
 echo "code: $(git rev-parse --short HEAD)$(git status --porcelain | grep -q . && echo ' (dirty tree)') in $CODE_DIR"
 export JULIA_NUM_THREADS="$SLURM_CPUS_PER_TASK"
 export TEST_FILTER="${TEST_FILTER:-}"
-matlab -nodisplay -nosplash -nodesktop -batch "
-addpath(genpath(fullfile(pwd,'matlab','1_code','simulation_code')));
-import matlab.unittest.TestSuite; import matlab.unittest.TestRunner;
-import matlab.unittest.plugins.TestReportPlugin;
-suite = TestSuite.fromFolder(fullfile(pwd,'matlab','1_code','tests'));
-f = getenv('TEST_FILTER'); if ~isempty(f), suite = suite(contains({suite.Name}, f)); end
-runner = TestRunner.withTextOutput('OutputDetail', 3);
-results = runner.run(suite);
-disp(table(results));
-if any([results.Failed] | [results.Incomplete]), exit(1); end
-"
+matlab -nodisplay -nosplash -nodesktop -batch "addpath(fullfile(pwd,'matlab','cluster')); run_tests_cluster"
