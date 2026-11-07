@@ -1,5 +1,11 @@
 
-function [dr, Delta, IntMat] = domainMaker(D, quant)
+function [dr, Delta, IntMat, nr_out, r_out] = domainMaker(D, quant)
+% domainMaker(D, quant): uniform grid (unchanged code below). domainMaker(grid): grid struct from uniform_grid /
+% graded_grid, see grid_domain.m (extra outputs nr_out, r_out = node count and radii).
+if isstruct(D)
+    [dr, Delta, IntMat, nr_out, r_out] = grid_domain(D);
+    return;
+end
 %D = 100; save('D.mat','D') %Diameter of the domain measured in units of Ro
 %quant = 50;save('quant.mat','quant')%minimal number of intervals covered by a radius
 
