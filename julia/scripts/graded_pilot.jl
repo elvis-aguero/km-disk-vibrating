@@ -115,7 +115,7 @@ function run_graded_case(dom, key, basis, f, cfg, outroot; bd = dom == "25x200" 
     n_fact = lu_factor_count(params.temporalResolution, deg2rad(params.phaseDifference), true)
     return (nr = grid.nr, wall_cm = wall_radius(grid) * params.diskRadius, t_grid = t_grid, t_dtn = t_dtn, t_run = t_run,
             lu_bytes = estimated_lu_cache_bytes(n_fact, 2 * grid.nr + 2), quality = String(row["quality"]),
-            gain = Float64(row["gain_lab"]), phase = Float64(row["phase_lag_lab_deg"]), wave_cut = row["wave_cut"])
+            gain = Float64(row["gain_lab"]), phase = Float64(row["phase_lag_lab_deg"]), wave_cut = row["wave_cut"], echo = Float64(row["echo_pred"]))
 end
 
 function part_C3(outdir, t_start, budget_min)
@@ -244,6 +244,60 @@ function part_C7(outdir, t_start, budget_min)
     end
 end
 
+# ------------------------------------------------------------------------------------------------ G: C7b
+# any production row (any quality) of the campaign CSV: (domain, bead, basis, f) => (gain, phase, quality, wall_echo_pred)
+function read_ref_any()
+    lines = readlines(REF_CSV)
+    hdr = split(lines[1], ',')
+    ref = Dict{Tuple{String,String,String,Float64},Tuple{Float64,Float64,String,Float64}}()
+    for ln in lines[2:end]
+        isempty(strip(ln)) && continue
+        v = split(ln, ',')
+        row = Dict(hdr[i] => v[i] for i in eachindex(hdr))
+        row["role"] == "production" || continue
+        ref[(row["domain"], row["bead"], row["radius_basis"], parse(Float64, row["freq_Hz"]))] =
+            (parse(Float64, row["gain_lab"]), parse(Float64, row["phase_lag_lab_deg"]), row["quality"], parse(Float64, row["wall_echo_pred"]))
+    end
+    return ref
+end
+
+function part_C7b(outdir, t_start, budget_min)
+    println("\n=== C7b (informational): al32 rc, graded (order 2, ppw 32, q 1.04) at several R, next to the uniform 25x200 and 25x700 rows ===")
+    println("expectation (HYPOTHESIS): graded R=100 a matches the 25x200 row, R=350 a the 25x700 row (0.3 % / 0.3 deg), R >= 1000 a converges")
+    ref = read_ref_any()
+    cfg = (2, 32.0, 1.04)
+    for f in (52.0, 60.0, 70.0)
+        println("\n--- al32 rc, ", f, " Hz ---")
+        for dom in ("25x200", "25x700")
+            k = ("$dom", BEAD_CSV_NAME["al32"], "rc", f)
+            if haskey(ref, k)
+                g, ph, ql, ec = ref[k]
+                @printf("uniform %-7s: gain %.5f phase %.4f quality %-10s wall_echo_pred %.4f\n", dom, g, ph, ql, ec)
+            else
+                println("uniform ", dom, ": no row in the CSV")
+            end
+        end
+        for Rdisk in (100.0, 200.0, 350.0, 1000.0, 3000.0)
+            (time() - t_start) / 60 > budget_min && (println("BUDGET REACHED: R = ", Rdisk, " not started"); continue)
+            bd = 2 * Rdisk
+            try
+                r = run_graded_case("25x$(Int(bd))", "al32", "rc", f, cfg, joinpath(outdir, "runs_c7b"); bd = bd)
+                line = @sprintf("graded R=%-5g a: nr=%-5d gain %.5f phase %.4f quality %-10s wall_echo_pred %.4f", Rdisk, r.nr, r.gain, r.phase, r.quality, r.echo)
+                for (dom, Rd) in (("25x200", 100.0), ("25x700", 350.0))
+                    if Rdisk == Rd && haskey(ref, (dom, BEAD_CSV_NAME["al32"], "rc", f))
+                        g, ph, _, _ = ref[(dom, BEAD_CSV_NAME["al32"], "rc", f)]
+                        line *= @sprintf("  | vs %s: dgain %+.3f %%, dphase %+.3f deg (limits 0.3 / 0.3)", dom, 100 * (r.gain / g - 1), wrap180(r.phase - ph))
+                    end
+                end
+                println(line)
+            catch err
+                println("graded R=", Rdisk, " ERROR ", sprint(showerror, err))
+            end
+            flush(stdout)
+        end
+    end
+end
+
 function pilot_main()
     length(ARGS) >= 1 || error("usage: graded_pilot.jl <outdir> [parts=ABCD] [budget_min=95]")
     outdir = ARGS[1]
@@ -260,6 +314,7 @@ function pilot_main()
     occursin('D', parts) && part_C6(outdir)
     occursin('E', parts) && part_C3b(outdir, t_start, budget_min)
     occursin('F', parts) && part_C7(outdir, t_start, budget_min)
+    occursin('G', parts) && part_C7b(outdir, t_start, budget_min)
     println("graded_pilot done in $(round((time() - t_start) / 60; digits = 1)) min")
 end
 
