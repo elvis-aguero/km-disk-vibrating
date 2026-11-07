@@ -97,9 +97,8 @@ function part_C2()
 end
 
 # ------------------------------------------------------------------------------------------------ C: C3
-function run_graded_case(dom, key, basis, f, cfg, outroot)
+function run_graded_case(dom, key, basis, f, cfg, outroot; bd = dom == "25x200" ? 200.0 : 700.0)
     order, ppw, q = cfg
-    bd = dom == "25x200" ? 200.0 : 700.0
     params = bead_params(key, basis, 25.0, bd, :bdf2, 60)
     t0 = time()
     grid = graded_grid_for(params, f; ppw = ppw, q = q, laplacian_order = order)
@@ -108,7 +107,7 @@ function run_graded_case(dom, key, basis, f, cfg, outroot)
     t0 = time()
     dtn = generate_dtn(grid)
     t_dtn = time() - t0
-    dir = joinpath(outroot, "o$(order)_ppw$(Int(ppw))_q$(q)", "$(key)_$(basis)_$(dom)_f$(Int(f))")
+    dir = joinpath(outroot, "o$(order)_ppw$(Int(ppw))_q$(q)", "$(key)_$(basis)_$(dom)_bd$(Int(bd))_f$(Int(f))")
     t0 = time()
     run_sweep(SweepSpec(gammas = [0.5], bathFrequenciesHz = [f], fixed = params), dir; dtn = dtn)
     t_run = time() - t0
@@ -116,7 +115,7 @@ function run_graded_case(dom, key, basis, f, cfg, outroot)
     n_fact = lu_factor_count(params.temporalResolution, deg2rad(params.phaseDifference), true)
     return (nr = grid.nr, wall_cm = wall_radius(grid) * params.diskRadius, t_grid = t_grid, t_dtn = t_dtn, t_run = t_run,
             lu_bytes = estimated_lu_cache_bytes(n_fact, 2 * grid.nr + 2), quality = String(row["quality"]),
-            gain = Float64(row["gain_lab"]), phase = Float64(row["phase_lag_lab_deg"]))
+            gain = Float64(row["gain_lab"]), phase = Float64(row["phase_lag_lab_deg"]), wave_cut = row["wave_cut"])
 end
 
 function part_C3(outdir, t_start, budget_min)
@@ -196,6 +195,55 @@ function part_C6(outdir)
     @printf("uniform result: quality %s gain_lab %.6f phase_lab %.4f deg\n", row["quality"], row["gain_lab"], row["phase_lag_lab_deg"])
 end
 
+# ------------------------------------------------------------------------------------------------ E: C3b (5 Hz rows)
+const C3B_CONFIGS = [(2, 24.0, 1.04), (2, 32.0, 1.04)]
+
+function part_C3b(outdir, t_start, budget_min)
+    println("\n=== C3b: every quality=good 5 Hz row of the 25x700 domain; same criterion as C3 (|d gain| <= 0.3 %, |d phase| <= 0.3 deg) ===")
+    ref = read_ref()
+    inv = Dict(v => k for (k, v) in BEAD_CSV_NAME)
+    cases = [(d, inv[b], k, f) for (d, b, k, f) in sort(collect(keys(ref))) if d == "25x700" && f == 5.0]
+    println("rows: ", length(cases), " ", cases)
+    for cfg in C3B_CONFIGS
+        (time() - t_start) / 60 > budget_min && (println("BUDGET REACHED: C3b config ", cfg, " not started"); break)
+        println("\n--- config (order, ppw, q) = ", cfg, " ---")
+        npass = 0
+        for (dom, key, basis, f) in cases
+            gref, pref = ref[(dom, BEAD_CSV_NAME[key], basis, f)]
+            try
+                r = run_graded_case(dom, key, basis, f, cfg, joinpath(outdir, "runs_c3b"))
+                dgp = 100 * (r.gain / gref - 1)
+                dph = wrap180(r.phase - pref)
+                ok = r.quality == "good" && isfinite(dgp) && isfinite(dph) && abs(dgp) <= 0.3 && abs(dph) <= 0.3
+                npass += ok
+                @printf("%-5s %-3s nr=%-5d t_dtn=%-6.1f t_run=%-7.1f %-8s gain %.5f (ref %.5f, %+.3f %%) phase %.3f (ref %.3f, %+.3f deg) %s\n", key, basis, r.nr, r.t_dtn, r.t_run,
+                        r.quality, r.gain, gref, dgp, r.phase, pref, dph, ok ? "PASS" : "FAIL")
+            catch err
+                println(key, " ", basis, " ERROR ", sprint(showerror, err))
+            end
+            flush(stdout)
+        end
+        println("C3b config ", cfg, ": ", npass, "/", length(cases), " rows pass")
+    end
+end
+
+# ------------------------------------------------------------------------------------------------ F: C7
+function part_C7(outdir, t_start, budget_min)
+    println("\n=== C7 (informational, no pass/fail): al16 R, 5 Hz, domain convergence of the graded grid (order 2, ppw 32, q 1.04) ===")
+    cfg = (2, 32.0, 1.04)
+    for bd in (700.0, 2000.0, 6000.0, 16000.0)
+        (time() - t_start) / 60 > budget_min && (println("BUDGET REACHED: R = ", bd / 2, " not started"); break)
+        try
+            r = run_graded_case("25x$(Int(bd))", "al16", "R", 5.0, cfg, joinpath(outdir, "runs_c7"); bd = bd)
+            @printf("R = %-6g a (bathDiameter %-6g): nr=%-5d wall=%.1f cm  gain %.5f phase %.4f quality %s wave_cut %s  t_dtn %.1f s  t_run %.1f s  LU est %.2f GiB\n",
+                    bd / 2, bd, r.nr, r.wall_cm, r.gain, r.phase, r.quality, r.wave_cut, r.t_dtn, r.t_run, r.lu_bytes / 2^30)
+        catch err
+            println("R = ", bd / 2, " ERROR ", sprint(showerror, err))
+        end
+        flush(stdout)
+    end
+end
+
 function pilot_main()
     length(ARGS) >= 1 || error("usage: graded_pilot.jl <outdir> [parts=ABCD] [budget_min=95]")
     outdir = ARGS[1]
@@ -210,6 +258,8 @@ function pilot_main()
     occursin('B', parts) && part_C2()
     occursin('C', parts) && part_C3(outdir, t_start, budget_min)
     occursin('D', parts) && part_C6(outdir)
+    occursin('E', parts) && part_C3b(outdir, t_start, budget_min)
+    occursin('F', parts) && part_C7(outdir, t_start, budget_min)
     println("graded_pilot done in $(round((time() - t_start) / 60; digits = 1)) min")
 end
 
