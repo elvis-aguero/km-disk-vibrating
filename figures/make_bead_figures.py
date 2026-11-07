@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 """Figures for the bead campaign (see figstyle.py for the shared encodings).
 
-Usage: python3 figures/make_bead_figures.py <campaign dir>
+Usage: python3 figures/make_bead_figures.py <campaign dir> [<resim_glob>]
+<resim_glob> (optional): gain_phase.csv files of the large-domain resimulation (08_resim); their rows replace the
+Γ = 0.5 rows of the R and rc sweeps with the same bead, basis and frequency.
 Reads  <campaign>/{03_accel,03b_accel_gt1,04_sweep_R,05_sweep_rc,06_numerics/*}/gain_phase_all.csv
 Writes <campaign>/figures/fig{1..4}_*.{png,pdf} and captions.md
 Needs matplotlib and numpy (on Oscar: `module load py-matplotlib/3.10.3-2hcg`).
 """
 import csv
+import glob
 import math
 import os
 import sys
@@ -197,6 +200,14 @@ def main():
     p = lambda *a: os.path.join(camp, *a, "gain_phase_all.csv")  # noqa: E731
     acc, hi = load(p("03_accel")), load(p("03b_accel_gt1"))
     R, rc = load(p("04_sweep_R")), load(p("05_sweep_rc"))
+    if len(sys.argv) > 2:
+        new = {}
+        for f in sorted(glob.glob(sys.argv[2])):
+            for r in load(f):
+                new[(r["bead"], r["basis"], r["freq_Hz"])] = r
+        sub = lambda rows: [new.get((r["bead"], r["basis"], r["freq_Hz"]), r) if abs(r["gamma"] - 0.5) < 1e-9 else r  # noqa: E731
+                            for r in rows]
+        R, rc = sub(R), sub(rc)
 
     fig1_gamma(acc, hi, out)
     fig2_beads(R, rc, out)

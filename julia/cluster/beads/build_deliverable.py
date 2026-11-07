@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Build the deliverable CSV (BDF2 only) from a finished bead campaign.
 
-Usage: python3 -I julia/cluster/beads/build_deliverable.py <campaign_dir>
+Usage: python3 -I julia/cluster/beads/build_deliverable.py <campaign_dir> [<resim_glob>]
+<resim_glob> (optional): gain_phase.csv files of a large-domain resimulation (stage 08_resim). Each of their rows replaces
+the production row with the same bead, basis, gamma and frequency; the `domain` column says which domain a row comes from.
 Writes <campaign_dir>/deliverables/bead_gain_phase_bdf2.csv and README.txt.
 
 Row order: production (04_sweep_R, 05_sweep_rc), gamma_scan (03_accel, 03b_accel_gt1),
@@ -9,10 +11,10 @@ numerics_bdf2 (06_numerics/bdf2_tres30). Euler rows are never written. A case th
 earlier row (same bead, basis, steps/period, gamma, freq) is dropped.
 Phase lag is wrapped to (-180, 180]; the post-processor (gain_phase.jl) gives mod 360.
 """
-import csv, math, os, re, sys
+import csv, glob, math, os, re, sys
 
 NAMES = {"ptfe": "PTFE", "al32": "Al_1/32in", "al16": "Al_1/16in", "nylon": "Nylon_1/16in"}
-COLS = ["role", "bead", "radius_basis", "diskRadius_cm", "scheme", "steps_per_period", "gamma", "freq_Hz",
+COLS = ["role", "bead", "radius_basis", "diskRadius_cm", "scheme", "domain", "steps_per_period", "gamma", "freq_Hz",
         "gain_lab", "phase_lag_lab_deg", "gain_shaker", "phase_lag_shaker_deg",
         "wall_echo_pred", "wall_echo_negligible", "quality"]
 
@@ -25,7 +27,11 @@ def fmt(x, n=5):
     return "" if x != x else ("%." + str(n) + "g") % x
 
 
-def main(camp):
+def main(camp, resim_glob=None):
+    resim = {}
+    for path in sorted(glob.glob(resim_glob)) if resim_glob else []:
+        for r in csv.DictReader(open(path)):
+            resim[(r["bead"], r["basis"], float(r["gamma"]), float(r["freq_Hz"]))] = r
     sources = [("production", "04_sweep_R", 60), ("production", "05_sweep_rc", 60),
                ("gamma_scan", "03_accel", 60), ("gamma_scan", "03b_accel_gt1", 60),
                ("numerics_bdf2", "06_numerics/bdf2_tres30", 30)]
@@ -37,6 +43,8 @@ def main(camp):
         for r in csv.DictReader(open(path)):
             if r["scheme"] != "bdf2":
                 continue
+            if role == "production" and (r["bead"], r["basis"], float(r["gamma"]), float(r["freq_Hz"])) in resim:
+                r = resim[(r["bead"], r["basis"], float(r["gamma"]), float(r["freq_Hz"]))]
             key = (r["bead"], r["basis"], tres, float(r["gamma"]), float(r["freq_Hz"]))
             if key in seen:
                 continue
@@ -45,7 +53,8 @@ def main(camp):
             has = g("gain_lab") == g("gain_lab")
             e = g("echo_pred")
             rows.append({"role": role, "bead": NAMES[r["bead"]], "radius_basis": r["basis"],
-                         "diskRadius_cm": r["diskRadius_cm"], "scheme": "bdf2", "steps_per_period": tres,
+                         "diskRadius_cm": r["diskRadius_cm"], "scheme": "bdf2", "domain": r.get("domain", "25x200"),
+                         "steps_per_period": tres,
                          "gamma": "%g" % g("gamma"), "freq_Hz": "%g" % g("freq_Hz"),
                          "gain_lab": fmt(g("gain_lab")),
                          "phase_lag_lab_deg": fmt(wrap(r["phase_lag_lab_deg"]) if has else float("nan")),
@@ -70,7 +79,9 @@ def main(camp):
 (includes the disk force-balance fix of PR 7: contact-line force counted once). Values from earlier campaigns are NOT comparable.
 Row order: production (Gamma 0.5, 60 steps/period, 4 beads x R,rc x 34 freqs), gamma_scan (PTFE R, Gamma 0.1-2.0), numerics_bdf2 (PTFE R, 30 steps/period).
 A case that repeats an earlier row is dropped.
-Model: FaradayDisk.jl, bath-driven, BDF2, domain 25 x 200 (DTN), nr 2500. Fluid: nu 0.079 St, rho 1.148 g/cm3, gamma 68 dyn/cm, g 981. Contact angle 180 deg (sphere mass).
+Model: FaradayDisk.jl, bath-driven, BDF2. `domain` column: 25x200 = DTN domain 25 x 200 (nr 2500, the paper's matrix);
+25x700 = large-domain resimulation of the rows whose wall echo was predicted >= 1% at 25x200 (nr 8750, single-layer DTN
+matrix, docs/dtn_single_layer.md; same equations, 60 steps/period, same fitting window rule). Fluid: nu 0.079 St, rho 1.148 g/cm3, gamma 68 dyn/cm, g 981. Contact angle 180 deg (sphere mass).
 radius_basis: R = actual bead radius, rc = contact radius.
 gain = fitted amplitude / (Gamma g / w^2) over the last 3 periods. lab = shaker trace + bath displacement.
 phase_lag_*_deg = lag of the bead behind the bath displacement, signed, range (-180, 180].
@@ -85,6 +96,6 @@ Definitions: julia/cluster/beads/gain_phase.jl and fit_oscillation in julia/src/
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    if len(sys.argv) not in (2, 3):
         sys.exit(__doc__)
-    main(sys.argv[1])
+    main(sys.argv[1], sys.argv[2] if len(sys.argv) == 3 else None)
